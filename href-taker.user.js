@@ -107,7 +107,11 @@ function getSettings(name) {
         shadowWrapper.setAttribute("id", "href-taker-outer-shadow-wrapper");
         shadowWrapper.attachShadow({mode: "open"});
         shadowWrapper.shadowRoot.innerHTML = `<div id="shadow-content-wrapper"></div>`;
-        insertPlace.prepend(shadowWrapper);
+        if (insertSelector === "html") {
+            insertPlace.append(shadowWrapper);
+        } else {
+            insertPlace.prepend(shadowWrapper);
+        }
         const container = shadowWrapper.shadowRoot.querySelector("#shadow-content-wrapper");
         const querySelector    = selector => container.querySelector(selector);
         const querySelectorAll = selector => container.querySelectorAll(selector);
