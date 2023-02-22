@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.0.2-2023.02.22
+// @version     0.0.3-2023.02.22
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -34,92 +34,31 @@ if (debug) {
     // showSettings();
 }
 
-function getSettings(name) {
+function getStaticContent(settings) {
     /**
-     * @typedef {Object|null} Settings
-     * @property {string}  input_only
-     * @property {boolean} input_only_disabled
-     * @property {string}  input_ignore
-     * @property {boolean} input_ignore_disabled
-     * @property {boolean} include_text_url
-     * @property {boolean} only_text_url
-     * @property {boolean} console_log
-     * @property {boolean} console_vars
-     * @property {boolean} unique
-     * @property {boolean} sort
-     * @property {boolean} reverse
-     * @property {boolean} ignore_first_party
-     * @property {string}  input_selector
-     * @property {boolean} input_selector_disabled
-     * @property {boolean} https
-     * @property {boolean} auto
+     * Removes `<style>` and `</style>` tags are required for IDE syntax highlighting.
+     * @example
+     * const cssText = cssFromStyle`
+     * <style>
+     * #some-id {
+     *     display: flex;
+     *     justify-content: center;
+     * }
+     * </style>`;
+     * @param textParts
+     * @param values
+     * @return {*}
      */
-
-    const LocalStoreName = "ujs-" + name;
-    /** @type Settings */
-    let settings = loadSettings();
-    function loadSettings() {
-        const defaultSettings = {
-            input_only: "",
-            input_only_disabled: false,
-            input_ignore: "",
-            input_ignore_disabled: false,
-            include_text_url: true,
-            only_text_url: false,
-            console_log: false,
-            console_vars: true,
-            unique: true,
-            sort: true,
-            reverse: false,
-            ignore_first_party: true,
-            input_selector: "body",
-            input_selector_disabled: false,
-            https: true,
-            auto: true,
-        };
-
-        let savedSettings;
-        try {
-            savedSettings = JSON.parse(localStorage.getItem(LocalStoreName)) || {};
-        } catch (e) {
-            console.error("[ujs]", e);
-            localStorage.removeItem(LocalStoreName);
-            savedSettings = {};
-        }
-        savedSettings = Object.assign(defaultSettings, savedSettings);
-        return savedSettings;
+    function cssFromStyle(textParts, ...values) {
+        values.push("");
+        const fullText = textParts.reduce((pre, cur, index) => {
+            return pre + cur + values[index];
+        }, "");
+        return fullText.replace(/^\s*<style>\n?/, "").replace(/\s*<\/style>\s*$/, "");
     }
-    const insertSelector = "html"; // "body", "html"
-    let opened = false;
-    function closeSettings() {
-        document.querySelector(`${insertSelector} > #href-taker-outer-shadow-wrapper`)?.remove();
-        opened = false;
-    }
-    function showSettings() {
-        let resetPopup = false;
-        if (opened) {
-            resetPopup = true;
-            closeSettings();
-        }
 
-        const insertPlace   = document.querySelector(insertSelector);
-        const shadowWrapper = document.createElement("div");
-        shadowWrapper.setAttribute("id", "href-taker-outer-shadow-wrapper");
-        shadowWrapper.attachShadow({mode: "open"});
-        shadowWrapper.shadowRoot.innerHTML = `<div id="shadow-content-wrapper"></div>`;
-        if (insertSelector === "html") {
-            insertPlace.append(shadowWrapper);
-        } else {
-            insertPlace.prepend(shadowWrapper);
-        }
-        const container = shadowWrapper.shadowRoot.querySelector("#shadow-content-wrapper");
-        const querySelector    = selector => container.querySelector(selector);
-        const querySelectorAll = selector => container.querySelectorAll(selector);
-
-        opened = true;
-
-
-        const wrapperShadowCss = cssFromStyle`
+    const wrapperHtml = `<div id="shadow-content-wrapper"></div>`;
+    const wrapperCss = cssFromStyle`
 <style>
 #shadow-content-wrapper {
     display: flex;
@@ -137,55 +76,154 @@ function getSettings(name) {
     pointer-events: all;
 }
 </style>`;
-        addCSS(wrapperShadowCss, container);
 
+    const minimizedHtml = `
+<div class="minimized">
+    <div>
+        HrefTaker
+        <button id="show-popup" title="Open popup">O</button>
+        <button id="close-popup" title="Close popup">X</button>
+    </div>
+</div>`;
+    const minimizedCss = cssFromStyle`
+<style>
+.minimized {
+    position: fixed;
+    width: fit-content;
+    background-color: white;
+    padding: 3px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    border: 1px solid gray;
+    border-radius: 2px;
+}
+</style>`;
 
-        const {
-            input_only,
-            input_only_disabled,
-            input_ignore,
-            input_ignore_disabled,
-            include_text_url,
-            only_text_url,
-            console_log,
-            console_vars,
-            unique,
-            sort,
-            input_selector,
-            input_selector_disabled,
-            ignore_first_party,
-            reverse,
-            https,
-            auto,
-        } = settings;
+    const {
+        input_only,
+        input_only_disabled,
+        input_ignore,
+        input_ignore_disabled,
+        include_text_url,
+        only_text_url,
+        console_log,
+        console_vars,
+        unique,
+        sort,
+        input_selector,
+        input_selector_disabled,
+        ignore_first_party,
+        reverse,
+        https,
+        auto,
+        auto_show,
+        auto_list,
+    } = settings;
+    const checked  = isChecked  => isChecked  ? "checked"  : "";
+    const disabled = isDisabled => isDisabled ? "disabled" : "";
 
-        function setSettingsDataAttributes() {
-            const settingsElem = querySelector(".ujs-modal-settings");
-            if (!settingsElem) {
-                return;
-            }
-            for (const [key, value] of Object.entries(settings)) {
-                if (typeof value !== "boolean") {
-                    continue;
-                }
-                const attr = `data-${key.replaceAll("_", "-")}`;
-                if (value) {
-                    settingsElem.setAttribute(attr, "");
-                } else {
-                    settingsElem.removeAttribute(attr);
-                }
-            }
-        }
+    const popupHtml = `
+<div class="ujs-modal-settings" id="popup">
+    <div class="header" id="popup-header">
+        <button id="minimize-button">_</button>
+        <button id="close-button">X</button>
+    </div>
+    <fieldset class="text-inputs-wrapper">
+        <legend id="legend-filters">Filters</legend>
+        <label>
+            <span class="input-prompt" id="input-only-prompt">Only</span>
+            <input id="input-only" type="text" name="input_only" value="${input_only}" ${disabled(input_only_disabled)} spellcheck="false">
+        </label>
+        <hr>
+        <label>
+            <span class="input-prompt" id="input-ignore-prompt">Ignore</span>
+            <input id="input-ignore" type="text" name="input_ignore" value="${input_ignore}" ${disabled(input_ignore_disabled)} spellcheck="false">
+        </label>
+    </fieldset>
+    <fieldset>
+        <legend>Controls</legend>  
+        <div class="control-row">
+            <div class="control-row-inner">
+                <button title="From anchors" name="list_button">List links</button>
+                <span id="include-text-url-wrapper">
+                    <label title="Include URLs parsed from text">
+                        <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
+                        Include text
+                    </label>   
+                </span>
+                <label title="Only URLs parsed from text">
+                    <input type="checkbox" name="only_text_url" ${checked(only_text_url)}>
+                    Only text
+                </label>
+            </div>
+            <div>
+                <button name="to_text_button">URLs to text</button>
+            </div>
+        </div>
+        <div class="control-row">
+            <div class="control-row-inner">
+                <button title="Copy URLs separated by space" name="copy_button">Copy</button>
+                <button title="Close it" name="close_button">Close</button>
+            </div>
+            <button title="Show Extra Settings" name="extra_settings_button">Extra Settings</button>
+        </div>
+        <div class="hidden" id="extra_settings">
+            <hr>
+            <div class="control-row">
+                <div class="control-row-inner">
+                    <label title="Log the result list to console">
+                        <input type="checkbox" name="console_log" ${checked(console_log)}>
+                        Console log
+                    </label>
+                    <label title="Expose variables to console">
+                        <input type="checkbox" name="console_vars" ${checked(console_vars)}>
+                        Console vars
+                    </label>
+                </div>
+                <div class="control-row-inner">                        
+                    <label title="Only unique URLs">
+                        <input type="checkbox" name="unique" ${checked(unique)}>
+                        Only unique
+                    </label>
+                    <label title="Sort URLs by hostname">
+                        <input type="checkbox" name="sort" ${checked(sort)}>
+                        Sort
+                    </label>
+                    <label title="Reverse list">
+                        <input type="checkbox" name="reverse" ${checked(reverse)}>
+                        Reverse
+                    </label>
+                    <label title="Don't list 1st-party URLs">
+                        <input type="checkbox" name="ignore_first_party" ${checked(ignore_first_party)}>
+                        No 1st-party
+                    </label>                        
+                    <label title="Replace http:// with https://">
+                        <input type="checkbox" name="https" ${checked(https)}>
+                        https
+                    </label>
+                    <label title="Auto list URLs on the pop is shown">
+                        <input type="checkbox" name="auto" ${checked(auto)}>
+                        Auto
+                    </label>
+                </div>
+            </div>
+            <div class="text-inputs-wrapper">
+                <hr>
+                <label title="Target selector. By default, it is &quot;body&quot; selector.">
+                    <span id="input-selector-prompt">Selector</span>
+                    <input id="input-selector" type="text" name="input_selector" value="${input_selector}" ${disabled(input_selector_disabled)} spellcheck="false">
+                </label>
+            </div>
+        </div>
 
-        const checked  = isChecked  => isChecked  ? "checked"  : "";
-        const disabled = isDisabled => isDisabled ? "disabled" : "";
-
-        if (localStorage.getItem("href-taker-popup-minimized") === "true" && !resetPopup) {
-            renderMinimize();
-            return;
-        }
-
-        const popupShadowCss = cssFromStyle`
+    </fieldset>
+    <fieldset id="result-list-fieldset">
+        <legend id="result-list-legend">Result list</legend>            
+        <div id="result-list">
+            <div id="result-list-prompt">Click here to list URLs...</div>
+        </div>
+    </fieldset>      
+</div>`;
+    const popupCss = cssFromStyle`
 <style>
 .hidden {
     display: none!important;
@@ -199,11 +237,9 @@ function getSettings(name) {
     border-color: darkorange;
 }
 
-
 /*:root {*/
 /*  --width: 720px;*/
 /*}*/
-
 .ujs-modal-settings {
     /*width: var(--width);*/
     width: 720px;
@@ -311,114 +347,134 @@ button {
 fieldset {
     border-color: aliceblue;
 }
-</style>
-        `;
-        addCSS(popupShadowCss, container);
+</style>`;
 
-        const popupHtml = `
-<div class="ujs-modal-settings" id="popup">
-    <div class="header" id="popup-header">
-        <button id="minimize-button">_</button>
-        <button id="close-button">X</button>
-    </div>
-    <fieldset class="text-inputs-wrapper">
-        <legend id="legend-filters">Filters</legend>
-        <label>
-            <span class="input-prompt" id="input-only-prompt">Only</span>
-            <input id="input-only" type="text" name="input_only" value="${input_only}" ${disabled(input_only_disabled)} spellcheck="false">
-        </label>
-        <hr>
-        <label>
-            <span class="input-prompt" id="input-ignore-prompt">Ignore</span>
-            <input id="input-ignore" type="text" name="input_ignore" value="${input_ignore}" ${disabled(input_ignore_disabled)} spellcheck="false">
-        </label>
-    </fieldset>
-    <fieldset>
-        <legend>Controls</legend>  
-        <div class="control-row">
-            <div class="control-row-inner">
-                <button title="From anchors" name="list_button">List links</button>
-                <span id="include-text-url-wrapper">
-                    <label title="Include URLs parsed from text">
-                        <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
-                        Include text
-                    </label>   
-                </span>
-                <label title="Only URLs parsed from text">
-                    <input type="checkbox" name="only_text_url" ${checked(only_text_url)}>
-                    Only text
-                </label>
-            </div>
-            <div>
-                <button name="to_text_button">URLs to text</button>
-            </div>
-        </div>
-        <div class="control-row">
-            <div class="control-row-inner">
-                <button title="Copy URLs separated by space" name="copy_button">Copy</button>
-                <button title="Close it" name="close_button">Close</button>
-            </div>
-            <button title="Show Extra Settings" name="extra_settings_button">Extra Settings</button>
-        </div>
-        <div class="hidden" id="extra_settings">
-            <hr>
-            <div class="control-row">
-                <div class="control-row-inner">
-                    <label title="Log the result list to console">
-                        <input type="checkbox" name="console_log" ${checked(console_log)}>
-                        Console log
-                    </label>
-                    <label title="Expose variables to console">
-                        <input type="checkbox" name="console_vars" ${checked(console_vars)}>
-                        Console vars
-                    </label>
-                </div>
-                <div class="control-row-inner">                        
-                    <label title="Only unique URLs">
-                        <input type="checkbox" name="unique" ${checked(unique)}>
-                        Only unique
-                    </label>
-                    <label title="Sort URLs by hostname">
-                        <input type="checkbox" name="sort" ${checked(sort)}>
-                        Sort
-                    </label>
-                    <label title="Reverse list">
-                        <input type="checkbox" name="reverse" ${checked(reverse)}>
-                        Reverse
-                    </label>
-                    <label title="Don't list 1st-party URLs">
-                        <input type="checkbox" name="ignore_first_party" ${checked(ignore_first_party)}>
-                        No 1st-party
-                    </label>                        
-                    <label title="Replace http:// with https://">
-                        <input type="checkbox" name="https" ${checked(https)}>
-                        https
-                    </label>
-                    <label title="Auto list URLs on the pop is shown">
-                        <input type="checkbox" name="auto" ${checked(auto)}>
-                        Auto
-                    </label>
-                </div>
-            </div>
-            <div class="text-inputs-wrapper">
-                <hr>
-                <label title="Target selector. By default, it is &quot;body&quot; selector.">
-                    <span id="input-selector-prompt">Selector</span>
-                    <input id="input-selector" type="text" name="input_selector" value="${input_selector}" ${disabled(input_selector_disabled)} spellcheck="false">
-                </label>
-            </div>
-        </div>
+    return {
+        wrapperHtml, wrapperCss,
+        minimizedHtml, minimizedCss,
+        popupHtml, popupCss,
+    };
+}
 
-    </fieldset>
-    <fieldset id="result-list-fieldset">
-        <legend id="result-list-legend">Result list</legend>            
-        <div id="result-list">
-            <div id="result-list-prompt">Click here to list URLs...</div>
-        </div>
-    </fieldset>      
-</div>
-        `;
+
+function getSettings(name) {
+    /**
+     * @typedef {Object|null} Settings
+     * @property {string}  input_only
+     * @property {boolean} input_only_disabled
+     * @property {string}  input_ignore
+     * @property {boolean} input_ignore_disabled
+     * @property {boolean} include_text_url
+     * @property {boolean} only_text_url
+     * @property {boolean} console_log
+     * @property {boolean} console_vars
+     * @property {boolean} unique
+     * @property {boolean} sort
+     * @property {boolean} reverse
+     * @property {boolean} ignore_first_party
+     * @property {string}  input_selector
+     * @property {boolean} input_selector_disabled
+     * @property {boolean} https
+     * @property {boolean} auto
+     */
+
+    const LocalStoreName = "ujs-" + name;
+    /** @type Settings */
+    let settings = loadSettings();
+    function loadSettings() {
+        const defaultSettings = {
+            input_only: "",
+            input_only_disabled: false,
+            input_ignore: "",
+            input_ignore_disabled: false,
+            include_text_url: true,
+            only_text_url: false,
+            console_log: false,
+            console_vars: true,
+            unique: true,
+            sort: true,
+            reverse: false,
+            ignore_first_party: true,
+            input_selector: "body",
+            input_selector_disabled: false,
+            https: true,
+            auto: true,
+        };
+
+        let savedSettings;
+        try {
+            savedSettings = JSON.parse(localStorage.getItem(LocalStoreName)) || {};
+        } catch (e) {
+            console.error("[ujs]", e);
+            localStorage.removeItem(LocalStoreName);
+            savedSettings = {};
+        }
+        savedSettings = Object.assign(defaultSettings, savedSettings);
+        return savedSettings;
+    }
+    const insertSelector = "html"; // "body", "html"
+    let opened = false;
+    function closeSettings() {
+        document.querySelector(`${insertSelector} > #href-taker-outer-shadow-wrapper`)?.remove();
+        opened = false;
+    }
+    function showSettings() {
+        let resetPopup = false;
+        if (opened) {
+            resetPopup = true;
+            closeSettings();
+        }
+
+        const {
+            wrapperHtml, wrapperCss,
+            minimizedHtml, minimizedCss,
+            popupHtml, popupCss,
+        } = getStaticContent(settings);
+
+
+        const insertPlace   = document.querySelector(insertSelector);
+        const shadowWrapper = document.createElement("div");
+        shadowWrapper.setAttribute("id", "href-taker-outer-shadow-wrapper");
+        shadowWrapper.attachShadow({mode: "open"});
+        shadowWrapper.shadowRoot.innerHTML = wrapperHtml;
+        if (insertSelector === "html") {
+            insertPlace.append(shadowWrapper);
+        } else {
+            insertPlace.prepend(shadowWrapper);
+        }
+        const container = shadowWrapper.shadowRoot.querySelector("#shadow-content-wrapper");
+        addCSS(wrapperCss, container);
+        const querySelector    = selector => container.querySelector(selector);
+        const querySelectorAll = selector => container.querySelectorAll(selector);
+
+        opened = true;
+
+        function setSettingsDataAttributes() {
+            const settingsElem = querySelector(".ujs-modal-settings");
+            if (!settingsElem) {
+                return;
+            }
+            for (const [key, value] of Object.entries(settings)) {
+                if (typeof value !== "boolean") {
+                    continue;
+                }
+                const attr = `data-${key.replaceAll("_", "-")}`;
+                if (value) {
+                    settingsElem.setAttribute(attr, "");
+                } else {
+                    settingsElem.removeAttribute(attr);
+                }
+            }
+        }
+
+
+        if (localStorage.getItem("href-taker-popup-minimized") === "true" && !resetPopup) {
+            renderMinimize();
+            return;
+        }
+
         container.insertAdjacentHTML("afterbegin", popupHtml);
+        addCSS(popupCss, container);
         setSettingsDataAttributes();
 
         const popup          = querySelector("#popup");
@@ -480,31 +536,9 @@ fieldset {
         minimizeButton.addEventListener("contextmenu", event => {
             event.preventDefault();
             localStorage.setItem("href-taker-popup-minimized", "true");
-            renderMinimize(true);
+            renderMinimize(true); // todo remove main pop css
         });
         function renderMinimize(resetPosition = false) {
-            const minimizedCss = cssFromStyle`
-<style>
-.minimized {
-    position: fixed;
-    width: fit-content;
-    background-color: white;
-    padding: 3px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    border: 1px solid gray;
-    border-radius: 2px;
-}
-</style>
-            `;
-            const minimizedHtml = `
-<div class="minimized">
-    <div>
-        HrefTaker
-        <button id="show-popup" title="Open popup">O</button>
-        <button id="close-popup" title="Close popup">X</button>
-    </div>
-</div>
-            `;
             querySelector(".ujs-modal-settings")?.remove();
             container.insertAdjacentHTML("afterbegin", minimizedHtml);
             addCSS(minimizedCss, container);
@@ -691,7 +725,7 @@ fieldset {
             void navigator.clipboard.writeText(urls.join("\n"));
         });
 
-        if (auto) {
+        if (settings.auto) {
             renderList();
         }
     }
@@ -827,27 +861,7 @@ function hashString(str) {
 
 // --------------------------
 
-/**
- * Removes `<style>` and `</style>` tags are required for IDE syntax highlighting.
- * @example
- * const cssText = cssFromStyle`
- * <style>
- * #href-taker-outer-shadow-wrapper {
- *     display: flex;
- *     justify-content: center;
- * }
- * </style>`;
- * @param textParts
- * @param values
- * @return {*}
- */
-function cssFromStyle(textParts, ...values) {
-    values.push("");
-    const fullText = textParts.reduce((pre, cur, index) => {
-        return pre + cur + values[index];
-    }, "");
-    return fullText.replace(/^\s*<style>\n?/, "").replace(/\s*<\/style>\s*$/, "")
-}
+
 
 
 
