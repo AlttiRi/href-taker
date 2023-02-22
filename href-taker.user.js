@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.0.0-2023.02.20
+// @version     0.0.0-2023.02.22
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -8,20 +8,31 @@
 // @supportURL  https://github.com/AlttiRi/href-taker/issues
 // @match       *://*/*
 // @grant       GM_registerMenuCommand
+// @grant       GM_addElement
 // ==/UserScript==
 
-let global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
-let debug = true;
+const global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
+const debug = true;
 
-let {settings, showSettings, closeSettings} = getSettings("href-taker");
+const {settings, showSettings, closeSettings} = getSettings("href-taker");
 if (typeof GM_registerMenuCommand === "function") {
     GM_registerMenuCommand("Show popup", showSettings);
 }
+
+function addCSS(css, target = document.head) {
+    if (typeof GM_addElement === "function") {
+        return GM_addElement(target, "style", {textContent: css});
+    }
+    const styleElem = document.createElement("style");
+    styleElem.textContent = css;
+    target.append(styleElem);
+    return styleElem;
+}
+
 if (debug) {
     showSettings();
     // showSettings();
 }
-
 
 function getSettings(name) {
     /**
@@ -78,12 +89,42 @@ function getSettings(name) {
         savedSettings = Object.assign(defaultSettings, savedSettings);
         return savedSettings;
     }
+    const insertSelector = "html"; // "body", "html"
     let opened = false;
     function closeSettings() {
-        document.querySelector("body > .ujs-modal-main-wrapper")?.remove();
+        document.querySelector(`${insertSelector} > #href-taker-outer-shadow-wrapper`)?.remove();
         opened = false;
     }
     function showSettings() {
+        const insertPlace   = document.querySelector(insertSelector);
+        const shadowWrapper = document.createElement("div");
+        shadowWrapper.setAttribute("id", "href-taker-outer-shadow-wrapper");
+        shadowWrapper.attachShadow({mode: "open"});
+        shadowWrapper.shadowRoot.innerHTML = `<div id="shadow-content-wrapper"></div>`;
+        insertPlace.prepend(shadowWrapper);
+        const container = shadowWrapper.shadowRoot.querySelector("#shadow-content-wrapper");
+        const querySelector    = selector => container.querySelector(selector);
+        const querySelectorAll = selector => container.querySelectorAll(selector);
+
+        const outerShadowWrapperCss = cssFromStyle`
+<style>
+#href-taker-outer-shadow-wrapper {
+    display: flex;
+    margin-top: 40px;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 99999;
+}
+</style>
+        `;
+        addCSS(outerShadowWrapperCss);
+        addCSS(`#shadow-content-wrapper > * { pointer-events: all; }`, container);
+
         const {
             input_only,
             input_only_disabled,
@@ -104,7 +145,7 @@ function getSettings(name) {
         } = settings;
 
         function setSettingsDataAttributes() {
-            const settingsElem = document.querySelector(".ujs-modal-settings");
+            const settingsElem = querySelector(".ujs-modal-settings");
             if (!settingsElem) {
                 return;
             }
@@ -130,36 +171,13 @@ function getSettings(name) {
 
         const checked  = isChecked  => isChecked  ? "checked"  : "";
         const disabled = isDisabled => isDisabled ? "disabled" : "";
-        const wrapperHtml = `
-<div class="ujs-modal-main-wrapper"> 
-<style>
-.ujs-modal-main-wrapper {
-    display: flex;
-    margin-top: 40px;
-    justify-content: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    pointer-events: none;
-    z-index: 99999;
-}
-.ujs-modal-main-wrapper > * {
-    pointer-events: all;
-}
-</style>
-</div>
-        `;
-        document.body.insertAdjacentHTML("afterbegin", wrapperHtml);
 
         if (localStorage.getItem("href-taker-popup-minimized") === "true" && !resetPopup) {
             renderMinimize();
             return;
         }
 
-        const popupHtml = `
-<div class="ujs-modal-settings">
+        const popupShadowCss = cssFromStyle`
 <style>
 .ujs-hidden {
     display: none!important;
@@ -173,11 +191,12 @@ function getSettings(name) {
     border-color: darkorange;
 }
 
+
 /*:root {*/
 /*  --width: 720px;*/
 /*}*/
 
-.ujs-modal-main-wrapper .ujs-modal-settings {
+.ujs-modal-settings {
     /*width: var(--width);*/
     width: 720px;
     background-color: white;
@@ -207,38 +226,38 @@ function getSettings(name) {
     overflow-y: hidden;
 }
 
-.ujs-modal-main-wrapper .text-inputs-wrapper label {
+ .text-inputs-wrapper label {
     display: flex;
 }
-.ujs-modal-main-wrapper input[type="text"] {
+ input[type="text"] {
     width: 100%;
     margin-left: 8px;
 }
-.ujs-modal-main-wrapper label > span {
+label > span {
     min-width: 54px;
 }
-.ujs-modal-main-wrapper label,
-.ujs-modal-main-wrapper button {
+label, 
+button {
     user-select: none;
 }
 
-.ujs-modal-main-wrapper button {
+button {
     margin: 4px;
 }
-.ujs-modal-main-wrapper .control-row {
+.control-row {
    display: flex;
    flex-direction: row;
    justify-content: space-between;
 }
-.ujs-modal-main-wrapper .control-row .control-row-inner {
+.control-row .control-row-inner {
    display: flex;
    align-items: center;
 }
-.ujs-modal-main-wrapper .control-row-inner > * {
+.control-row-inner > * {
     margin-right: 8px;
 }
 
-.ujs-modal-main-wrapper [data-only-text-url] #include-text-url-wrapper {
+[data-only-text-url] #include-text-url-wrapper {
     color: gray;
 }
 
@@ -275,8 +294,12 @@ function getSettings(name) {
 /*}*/
 
 </style>
+        `;
+        addCSS(popupShadowCss, container);
 
-    <div class="header">
+        const popupHtml = `
+<div class="ujs-modal-settings" id="popup">
+    <div class="header" id="popup-header">
         <button id="minimize-button">_</button>
         <button id="close-button">X</button>
     </div>
@@ -377,23 +400,22 @@ function getSettings(name) {
     </fieldset>      
 </div>
         `;
-        document.querySelector(".ujs-modal-main-wrapper").insertAdjacentHTML("beforeend", popupHtml);
+        container.insertAdjacentHTML("afterbegin", popupHtml);
         setSettingsDataAttributes();
 
-
-        const container      = document.querySelector(".ujs-modal-settings");
-        const header         = document.querySelector(".header");
-        const resultListElem = document.querySelector("#result-list-fieldset");
-        makeDraggable(container, {
+        const popup          = querySelector("#popup");
+        const header         = querySelector("#popup-header");
+        const resultListElem = querySelector("#result-list-fieldset");
+        makeDraggable(popup, {
             handle: header,
             reset: resetPopup,
             restore: true,
             id: "href-taker-popup"
         });
-        makeResizable(container, {
+        makeResizable(popup, {
             minW: 420, minH: 320,
             onMove(state) {
-                assignStyleState(container, state);
+                assignStyleState(popup, state);
                 resultListElem.style.width = (parseInt(state.width) - 24) + "px";
             },
             reset: resetPopup,
@@ -403,14 +425,15 @@ function getSettings(name) {
 
 
         ["input-only", "input-ignore", "input-selector"].forEach(name => {
-            const input      = document.querySelector(`#${name}`);
-            const promptElem = document.querySelector(`#${name}-prompt`);
+            const input      = querySelector(`#${name}`);
+            const promptElem = querySelector(`#${name}-prompt`);
             promptElem.addEventListener("contextmenu", event => {
                 event.preventDefault();
                 input.toggleAttribute("disabled");
                 saveSetting();
             });
 
+            // todo
             input.addEventListener("keyup", event => {
                 if (event.key === "Enter" && event.shiftKey) {
                     event.preventDefault();
@@ -420,17 +443,17 @@ function getSettings(name) {
         });
 
 
-        const extraSettingsButton = document.querySelector(`.ujs-modal-main-wrapper button[name="extra_settings_button"]`);
-        const extraSettings       = document.querySelector(`.ujs-modal-main-wrapper #extra_settings`);
+        const extraSettingsButton = querySelector(`button[name="extra_settings_button"]`);
+        const extraSettings       = querySelector(`#extra_settings`);
         extraSettingsButton.addEventListener("click", event => {
             extraSettings.classList.toggle("ujs-hidden");
         });
 
-        const closeButton = document.querySelector(`.ujs-modal-main-wrapper button[name="close_button"]`);
+        const closeButton    = querySelector(`button[name="close_button"]`);
         closeButton.addEventListener("click", closeSettings);
-        const closeButton2 = document.querySelector("#close-button");
+        const closeButton2   = querySelector("#close-button");
         closeButton2.addEventListener("click", closeSettings);
-        const minimizeButton = document.querySelector("#minimize-button");
+        const minimizeButton = querySelector("#minimize-button");
         minimizeButton.addEventListener("click", event => {
             localStorage.setItem("href-taker-popup-minimized", "true");
             renderMinimize();
@@ -441,39 +464,41 @@ function getSettings(name) {
             renderMinimize(true);
         });
         function renderMinimize(resetPosition = false) {
-            const html = `
-                <div class="minimized">
-                    <style>
-                    .minimized {
-                        position: fixed;
-                        width: fit-content;
-                        background-color: white;
-                        padding: 3px;
-                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-                        border: 1px solid gray;
-                        border-radius: 2px;
-                    }
-                    </style>
-                    <div>
-                        HrefTaker
-                        <button id="show-popup" title="Open popup">O</button>
-                        <button id="close-popup" title="Close popup">X</button>
-                    </div>
-                </div>
+            const minimizedCss = cssFromStyle`
+<style>
+.minimized {
+    position: fixed;
+    width: fit-content;
+    background-color: white;
+    padding: 3px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    border: 1px solid gray;
+    border-radius: 2px;
+}
+</style>
             `;
-            const wrapper = document.querySelector(".ujs-modal-main-wrapper");
-            document.querySelector(".ujs-modal-settings")?.remove();
-            wrapper.insertAdjacentHTML("beforeend", html);
+            const minimizedHtml = `
+<div class="minimized">
+    <div>
+        HrefTaker
+        <button id="show-popup" title="Open popup">O</button>
+        <button id="close-popup" title="Close popup">X</button>
+    </div>
+</div>
+            `;
+            querySelector(".ujs-modal-settings")?.remove();
+            container.insertAdjacentHTML("afterbegin", minimizedHtml);
+            addCSS(minimizedCss, container);
 
-            const minimized = document.querySelector(".minimized");
+            const minimized = querySelector(".minimized");
             makeDraggable(minimized, {
                 reset: resetPosition,
                 restore: true,
                 id: "href-taker-minimized"
             });
 
-            const showButton  = document.querySelector(".minimized  #show-popup");
-            const closeButton = document.querySelector(".minimized #close-popup");
+            const showButton  = querySelector(".minimized  #show-popup");
+            const closeButton = querySelector(".minimized #close-popup");
             showButton.addEventListener("click", event => {
                 localStorage.setItem("href-taker-popup-minimized", "false");
                 closeSettings();
@@ -498,7 +523,7 @@ function getSettings(name) {
             return settings.input_selector_disabled ? "body" : settings.input_selector;
         }
 
-        const urlsToTextButton = document.querySelector(`.ujs-modal-main-wrapper button[name="to_text_button"]`);
+        const urlsToTextButton = querySelector(`button[name="to_text_button"]`);
         let urlTexted = false;
         urlsToTextButton.addEventListener("click", () => {
             const selector = getSelector();
@@ -511,8 +536,8 @@ function getSettings(name) {
             onStateChanged?.();
         });
 
-        const checkboxList  = [...document.querySelectorAll("body > .ujs-modal-main-wrapper input[type=checkbox]")];
-        const inputList     = [...document.querySelectorAll("body > .ujs-modal-main-wrapper input[type=text]")];
+        const checkboxList  = [...querySelectorAll("input[type=checkbox]")];
+        const inputList     = [...querySelectorAll("input[type=text]")];
 
         checkboxList.forEach(checkbox => {
             checkbox.addEventListener("change", saveSetting);
@@ -534,7 +559,7 @@ function getSettings(name) {
             setSettingsDataAttributes();
         }
 
-        const selectorInput = document.querySelector(`input[name="input_selector"]`);
+        const selectorInput = querySelector(`input[name="input_selector"]`);
         selectorInput.addEventListener("input", debounce(() => {
             let isReasonableSelector = false;
             let isValidSelector = true;
@@ -559,17 +584,10 @@ function getSettings(name) {
 
         }, 450));
 
-        const ujsRootSelector = ".ujs-modal-main-wrapper";
-        const listBtn    = document.querySelector(`${ujsRootSelector} button[name="list_button"]`);
-        const list       = document.querySelector(`${ujsRootSelector} #result-list`);
-        const listLegend = document.querySelector(`${ujsRootSelector} #result-list-legend`);
+        const listBtn    = querySelector(`button[name="list_button"]`);
+        const list       = querySelector(`#result-list`);
+        const listLegend = querySelector(`#result-list-legend`);
         const listHelper = {
-            insideList(elem) {
-                return elem.closest(ujsRootSelector);
-            },
-            includesList(elem) {
-                return elem.querySelector(ujsRootSelector);
-            },
             clearList() {
                 list.innerHTML = "";
                 listLegend.textContent = `Result list`;
@@ -594,7 +612,6 @@ function getSettings(name) {
             urls = parseUrls(selector, {
                 includeTextUrls: settings.include_text_url,
                 onlyTextUrls:    settings.only_text_url,
-                listHelper,
             });
 
             const onlyTexts = settings.input_only.trim().split(/\s+/g).filter(o => o);
@@ -646,7 +663,7 @@ function getSettings(name) {
         list.addEventListener("click", renderList, {once: true});
 
 
-        const copyButton = document.querySelector(`.ujs-modal-main-wrapper button[name="copy_button"]`);
+        const copyButton = querySelector(`button[name="copy_button"]`);
         copyButton.addEventListener("click", event => {
             void navigator.clipboard.writeText(urls.join(" "));
         });
@@ -669,7 +686,7 @@ function getSettings(name) {
 
 /** * @return {string[]} */
 function parseUrls(targetSelector = "body", {
-    includeTextUrls, onlyTextUrls, listHelper,
+    includeTextUrls, onlyTextUrls,
 }) {
     let elems;
     try {
@@ -681,15 +698,8 @@ function parseUrls(targetSelector = "body", {
 
     includeTextUrls = includeTextUrls || onlyTextUrls;
 
-    const {
-        insideList, includesList, clearList
-    } = listHelper;
-
     const urls = [];
     for (const el of elems) {
-        if (insideList(el)) {
-            continue;
-        }
 
         let anchorUrls;
         if (onlyTextUrls) {
@@ -698,17 +708,12 @@ function parseUrls(targetSelector = "body", {
             if (el.tagName === "A") {
                 anchorUrls = [el.href];
             } else {
-                anchorUrls = [...el.querySelectorAll("a")]
-                    .filter(a => !insideList(a))
-                    .map(a => a.href);
+                anchorUrls = [...el.querySelectorAll("a")].map(a => a.href);
             }
         }
 
         urls.push(anchorUrls);
         if (includeTextUrls) {
-            if (includesList(el)) {
-                clearList();
-            }
             const textUrls = [...el.innerText.matchAll(/\S+\.\S+\/[^\s)]+/g)]
                 .map(match => match[0])
                 .map(text => {
@@ -802,6 +807,28 @@ function hashString(str) {
 }
 
 // --------------------------
+
+/**
+ * Removes `<style>` and `</style>` tags are required for IDE syntax highlighting.
+ * @example
+ * const cssText = cssFromStyle`
+ * <style>
+ * #href-taker-outer-shadow-wrapper {
+ *     display: flex;
+ *     justify-content: center;
+ * }
+ * </style>`;
+ * @param textParts
+ * @param values
+ * @return {*}
+ */
+function cssFromStyle(textParts, ...values) {
+    values.push("");
+    const fullText = textParts.reduce((pre, cur, index) => {
+        return pre + cur + values[index];
+    }, "");
+    return fullText.replace(/^\s*<style>\n?/, "").replace(/\s*<\/style>\s*$/, "")
+}
 
 
 
