@@ -296,7 +296,7 @@ button {
 #extra_settings .control-row-inner {
     flex-wrap: wrap;
 }
-#result-list {
+#result-list-prompt {
     margin: 5px;
     color: gray;
 }
@@ -397,11 +397,12 @@ button {
                 </label>
             </div>
         </div>
+
     </fieldset>
     <fieldset id="result-list-fieldset">
         <legend id="result-list-legend">Result list</legend>            
         <div id="result-list">
-            <div>Click here to list URLs...</div>
+            <div id="result-list-prompt">Click here to list URLs...</div>
         </div>
     </fieldset>      
 </div>
