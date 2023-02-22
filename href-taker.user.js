@@ -349,10 +349,33 @@ fieldset {
 }
 </style>`;
 
+    function getListHelper(listContentElem, listHeaderElem) {
+        return {
+            clearList() {
+                listContentElem.innerHTML = "";
+                listHeaderElem.textContent = "Result list";
+            },
+            insertUrls(urls) {
+                let resultHtml = "";
+                for (const url of urls) {
+                    const html = `<div class="url-item"><a href="${url}" target="_blank" rel="noreferrer noopener">${url}</a></div>`;
+                    resultHtml += html;
+                }
+                this.clearList();
+                listContentElem.insertAdjacentHTML("beforeend", resultHtml);
+
+                const joinedUrls = [...new Set(urls)].sort().join(" ");
+                const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
+                listHeaderElem.innerHTML = `Result list (${urls.length}) <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
+            }
+        };
+    }
+
     return {
         wrapperHtml, wrapperCss,
         minimizedHtml, minimizedCss,
         popupHtml, popupCss,
+        getListHelper,
     };
 }
 
@@ -429,6 +452,7 @@ function getSettings(name) {
             wrapperHtml, wrapperCss,
             minimizedHtml, minimizedCss,
             popupHtml, popupCss,
+            getListHelper,
         } = getStaticContent(settings);
 
 
@@ -637,28 +661,12 @@ function getSettings(name) {
 
         }, 450));
 
-        const listBtn    = querySelector(`button[name="list_button"]`);
-        const list       = querySelector(`#result-list`);
-        const listLegend = querySelector(`#result-list-legend`);
-        const listHelper = {
-            clearList() {
-                list.innerHTML = "";
-                listLegend.textContent = `Result list`;
-            },
-            insertUrls(urls) {
-                let resultHtml = "";
-                for (const url of urls) {
-                    const html = `<div class="url-item"><a href="${url}" target="_blank" rel="noreferrer noopener">${url}</a></div>`;
-                    resultHtml += html;
-                }
-                this.clearList();
-                list.insertAdjacentHTML("beforeend", resultHtml);
+        const listBtn       = querySelector(`button[name="list_button"]`);
+        const listContainer = querySelector(`#result-list`);
+        const listHeader    = querySelector(`#result-list-legend`);
 
-                const joinedUrls = [...new Set(urls)].sort().join(" ");
-                const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
-                listLegend.innerHTML = `Result list (${urls.length}) <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
-            }
-        };
+        const listHelper = getListHelper(listContainer, listHeader);
+
         let urls = [];
         function listUrl() {
             const selector = getSelector();
@@ -710,10 +718,10 @@ function getSettings(name) {
         function renderList() {
             listUrl();
             onStateChanged = listUrl;
-            list.removeEventListener("click", renderList);
+            listContainer.removeEventListener("click", renderList);
         }
         listBtn.addEventListener("click", renderList);
-        list.addEventListener("click", renderList, {once: true});
+        listContainer.addEventListener("click", renderList, {once: true});
 
 
         const copyButton = querySelector(`button[name="copy_button"]`);
