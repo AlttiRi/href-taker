@@ -31,7 +31,7 @@ function addCSS(cssText, target = document.head) {
 
 if (debug) {
     showSettings();
-    showSettings();
+    // showSettings();
 }
 
 function getSettings(name) {
