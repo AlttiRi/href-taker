@@ -11,8 +11,8 @@
 // @grant       GM_addElement
 // ==/UserScript==
 
-const global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
 const debug = true;
+const global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
 
 const {settings, showSettings, closeSettings} = getSettings("href-taker");
 if (typeof GM_registerMenuCommand === "function") {
@@ -179,14 +179,14 @@ function getSettings(name) {
 
         const popupShadowCss = cssFromStyle`
 <style>
-.ujs-hidden {
+.hidden {
     display: none!important;
 }
-.ujs-red {
+.red {
     color: red;
     border-color: red;
 }
-.ujs-orange {
+.orange {
     color: darkorange;
     border-color: darkorange;
 }
@@ -342,7 +342,7 @@ button {
             </div>
             <button title="Show Extra Settings" name="extra_settings_button">Extra Settings</button>
         </div>
-        <div class="ujs-hidden" id="extra_settings">
+        <div class="hidden" id="extra_settings">
             <hr>
             <div class="control-row">
                 <div class="control-row-inner" style="flex-wrap: wrap;">
@@ -446,7 +446,7 @@ button {
         const extraSettingsButton = querySelector(`button[name="extra_settings_button"]`);
         const extraSettings       = querySelector(`#extra_settings`);
         extraSettingsButton.addEventListener("click", event => {
-            extraSettings.classList.toggle("ujs-hidden");
+            extraSettings.classList.toggle("hidden");
         });
 
         const closeButton    = querySelector(`button[name="close_button"]`);
@@ -572,14 +572,14 @@ button {
                 isValidSelector = false;
             }
             if (!isValidSelector) {
-                selectorInput.classList.add("ujs-red");
+                selectorInput.classList.add("red");
                 return;
             }
             if (isReasonableSelector) {
-                selectorInput.classList.remove("ujs-red");
-                selectorInput.classList.remove("ujs-orange");
+                selectorInput.classList.remove("red");
+                selectorInput.classList.remove("orange");
             } else {
-                selectorInput.classList.add("ujs-orange");
+                selectorInput.classList.add("orange");
             }
 
         }, 450));
