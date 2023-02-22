@@ -19,19 +19,19 @@ if (typeof GM_registerMenuCommand === "function") {
     GM_registerMenuCommand("Show popup", showSettings);
 }
 
-function addCSS(css, target = document.head) {
+function addCSS(cssText, target = document.head) {
     if (typeof GM_addElement === "function") {
-        return GM_addElement(target, "style", {textContent: css});
+        return GM_addElement(target, "style", {textContent: cssText});
     }
     const styleElem = document.createElement("style");
-    styleElem.textContent = css;
+    styleElem.textContent = cssText;
     target.append(styleElem);
     return styleElem;
 }
 
 if (debug) {
     showSettings();
-    // showSettings();
+    showSettings();
 }
 
 function getSettings(name) {
@@ -96,6 +96,12 @@ function getSettings(name) {
         opened = false;
     }
     function showSettings() {
+        let resetPopup = false;
+        if (opened) {
+            resetPopup = true;
+            closeSettings();
+        }
+
         const insertPlace   = document.querySelector(insertSelector);
         const shadowWrapper = document.createElement("div");
         shadowWrapper.setAttribute("id", "href-taker-outer-shadow-wrapper");
@@ -106,9 +112,12 @@ function getSettings(name) {
         const querySelector    = selector => container.querySelector(selector);
         const querySelectorAll = selector => container.querySelectorAll(selector);
 
-        const outerShadowWrapperCss = cssFromStyle`
+        opened = true;
+
+
+        const wrapperShadowCss = cssFromStyle`
 <style>
-#href-taker-outer-shadow-wrapper {
+#shadow-content-wrapper {
     display: flex;
     margin-top: 40px;
     justify-content: center;
@@ -120,10 +129,12 @@ function getSettings(name) {
     pointer-events: none;
     z-index: 99999;
 }
-</style>
-        `;
-        addCSS(outerShadowWrapperCss);
-        addCSS(`#shadow-content-wrapper > * { pointer-events: all; }`, container);
+#shadow-content-wrapper > * {
+    pointer-events: all;
+}
+</style>`;
+        addCSS(wrapperShadowCss, container);
+
 
         const {
             input_only,
@@ -162,13 +173,6 @@ function getSettings(name) {
             }
         }
 
-        let resetPopup = false;
-        if (opened) {
-            resetPopup = true;
-            closeSettings();
-        }
-        opened = true;
-
         const checked  = isChecked  => isChecked  ? "checked"  : "";
         const disabled = isDisabled => isDisabled ? "disabled" : "";
 
@@ -204,7 +208,6 @@ function getSettings(name) {
     border: 1px solid darkgray;
     padding: 6px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    pointer-events: initial;
     display: flex;
     flex-direction: column;
 }
@@ -463,7 +466,8 @@ button {
         const minimizeButton = querySelector("#minimize-button");
         minimizeButton.addEventListener("click", event => {
             localStorage.setItem("href-taker-popup-minimized", "true");
-            renderMinimize();
+            closeSettings();
+            showSettings();
         });
         minimizeButton.addEventListener("contextmenu", event => {
             event.preventDefault();
