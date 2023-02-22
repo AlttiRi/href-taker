@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.0.4-2023.02.22
+// @version     0.0.5-2023.02.22
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -143,7 +143,7 @@ function getStaticContent(settings) {
         <legend>Controls</legend>  
         <div class="control-row">
             <div class="control-row-inner">
-                <button title="From anchors" name="list_button">List links</button>
+                <button title="From anchors" name="list_button" class="short">List links</button>
                 <span id="include-text-url-wrapper">
                     <label title="Include URLs parsed from text">
                         <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
@@ -156,15 +156,15 @@ function getStaticContent(settings) {
                 </label>
             </div>
             <div>
-                <button name="to_text_button">URLs to text</button>
+                <button name="to_text_button" class="long">URLs to text</button>
             </div>
         </div>
         <div class="control-row">
             <div class="control-row-inner">
-                <button title="Copy URLs separated by space" name="copy_button">Copy</button>
-                <button title="Close it" name="close_button">Close</button>
+                <button title="Copy URLs separated by space" name="copy_button" class="short">Copy</button>
+                <button title="Close it" name="close_button" class="short">Close</button>
             </div>
-            <button title="Show Extra Settings" name="extra_settings_button">Extra Settings</button>
+            <button title="Show Extra Settings" name="extra_settings_button" class="long">Extra Settings</button>
         </div>
         <div class="hidden" id="extra_settings">
             <hr>
@@ -269,7 +269,7 @@ function getStaticContent(settings) {
     overflow-y: hidden;
 }
 
- .text-inputs-wrapper label {
+.text-inputs-wrapper label {
     display: flex;
 }
  input[type="text"] {
@@ -282,6 +282,13 @@ label > span {
 label, 
 button {
     user-select: none;
+}
+
+button.short {
+    min-width: 68px;
+}
+button.long {
+    min-width: 100px;
 }
 
 button {
@@ -344,7 +351,7 @@ button {
     color: gray;
 }
 
-fieldset {
+fieldset, hr {
     border-color: aliceblue;
 }
 </style>`;
