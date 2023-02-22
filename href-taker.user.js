@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.0.0-2023.02.22
+// @version     0.0.1-2023.02.22
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -204,7 +204,7 @@ function getSettings(name) {
     /*width: var(--width);*/
     width: 720px;
     background-color: white;
-    min-height: 320px;
+    height: 580px;
     border: 1px solid darkgray;
     padding: 6px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
@@ -302,6 +302,10 @@ button {
 #result-list-prompt {
     margin: 5px;
     color: gray;
+}
+
+fieldset {
+    border-color: aliceblue;
 }
 </style>
         `;
