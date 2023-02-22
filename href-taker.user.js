@@ -293,6 +293,13 @@ button {
 /*    right: 0;*/
 /*}*/
 
+#extra_settings .control-row-inner {
+    flex-wrap: wrap;
+}
+#result-list {
+    margin: 5px;
+    color: gray;
+}
 </style>
         `;
         addCSS(popupShadowCss, container);
@@ -345,7 +352,7 @@ button {
         <div class="hidden" id="extra_settings">
             <hr>
             <div class="control-row">
-                <div class="control-row-inner" style="flex-wrap: wrap;">
+                <div class="control-row-inner">
                     <label title="Log the result list to console">
                         <input type="checkbox" name="console_log" ${checked(console_log)}>
                         Console log
@@ -355,7 +362,7 @@ button {
                         Console vars
                     </label>
                 </div>
-                <div class="control-row-inner" style="flex-wrap: wrap;">                        
+                <div class="control-row-inner">                        
                     <label title="Only unique URLs">
                         <input type="checkbox" name="unique" ${checked(unique)}>
                         Only unique
@@ -390,12 +397,11 @@ button {
                 </label>
             </div>
         </div>
-
     </fieldset>
     <fieldset id="result-list-fieldset">
         <legend id="result-list-legend">Result list</legend>            
         <div id="result-list">
-            <div style="margin: 5px; color: gray;">Click here to list URLs...</div>
+            <div>Click here to list URLs...</div>
         </div>
     </fieldset>      
 </div>
