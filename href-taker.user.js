@@ -48,7 +48,8 @@ function initHrefTaker() {
      * @property {string}  input_selector
      * @property {boolean} input_selector_disabled
      * @property {boolean} https
-     * @property {boolean} auto
+     * @property {boolean} auto_open
+     * @property {boolean} auto_list
      * @property {boolean} minimized
      * @property {boolean} brackets_trim
      */
@@ -71,7 +72,8 @@ function initHrefTaker() {
             input_selector: "body",
             input_selector_disabled: false,
             https: true,
-            auto: true,
+            auto_open: false,
+            auto_list: true,
             minimized: false,
             brackets_trim: true,
         };
@@ -119,7 +121,7 @@ function initHrefTaker() {
     // {showPopup, closePopup, showMinimized, closeMinimized, close}
     const methods = getRenders(settings, updateSettings);
 
-    if (settings.auto) {
+    if (settings.auto_open) {
         if (settings.minimized === true) {
             methods.showMinimized();
         } else {
@@ -214,8 +216,7 @@ function getStaticContent(settings) {
         ignore_first_party,
         reverse,
         https,
-        auto,
-        auto_show,
+        auto_open,
         auto_list,
         brackets_trim,
     } = settings;
@@ -280,7 +281,15 @@ function getStaticContent(settings) {
                         Console vars
                     </label>
                 </div>
-                <div class="control-row-inner">                        
+                <div class="control-row-inner">    
+                    <label title="Auto open the popup (or minimized one)">
+                        <input type="checkbox" name="auto_open" ${checked(auto_open)}>
+                        Auto Open
+                    </label>
+                    <label title="Auto list URLs on the pop is shown">
+                        <input type="checkbox" name="auto_list" ${checked(auto_list)}>
+                        Auto List
+                    </label>                 
                     <label title="Only unique URLs">
                         <input type="checkbox" name="unique" ${checked(unique)}>
                         Only unique
@@ -301,13 +310,9 @@ function getStaticContent(settings) {
                         <input type="checkbox" name="https" ${checked(https)}>
                         https
                     </label>
-                    <label title="Auto list URLs on the pop is shown">
-                        <input type="checkbox" name="auto" ${checked(auto)}>
-                        Auto
-                    </label>
                     <label title="Trim unmached closed brackets ], or ) with the followed content. Text URLs only.">
                         <input type="checkbox" name="brackets_trim" ${checked(brackets_trim)}>
-                        Brackets Trim
+                        Trim Brackets
                     </label>
                 </div>
             </div>
@@ -793,7 +798,7 @@ function getRenders(settings, updateSettings) {
 
         // ------
 
-        if (settings.auto) {
+        if (settings.auto_list) {
             renderUrlList();
         }
         if (settings.console_vars) {
