@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.1.4-2023.03.02
+// @version     0.1.5-2023.03.02
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -348,6 +348,10 @@ function getStaticContent(settings) {
 .orange {
     color: darkorange;
     border-color: darkorange;
+}
+
+a {
+    text-decoration: none;
 }
 
 /*:root {*/
