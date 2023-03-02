@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.0.5-2023.02.22
+// @version     0.1.0-2023.03.02
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -11,12 +11,12 @@
 // @grant       GM_addElement
 // ==/UserScript==
 
-const debug = true;
+
 const global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
 
-const {settings, showSettings, closeSettings} = getSettings("href-taker");
+const {showPopup} = initHrefTaker();
 if (typeof GM_registerMenuCommand === "function") {
-    GM_registerMenuCommand("Show popup", showSettings);
+    GM_registerMenuCommand("Show popup", showPopup);
 }
 
 function addCSS(cssText, target = document.head) {
@@ -29,9 +29,104 @@ function addCSS(cssText, target = document.head) {
     return styleElem;
 }
 
-if (debug) {
-    showSettings();
-    // showSettings();
+
+function initHrefTaker() {
+    /**
+     * @typedef {Object|null} Settings
+     * @property {string}  input_only
+     * @property {boolean} input_only_disabled
+     * @property {string}  input_ignore
+     * @property {boolean} input_ignore_disabled
+     * @property {boolean} include_text_url
+     * @property {boolean} only_text_url
+     * @property {boolean} console_log
+     * @property {boolean} console_vars
+     * @property {boolean} unique
+     * @property {boolean} sort
+     * @property {boolean} reverse
+     * @property {boolean} ignore_first_party
+     * @property {string}  input_selector
+     * @property {boolean} input_selector_disabled
+     * @property {boolean} https
+     * @property {boolean} auto
+     */
+
+    const {settings, updateSettings} = loadSettings();
+    function loadSettings() {
+        const defaultSettings = {
+            input_only: "",
+            input_only_disabled: false,
+            input_ignore: "",
+            input_ignore_disabled: false,
+            include_text_url: true,
+            only_text_url: false,
+            console_log: false,
+            console_vars: true,
+            unique: true,
+            sort: true,
+            reverse: false,
+            ignore_first_party: true,
+            input_selector: "body",
+            input_selector_disabled: false,
+            https: true,
+            auto: true,
+        };
+        const LocalStoreName = "ujs-href-taker";
+
+        /** @type Settings */
+        let savedSettings;
+        try {
+            savedSettings = JSON.parse(localStorage.getItem(LocalStoreName)) || {};
+        } catch (e) {
+            console.error("[ujs][href-taker]", e);
+            localStorage.removeItem(LocalStoreName);
+            savedSettings = {};
+        }
+        const settings = Object.assign(defaultSettings, savedSettings);
+
+        const str = input => JSON.stringify(input);
+        function updateSettings(newSettings, callback) {
+            const changedKeys = [];
+            for (const [key, newValue] of Object.entries(newSettings)) {
+                if (settings[key] === undefined && newValue !== undefined) {
+                    changedKeys.push(key);
+                } else
+                if (typeof newValue === "object" && str(settings[key]) !== str(newValue)) {
+                    changedKeys.push(key);
+                } else
+                if (settings[key] !== newValue) {
+                    changedKeys.push(key);
+                }
+            }
+            if (changedKeys.length) {
+                Object.assign(settings, newSettings);
+                localStorage.setItem(LocalStoreName, JSON.stringify(newSettings));
+                callback?.(settings, changedKeys);
+            }
+        }
+
+        return {
+            settings,
+            updateSettings
+        };
+    }
+
+    // {showPopup, closePopup, showMinimized, closeMinimized, close}
+    const methods = getRenders(settings, updateSettings);
+
+    if (settings.auto) {
+        if (localStorage.getItem("href-taker-popup-minimized") === "true") {
+            methods.showMinimized();
+        } else {
+            methods.showPopup();
+        }
+    }
+
+    if (settings.console_vars) {
+        Object.assign(global, methods);
+    }
+
+    return methods;
 }
 
 function getStaticContent(settings) {
@@ -78,16 +173,16 @@ function getStaticContent(settings) {
 </style>`;
 
     const minimizedHtml = `
-<div class="minimized">
+<div id="popup-minimized">
     <div>
         HrefTaker
-        <button id="show-popup" title="Open popup">O</button>
+        <button id="open-popup" title="Open popup">O</button>
         <button id="close-popup" title="Close popup">X</button>
     </div>
 </div>`;
     const minimizedCss = cssFromStyle`
 <style>
-.minimized {
+#popup-minimized {
     position: fixed;
     width: fit-content;
     background-color: white;
@@ -122,7 +217,7 @@ function getStaticContent(settings) {
     const disabled = isDisabled => isDisabled ? "disabled" : "";
 
     const popupHtml = `
-<div class="ujs-modal-settings" id="popup">
+<div id="popup">
     <div class="header" id="popup-header">
         <button id="minimize-button">_</button>
         <button id="close-button">X</button>
@@ -216,8 +311,8 @@ function getStaticContent(settings) {
         </div>
 
     </fieldset>
-    <fieldset id="result-list-fieldset">
-        <legend id="result-list-legend">Result list</legend>            
+    <fieldset id="result-list-wrapper">
+        <legend id="result-list-header">Result list</legend>            
         <div id="result-list">
             <div id="result-list-prompt">Click here to list URLs...</div>
         </div>
@@ -240,7 +335,7 @@ function getStaticContent(settings) {
 /*:root {*/
 /*  --width: 720px;*/
 /*}*/
-.ujs-modal-settings {
+#popup {
     /*width: var(--width);*/
     width: 720px;
     background-color: white;
@@ -262,7 +357,7 @@ function getStaticContent(settings) {
     height: 100%;
     width: inherit;
 }
-#result-list-fieldset {
+#result-list-wrapper {
     width: calc(720px - 24px);
     padding: 4px 4px 8px 12px;
     flex-grow: 1;
@@ -356,25 +451,30 @@ fieldset, hr {
 }
 </style>`;
 
-    function getListHelper(listContentElem, listHeaderElem) {
+    function getListHelper(container) {
+        const headerElem  = container.querySelector(`#result-list-header`);
+        const contentElem = container.querySelector(`#result-list`);
         return {
             clearList() {
-                listContentElem.innerHTML = "";
-                listHeaderElem.textContent = "Result list";
+                headerElem.textContent = "Result list";
+                contentElem.innerHTML = "";
             },
             insertUrls(urls) {
+                this.clearList();
+
+                const joinedUrls = [...new Set(urls)].sort().join(" ");
+                const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
+                headerElem.innerHTML = `Result list (${urls.length}) <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
+
                 let resultHtml = "";
                 for (const url of urls) {
                     const html = `<div class="url-item"><a href="${url}" target="_blank" rel="noreferrer noopener">${url}</a></div>`;
                     resultHtml += html;
                 }
-                this.clearList();
-                listContentElem.insertAdjacentHTML("beforeend", resultHtml);
-
-                const joinedUrls = [...new Set(urls)].sort().join(" ");
-                const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
-                listHeaderElem.innerHTML = `Result list (${urls.length}) <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
-            }
+                contentElem.insertAdjacentHTML("beforeend", resultHtml);
+            },
+            headerElem,
+            contentElem,
         };
     }
 
@@ -386,83 +486,20 @@ fieldset, hr {
     };
 }
 
+function getRenders(settings, updateSettings) {
+    const {
+        wrapperHtml, wrapperCss,
+        minimizedHtml, minimizedCss,
+        popupHtml, popupCss,
+        getListHelper,
+    } = getStaticContent(settings);
 
-function getSettings(name) {
-    /**
-     * @typedef {Object|null} Settings
-     * @property {string}  input_only
-     * @property {boolean} input_only_disabled
-     * @property {string}  input_ignore
-     * @property {boolean} input_ignore_disabled
-     * @property {boolean} include_text_url
-     * @property {boolean} only_text_url
-     * @property {boolean} console_log
-     * @property {boolean} console_vars
-     * @property {boolean} unique
-     * @property {boolean} sort
-     * @property {boolean} reverse
-     * @property {boolean} ignore_first_party
-     * @property {string}  input_selector
-     * @property {boolean} input_selector_disabled
-     * @property {boolean} https
-     * @property {boolean} auto
-     */
+    let shadowContainer = null;
+    const querySelector    = selector => shadowContainer.querySelector(selector);
+    const querySelectorAll = selector => shadowContainer.querySelectorAll(selector);
 
-    const LocalStoreName = "ujs-" + name;
-    /** @type Settings */
-    let settings = loadSettings();
-    function loadSettings() {
-        const defaultSettings = {
-            input_only: "",
-            input_only_disabled: false,
-            input_ignore: "",
-            input_ignore_disabled: false,
-            include_text_url: true,
-            only_text_url: false,
-            console_log: false,
-            console_vars: true,
-            unique: true,
-            sort: true,
-            reverse: false,
-            ignore_first_party: true,
-            input_selector: "body",
-            input_selector_disabled: false,
-            https: true,
-            auto: true,
-        };
-
-        let savedSettings;
-        try {
-            savedSettings = JSON.parse(localStorage.getItem(LocalStoreName)) || {};
-        } catch (e) {
-            console.error("[ujs]", e);
-            localStorage.removeItem(LocalStoreName);
-            savedSettings = {};
-        }
-        savedSettings = Object.assign(defaultSettings, savedSettings);
-        return savedSettings;
-    }
     const insertSelector = "html"; // "body", "html"
-    let opened = false;
-    function closeSettings() {
-        document.querySelector(`${insertSelector} > #href-taker-outer-shadow-wrapper`)?.remove();
-        opened = false;
-    }
-    function showSettings() {
-        let resetPopup = false;
-        if (opened) {
-            resetPopup = true;
-            closeSettings();
-        }
-
-        const {
-            wrapperHtml, wrapperCss,
-            minimizedHtml, minimizedCss,
-            popupHtml, popupCss,
-            getListHelper,
-        } = getStaticContent(settings);
-
-
+    function renderShadowContainer() {
         const insertPlace   = document.querySelector(insertSelector);
         const shadowWrapper = document.createElement("div");
         shadowWrapper.setAttribute("id", "href-taker-outer-shadow-wrapper");
@@ -473,16 +510,37 @@ function getSettings(name) {
         } else {
             insertPlace.prepend(shadowWrapper);
         }
-        const container = shadowWrapper.shadowRoot.querySelector("#shadow-content-wrapper");
-        addCSS(wrapperCss, container);
-        const querySelector    = selector => container.querySelector(selector);
-        const querySelectorAll = selector => container.querySelectorAll(selector);
 
-        opened = true;
+        shadowContainer = shadowWrapper.shadowRoot.querySelector("#shadow-content-wrapper");
+        addCSS(wrapperCss, shadowContainer);
+    }
+    function closeShadowContainer() {
+        document.querySelector(`${insertSelector} > #href-taker-outer-shadow-wrapper`)?.remove();
+        shadowContainer = null;
+    }
+    function initShadowContainer() {
+        if (!shadowContainer) {
+            renderShadowContainer();
+            return false;
+        }
+        return true;
+    }
+
+    function renderPopup(resetPosition = false) {
+        initShadowContainer();
+
+        const wasOpened = querySelector("#popup");
+        closePopup()
+        closeMinimized();
+        resetPosition = wasOpened || resetPosition;
+
+        shadowContainer.insertAdjacentHTML("afterbegin", popupHtml);
+        const popupElem = querySelector("#popup");
+        addCSS(popupCss, popupElem);
+        setSettingsDataAttributes();
 
         function setSettingsDataAttributes() {
-            const settingsElem = querySelector(".ujs-modal-settings");
-            if (!settingsElem) {
+            if (!popupElem) {
                 return;
             }
             for (const [key, value] of Object.entries(settings)) {
@@ -491,43 +549,85 @@ function getSettings(name) {
                 }
                 const attr = `data-${key.replaceAll("_", "-")}`;
                 if (value) {
-                    settingsElem.setAttribute(attr, "");
+                    popupElem.setAttribute(attr, "");
                 } else {
-                    settingsElem.removeAttribute(attr);
+                    popupElem.removeAttribute(attr);
                 }
             }
         }
 
-
-        if (localStorage.getItem("href-taker-popup-minimized") === "true" && !resetPopup) {
-            renderMinimize();
-            return;
-        }
-
-        container.insertAdjacentHTML("afterbegin", popupHtml);
-        addCSS(popupCss, container);
-        setSettingsDataAttributes();
-
-        const popup          = querySelector("#popup");
-        const header         = querySelector("#popup-header");
-        const resultListElem = querySelector("#result-list-fieldset");
-        makeDraggable(popup, {
-            handle: header,
-            reset: resetPopup,
+        const headerElem     = querySelector("#popup-header");
+        const resultListElem = querySelector("#result-list-wrapper");
+        makeDraggable(popupElem, {
+            handle: headerElem,
+            reset: resetPosition,
             restore: true,
             id: "href-taker-popup"
         });
-        makeResizable(popup, {
+        makeResizable(popupElem, {
             minW: 420, minH: 320,
             onMove(state) {
-                assignStyleState(popup, state);
+                assignStyleState(popupElem, state);
                 resultListElem.style.width = (parseInt(state.width) - 24) + "px";
             },
-            reset: resetPopup,
+            reset: resetPosition,
             restore: true,
             id: "href-taker-popup"
         });
 
+        // ------
+
+        const extraSettingsButton = querySelector(`button[name="extra_settings_button"]`);
+        const extraSettings       = querySelector(`#extra_settings`);
+        extraSettingsButton.addEventListener("click", event => {
+            extraSettings.classList.toggle("hidden");
+        });
+
+        // ------
+
+        const closeButton    = querySelector(`button[name="close_button"]`);
+        closeButton.addEventListener("click", closeShadowContainer);
+        const closeButton2   = querySelector("#close-button");
+        closeButton2.addEventListener("click", closeShadowContainer);
+
+        // ------
+
+        function minimizePopup(resetPosition = false) {
+            localStorage.setItem("href-taker-popup-minimized", "true");
+            closePopup();
+            renderMinimized(resetPosition);
+        }
+        const minimizeButton = querySelector("#minimize-button");
+        minimizeButton.addEventListener("click", event => {
+            minimizePopup();
+        });
+        minimizeButton.addEventListener("contextmenu", event => {
+            event.preventDefault();
+            minimizePopup(true);
+        });
+
+        // ------
+
+        let onStateChanged = null;
+
+        const checkboxList  = [...querySelectorAll("input[type=checkbox]")];
+        const inputList     = [...querySelectorAll("input[type=text]")];
+        checkboxList.forEach(checkbox => {
+            checkbox.addEventListener("change", saveSetting);
+        });
+        const saveSettingDebounced = debounce(saveSetting, 150);
+        inputList.forEach(checkbox => {
+            checkbox.addEventListener("input", saveSettingDebounced);
+        });
+        function saveSetting() {
+            const checkboxDataList  = checkboxList.map(checkbox => [checkbox.name, checkbox.checked]);
+            const inputDataList     =    inputList.map(checkbox => [checkbox.name, checkbox.value]);
+            const inputDisabledList =    inputList.map(checkbox => [checkbox.name + "_disabled", checkbox.disabled]);
+            const _settings = Object.fromEntries([checkboxDataList, inputDataList, inputDisabledList].flat());
+            updateSettings(_settings);
+            setSettingsDataAttributes();
+            onStateChanged?.();
+        }
 
         ["input-only", "input-ignore", "input-selector"].forEach(name => {
             const input      = querySelector(`#${name}`);
@@ -538,7 +638,7 @@ function getSettings(name) {
                 saveSetting();
             });
 
-            // todo
+            // todo save suggestions
             input.addEventListener("keyup", event => {
                 if (event.key === "Enter" && event.shiftKey) {
                     event.preventDefault();
@@ -547,101 +647,7 @@ function getSettings(name) {
             });
         });
 
-
-        const extraSettingsButton = querySelector(`button[name="extra_settings_button"]`);
-        const extraSettings       = querySelector(`#extra_settings`);
-        extraSettingsButton.addEventListener("click", event => {
-            extraSettings.classList.toggle("hidden");
-        });
-
-        const closeButton    = querySelector(`button[name="close_button"]`);
-        closeButton.addEventListener("click", closeSettings);
-        const closeButton2   = querySelector("#close-button");
-        closeButton2.addEventListener("click", closeSettings);
-        const minimizeButton = querySelector("#minimize-button");
-        minimizeButton.addEventListener("click", event => {
-            localStorage.setItem("href-taker-popup-minimized", "true");
-            closeSettings();
-            showSettings();
-        });
-        minimizeButton.addEventListener("contextmenu", event => {
-            event.preventDefault();
-            localStorage.setItem("href-taker-popup-minimized", "true");
-            renderMinimize(true); // todo remove main pop css
-        });
-        function renderMinimize(resetPosition = false) {
-            querySelector(".ujs-modal-settings")?.remove();
-            container.insertAdjacentHTML("afterbegin", minimizedHtml);
-            addCSS(minimizedCss, container);
-
-            const minimized = querySelector(".minimized");
-            makeDraggable(minimized, {
-                reset: resetPosition,
-                restore: true,
-                id: "href-taker-minimized"
-            });
-
-            const showButton  = querySelector(".minimized  #show-popup");
-            const closeButton = querySelector(".minimized #close-popup");
-            showButton.addEventListener("click", event => {
-                localStorage.setItem("href-taker-popup-minimized", "false");
-                closeSettings();
-                showSettings();
-            });
-            closeButton.addEventListener("click", event => {
-                localStorage.setItem("href-taker-popup-minimized", "false");
-                closeSettings();
-            });
-        }
-
-
-        function getFilterUrl({ignore1stParty}) {
-            return url => {
-                return url
-                    && (ignore1stParty ? !url.startsWith(location.origin) : true)
-                    && !url.startsWith("blob:") && !url.startsWith("javascript:");
-            };
-        }
-
-        function getSelector() {
-            return settings.input_selector_disabled ? "body" : settings.input_selector;
-        }
-
-        const urlsToTextButton = querySelector(`button[name="to_text_button"]`);
-        let urlTexted = false;
-        urlsToTextButton.addEventListener("click", () => {
-            const selector = getSelector();
-            if (!urlTexted) {
-                urlsToText(selector, getFilterUrl({ignore1stParty: true}));
-            } else {
-                undoUrlsToText(selector);
-            }
-            urlTexted = !urlTexted;
-            onStateChanged?.();
-        });
-
-        const checkboxList  = [...querySelectorAll("input[type=checkbox]")];
-        const inputList     = [...querySelectorAll("input[type=text]")];
-
-        checkboxList.forEach(checkbox => {
-            checkbox.addEventListener("change", saveSetting);
-        });
-        const saveSettingDebounced = debounce(saveSetting, 150);
-        inputList.forEach(checkbox => {
-            checkbox.addEventListener("input", saveSettingDebounced);
-        });
-        let onStateChanged = null;
-        function saveSetting() {
-            const checkboxDataList  = checkboxList.map(checkbox => [checkbox.name, checkbox.checked]);
-            const inputDataList     =    inputList.map(checkbox => [checkbox.name, checkbox.value]);
-            const inputDisabledList =    inputList.map(checkbox => [checkbox.name + "_disabled", checkbox.disabled]);
-            const _settings = Object.fromEntries([checkboxDataList, inputDataList, inputDisabledList].flat());
-            localStorage.setItem(LocalStoreName, JSON.stringify(_settings));
-            settings.console_log && console.log("[ujs][settings]", _settings);
-            settings = _settings;
-            onStateChanged?.();
-            setSettingsDataAttributes();
-        }
+        // ------
 
         const selectorInput = querySelector(`input[name="input_selector"]`);
         selectorInput.addEventListener("input", debounce(() => {
@@ -668,14 +674,51 @@ function getSettings(name) {
 
         }, 450));
 
-        const listBtn       = querySelector(`button[name="list_button"]`);
-        const listContainer = querySelector(`#result-list`);
-        const listHeader    = querySelector(`#result-list-legend`);
-
-        const listHelper = getListHelper(listContainer, listHeader);
-
+        // ------
         let urls = [];
-        function listUrl() {
+        if (settings.console_vars) {
+            global.urls = urls;
+        }
+        // ------
+
+        const copyButton = querySelector(`button[name="copy_button"]`);
+        copyButton.addEventListener("click", event => {
+            void navigator.clipboard.writeText(urls.join(" "));
+        });
+        copyButton.addEventListener("contextmenu", event => {
+            event.preventDefault();
+            void navigator.clipboard.writeText(urls.join("\n"));
+        });
+
+        // ------
+
+        function urlFilter(url) {
+            return url
+                && (settings.ignore_first_party ? !url.startsWith(location.origin) : true)
+                && !url.startsWith("blob:") && !url.startsWith("javascript:");
+        }
+        function getSelector() {
+            return settings.input_selector_disabled ? "body" : settings.input_selector;
+        }
+
+        // ------
+
+        const urlsToTextButton = querySelector(`button[name="to_text_button"]`);
+        let urlTexted = false;
+        urlsToTextButton.addEventListener("click", () => {
+            const selector = getSelector();
+            if (!urlTexted) {
+                urlsToText(selector, urlFilter);
+            } else {
+                undoUrlsToText(selector);
+            }
+            urlTexted = !urlTexted;
+            onStateChanged?.();
+        });
+
+        // ------
+
+        function recomputeUrlList() {
             const selector = getSelector();
             urls = parseUrls(selector, {
                 includeTextUrls: settings.include_text_url,
@@ -685,7 +728,7 @@ function getSettings(name) {
             const onlyTexts = settings.input_only.trim().split(/\s+/g).filter(o => o);
             const ignoreTexts = settings.input_ignore.trim().split(/\s+/g).filter(o => o);
 
-            urls = urls.filter(getFilterUrl({ignore1stParty: settings.ignore_first_party}));
+            urls = urls.filter(urlFilter);
             if (!settings.input_only_disabled && onlyTexts.length) {
                 urls = urls.filter(url => onlyTexts.some(text => url.includes(text)));
             }
@@ -719,35 +762,79 @@ function getSettings(name) {
             if (settings.console_vars) {
                 global.urls = urls;
             }
+        }
 
+        const listBtn = querySelector(`button[name="list_button"]`);
+        const listHelper = getListHelper(shadowContainer);
+
+        function renderUrlList() {
+            recomputeUrlList();
+            onStateChanged = renderUrlList;
+            listHelper.contentElem.removeEventListener("click", renderUrlList);
             listHelper.insertUrls(urls);
         }
-        function renderList() {
-            listUrl();
-            onStateChanged = listUrl;
-            listContainer.removeEventListener("click", renderList);
-        }
-        listBtn.addEventListener("click", renderList);
-        listContainer.addEventListener("click", renderList, {once: true});
 
+        listBtn.addEventListener("click", renderUrlList);
+        listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
 
-        const copyButton = querySelector(`button[name="copy_button"]`);
-        copyButton.addEventListener("click", event => {
-            void navigator.clipboard.writeText(urls.join(" "));
-        });
-        copyButton.addEventListener("contextmenu", event => {
-            event.preventDefault();
-            void navigator.clipboard.writeText(urls.join("\n"));
-        });
+        // ------
 
         if (settings.auto) {
-            renderList();
+            renderUrlList();
         }
+        if (settings.console_vars) {
+            Object.assign(global, {renderUrlList});
+        }
+
+        // ------
+
+        return {renderUrlList};
     }
+    function closePopup() {
+        shadowContainer?.querySelector("#popup")?.remove();
+    }
+
+    function closeMinimized() {
+        shadowContainer?.querySelector("#popup-minimized")?.remove();
+    }
+    function renderMinimized(resetPosition = false) {
+        initShadowContainer();
+
+        const wasOpened = querySelector("#popup-minimized");
+        closePopup()
+        closeMinimized();
+        resetPosition = wasOpened || resetPosition;
+
+        shadowContainer.insertAdjacentHTML("afterbegin", minimizedHtml);
+        const minimizedElem = querySelector("#popup-minimized");
+        addCSS(minimizedCss, minimizedElem);
+
+        makeDraggable(minimizedElem, {
+            reset: resetPosition,
+            restore: true,
+            id: "href-taker-minimized"
+        });
+
+        const openButton  = minimizedElem.querySelector( "#open-popup");
+        const closeButton = minimizedElem.querySelector("#close-popup");
+        openButton.addEventListener("click", event => {
+            localStorage.setItem("href-taker-popup-minimized", "false");
+            renderPopup();
+        });
+        closeButton.addEventListener("click", event => {
+            localStorage.setItem("href-taker-popup-minimized", "false");
+            closeMinimized();
+        });
+    }
+
     return {
-        settings,
-        showSettings,
-        closeSettings,
+        showPopup: renderPopup,
+        closePopup,
+
+        showMinimized: renderMinimized,
+        closeMinimized,
+
+        close: closeShadowContainer,
     };
 }
 
@@ -798,12 +885,12 @@ function parseUrls(targetSelector = "body", {
     return urls.flat();
 }
 
-function urlsToText(targetSelector = "body", filterUrl) {
+function urlsToText(targetSelector = "body", urlFilter) {
     let count = 0;
     [...document.querySelectorAll(targetSelector)]
         .forEach(el => {
             const anchors = [...el.querySelectorAll("a")]
-                .filter(a => filterUrl(a.href));
+                .filter(a => urlFilter(a.href));
 
             for (const a of anchors) {
                 if (a.dataset.urlToText !== undefined) {
