@@ -105,6 +105,7 @@ function initHrefTaker() {
                 localStorage.setItem(LocalStoreName, JSON.stringify(settings));
                 callback?.(settings, changedKeys);
             }
+            return changedKeys;
         }
 
         return {
