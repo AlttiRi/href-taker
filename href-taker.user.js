@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.1.2-2023.03.02
+// @version     0.1.3-2023.03.02
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -877,7 +877,7 @@ function parseUrls(targetSelector = "body", {
 
         urls.push(anchorUrls);
         if (includeTextUrls) {
-            const textUrls = [...el.innerText.matchAll(/\S+\.\S+\/[^\s)]+/g)]
+            const textUrls = [...el.innerText.matchAll(/[^\s<>"]+\.[^\s<>"]+\/[^\s<>")]+/g)]
                 .map(match => match[0])
                 .map(text => {
                     if (text.includes("://") && !text.startsWith("https")) { // prefer https
