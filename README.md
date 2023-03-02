@@ -77,3 +77,7 @@ Extra checkboxes
 - **"Trim brackets"** — to enable extra logic for text URL parsing for links are included `(`,`)`,`[`,`]` characters.
 - **"Console log"** — to log some data to the console while working.
 - **"Console vars"** — to expose some variables into the console. For example, `urls` variable.
+
+Selector
+
+- It defines from which element(s) to parse URLs. By default, it's `body` selector.
