@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.1.5-2023.03.02
+// @version     0.1.6-2023.03.02
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -13,6 +13,7 @@
 
 
 const global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
+const debug = false;
 
 const {showPopup} = initHrefTaker();
 if (typeof GM_registerMenuCommand === "function") {
@@ -78,7 +79,7 @@ function initHrefTaker() {
             auto_list: true,
             minimized: false,
             brackets_trim: true,
-            opened: false,
+            opened: debug,
             reverse_only: false,
         };
         const LocalStoreName = "ujs-href-taker";
@@ -483,6 +484,10 @@ input[disabled] {
 fieldset, hr {
     border-color: aliceblue;
 }
+
+.clicked {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
 </style>`;
 
     function getListHelper(container) {
@@ -695,7 +700,7 @@ function getRenders(settings, updateSettings) {
         });
 
         const inputOnlyPromptElem = querySelector(`#input-only-prompt`);
-        inputOnlyPromptElem.addEventListener("mousedown", event => {
+        inputOnlyPromptElem.addEventListener("pointerdown", event => {
             const MIDDLE_BUTTON = 1;
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
@@ -745,7 +750,20 @@ function getRenders(settings, updateSettings) {
         copyButton.addEventListener("contextmenu", event => {
             event.preventDefault();
             void navigator.clipboard.writeText(urls.join("\n"));
+            void clicked(copyButton);
         });
+        copyButton.addEventListener("pointerdown", event => {
+            const MIDDLE_BUTTON = 1;
+            if (event.button === MIDDLE_BUTTON) {
+                event.preventDefault();
+                void navigator.clipboard.writeText(getUrlArray());
+                void clicked(copyButton);
+            }
+        });
+
+        function getUrlArray() {
+            return `/* ${urls.length.toString().padStart(2)} */ ${JSON.stringify(urls)},`;
+        }
 
         // ------
 
@@ -819,7 +837,7 @@ function getRenders(settings, updateSettings) {
                 urls.reverse();
             }
             if (settings.console_log) {
-                console.log(`/* ${urls.length.toString().padStart(2)} */ ${JSON.stringify(urls)},`);
+                console.log(getUrlArray());
             }
             if (settings.console_vars) {
                 global.urls = urls;
@@ -842,6 +860,7 @@ function getRenders(settings, updateSettings) {
             event.preventDefault();
             listHelper.clearList(true);
             listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
+            void clicked(listBtn);
         });
 
         // ------
@@ -1069,6 +1088,16 @@ function hashString(str) {
         hash = Math.imul(Math.imul(31, hash) + str.charCodeAt(i), 1);
     }
     return hash;
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function clicked(elem) {
+    elem.classList.add("clicked");
+    await sleep(120);
+    elem.classList.remove("clicked");
 }
 
 // --------------------------
