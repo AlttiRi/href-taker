@@ -2,6 +2,8 @@
 
 The userscript that adds a popup to collect URLs from a web page.
 
+It grabs the links from anchors' `href`s (`a` HTML tag) as well as from non-hyperlink visible text.
+
 ![image](https://user-images.githubusercontent.com/16310547/220745223-a674587f-8863-4e94-8aa7-bdbd375ac6e8.png)
 
 
@@ -9,7 +11,15 @@ _Popup is draggable and resizable. Use the upper edge to move the popup. To resi
 
 _Changing of controls/filters immediately effects on the result list._
 
+_Popup can be not only closed, but minimized._
+
 _It keeps the state in `LocalStorage`._
+
+
+To open the popup use the userscript manager's menu command:
+
+![image](https://user-images.githubusercontent.com/16310547/222466876-7f023af9-3a75-4775-8235-28b4d64bb6e1.png)
+
 
 ### Filters
 
@@ -37,13 +47,13 @@ Checkboxes
 
 Extra checkboxes
 
-- Auto open
-- Auto list
-- Only unique
-- Sort
-- Reverse
-- No 1st-party
-- https
-- Trim brackets
-- Console log
-- Console vars
+- **"Auto open"** — to automatically show the popup/minimized popup on a web page is loaded event even the popup was closed last time.
+- **"Auto list"** — to automatically collect and list URL on popup is opened.
+- **"Only unique"** — to list only unique URLs without duplicates.
+- **"Sort"** — to sort URLs by `hostname`.
+- **"Reverse"** — to revers order the result URLs list.
+- **"No 1st-party"** — to exclude 1st-party links, and list only 3rd-party ones.
+- **"https"** — to replace `http://` with `https://`.
+- **"Trim brackets"** — to enable extra logic for text URL parsing for links are included `(`,`)`,`[`,`]` characters.
+- **"Console log"** — to log some data to the console while working.
+- **"Console vars"** — to expose some variables into the console. For example, `urls` variable.
