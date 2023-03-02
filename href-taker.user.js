@@ -52,6 +52,7 @@ function initHrefTaker() {
      * @property {boolean} auto_list
      * @property {boolean} minimized
      * @property {boolean} brackets_trim
+     * @property {boolean} opened
      */
 
     const {settings, updateSettings} = loadSettings();
@@ -76,6 +77,7 @@ function initHrefTaker() {
             auto_list: true,
             minimized: false,
             brackets_trim: true,
+            opened: false,
         };
         const LocalStoreName = "ujs-href-taker";
 
@@ -121,7 +123,7 @@ function initHrefTaker() {
     // {showPopup, closePopup, showMinimized, closeMinimized, close}
     const methods = getRenders(settings, updateSettings);
 
-    if (settings.auto_open) {
+    if (settings.auto_open || settings.opened) {
         if (settings.minimized === true) {
             methods.showMinimized();
         } else {
@@ -219,6 +221,7 @@ function getStaticContent(settings) {
         auto_open,
         auto_list,
         brackets_trim,
+        // opened,
     } = settings;
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
@@ -532,10 +535,12 @@ function getRenders(settings, updateSettings) {
 
         shadowContainer = shadowWrapper.shadowRoot.querySelector("#shadow-content-wrapper");
         addCSS(wrapperCss, shadowContainer);
+        updateSettings({opened: true});
     }
     function closeShadowContainer() {
         document.querySelector(`${insertSelector} > #href-taker-outer-shadow-wrapper`)?.remove();
         shadowContainer = null;
+        updateSettings({opened: false});
     }
     function initShadowContainer() {
         if (!shadowContainer) {
@@ -547,6 +552,7 @@ function getRenders(settings, updateSettings) {
 
     function renderPopup(resetPosition = false) {
         initShadowContainer();
+        updateSettings({minimized: false});
 
         const wasOpened = querySelector("#popup");
         closePopup()
@@ -780,7 +786,7 @@ function getRenders(settings, updateSettings) {
                 urls.reverse();
             }
             if (settings.console_log) {
-                console.log(`/* ${urls.length.toString().padStart(2)} */`, JSON.stringify(urls) + ",");
+                console.log(`/* ${urls.length.toString().padStart(2)} */ ${JSON.stringify(urls)},`);
             }
             if (settings.console_vars) {
                 global.urls = urls;
@@ -848,12 +854,11 @@ function getRenders(settings, updateSettings) {
         const openButton  = minimizedElem.querySelector( "#open-popup");
         const closeButton = minimizedElem.querySelector("#close-popup");
         openButton.addEventListener("click", event => {
-            updateSettings({minimized: false});
             renderPopup();
         });
         closeButton.addEventListener("click", event => {
             updateSettings({minimized: false});
-            closeMinimized();
+            closeShadowContainer();
         });
     }
 
