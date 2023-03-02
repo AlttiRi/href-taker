@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.1.3-2023.03.02
+// @version     0.1.4-2023.03.02
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -50,6 +50,7 @@ function initHrefTaker() {
      * @property {boolean} https
      * @property {boolean} auto
      * @property {boolean} minimized
+     * @property {boolean} brackets_trim
      */
 
     const {settings, updateSettings} = loadSettings();
@@ -72,6 +73,7 @@ function initHrefTaker() {
             https: true,
             auto: true,
             minimized: false,
+            brackets_trim: true,
         };
         const LocalStoreName = "ujs-href-taker";
 
@@ -215,6 +217,7 @@ function getStaticContent(settings) {
         auto,
         auto_show,
         auto_list,
+        brackets_trim,
     } = settings;
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
@@ -301,6 +304,10 @@ function getStaticContent(settings) {
                     <label title="Auto list URLs on the pop is shown">
                         <input type="checkbox" name="auto" ${checked(auto)}>
                         Auto
+                    </label>
+                    <label title="Trim unmached closed brackets ], or ) with the followed content. Text URLs only.">
+                        <input type="checkbox" name="brackets_trim" ${checked(brackets_trim)}>
+                        Brackets Trim
                     </label>
                 </div>
             </div>
@@ -729,6 +736,7 @@ function getRenders(settings, updateSettings) {
             urls = parseUrls(selector, {
                 includeTextUrls: settings.include_text_url,
                 onlyTextUrls:    settings.only_text_url,
+                bracketsTrim:    settings.brackets_trim,
             });
 
             const onlyTexts = settings.input_only.trim().split(/\s+/g).filter(o => o);
@@ -846,10 +854,61 @@ function getRenders(settings, updateSettings) {
     };
 }
 
+/**
+ * @param {string} url
+ * @return {string[]}
+ */
+function splitOnUnmatchedBrackets(url) {
+    const chars = [...url];
+    let rounds  = 0;
+    let squares = 0;
+    let i = 0;
+    for (const char of chars) {
+        i++;
+        if (char === "(") {
+            rounds++;
+        } else if (char === ")") {
+            rounds--;
+        } else if (char === "[") {
+            squares++;
+        } else if (char === "]") {
+            squares--;
+        }
+        if (rounds < 0 || squares < 0 ) {
+            const before = chars.slice(0, i - 1).join("");
+            const after  = chars.slice(i - 1).join("");
+            return [before, after];
+        }
+    }
+    return [url, null];
+}
+function parseUrlsFromText(text, bracketsTrim = true) {
+    const regex = /[^\s<>"()]+\.[^\s<>"()]+\/[^\s<>"]+/g;
+    const urls = [...text.matchAll(regex)]
+        .map(match => match[0])
+        .map(text => {
+            if (text.includes("://") && !text.startsWith("https")) { // prefer https
+                text = "https" + text.match(/:\/\/.+/)[0];
+            } else if (!text.startsWith("http")) {
+                text = ("https://" + text).replace(/:\/{3,}/, "://");
+            }
+            return text;
+        });
+    if (bracketsTrim) { // Trim unmatched closed brackets — ")", or "]" with the followed content
+        return urls.flatMap(url => {
+            const [_url, after] = splitOnUnmatchedBrackets(url);
+            if (after && after.includes("://") && after.match(regex)) {
+                return [_url, ...parseUrlsFromText(after)];
+            }
+            return _url;
+        });
+    }
+    return urls;
+}
 
 /** * @return {string[]} */
 function parseUrls(targetSelector = "body", {
-    includeTextUrls, onlyTextUrls,
+    includeTextUrls, onlyTextUrls, bracketsTrim,
 }) {
     let elems;
     try {
@@ -877,16 +936,7 @@ function parseUrls(targetSelector = "body", {
 
         urls.push(anchorUrls);
         if (includeTextUrls) {
-            const textUrls = [...el.innerText.matchAll(/[^\s<>"]+\.[^\s<>"]+\/[^\s<>")]+/g)]
-                .map(match => match[0])
-                .map(text => {
-                    if (text.includes("://") && !text.startsWith("https")) { // prefer https
-                        text = "https" + text.match(/:\/\/.+/)[0];
-                    } else if (!text.startsWith("http")) {
-                        text = ("https://" + text).replace(/:\/{3,}/, "://");
-                    }
-                    return text;
-                });
+            const textUrls = parseUrlsFromText(el.innerText, bracketsTrim);
             urls.push(textUrls.filter(url => !anchorUrls.includes(url)));
         }
     }
