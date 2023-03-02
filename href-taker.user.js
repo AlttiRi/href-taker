@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.1.1-2023.03.02
+// @version     0.1.2-2023.03.02
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -563,19 +563,22 @@ function getRenders(settings, updateSettings) {
         const resultListElem = querySelector("#result-list-wrapper");
         makeDraggable(popupElem, {
             handle: headerElem,
-            reset: resetPosition,
-            restore: true,
-            id: "href-taker-popup"
+            ...storeStateInLS({
+                reset: resetPosition,
+                restore: true,
+                id: "ujs-href-taker-popup-position"
+            })
         });
         makeResizable(popupElem, {
             minW: 420, minH: 320,
-            onMove(state) {
-                assignStyleState(popupElem, state);
-                resultListElem.style.width = (parseInt(state.width) - 24) + "px";
-            },
-            reset: resetPosition,
-            restore: true,
-            id: "href-taker-popup"
+            ...storeStateInLS({
+                reset: resetPosition,
+                restore: true,
+                id: "ujs-href-taker-popup-size",
+                onMove(state) {
+                    resultListElem.style.width = (parseInt(state.width) - 24) + "px";
+                },
+            })
         });
 
         // ------
@@ -813,9 +816,11 @@ function getRenders(settings, updateSettings) {
         addCSS(minimizedCss, minimizedElem);
 
         makeDraggable(minimizedElem, {
-            reset: resetPosition,
-            restore: true,
-            id: "href-taker-minimized"
+            ...storeStateInLS({
+                reset: resetPosition,
+                restore: true,
+                id: "ujs-href-taker-popup-minimized-position"
+            })
         });
 
         const openButton  = minimizedElem.querySelector( "#open-popup");
@@ -971,7 +976,6 @@ function hashString(str) {
 
 
 // --------------------------
-// todo: refactor
 
 function assignStyleState(element, state) {
     for (const [k, v] of Object.entries(state)) {
@@ -979,46 +983,15 @@ function assignStyleState(element, state) {
     }
 }
 
-function lsProxy(element, {id: lsName, reset, restore, onStop, onMove} = {}) {
-    if (reset && lsName) {
-        localStorage.removeItem(lsName);
-    }
-    if (!restore || !lsName) {
-        return {onMove, onStop};
-    }
-
-    const stateJson = localStorage.getItem(lsName);
-    if (stateJson) {
-        const state = JSON.parse(stateJson);
-        assignStyleState(element, state);
+function makeDraggable(element, {handle, onStop: _onStop, onMove, state} = {}) {
+    const _onMove = state => {
         onMove?.(state);
-        onStop?.(state);
-    }
-
-    function saveStateLS(state) {
-        localStorage.setItem(lsName, JSON.stringify(state));
-    }
-
-    let _onStop;
-    if (onStop) {
-        _onStop = function(state) {
-            saveStateLS(state);
-        }
-    } else {
-        _onStop = saveStateLS;
-    }
-
-    return {
-        onMove,
-        onStop: _onStop
+        assignStyleState(element, state);
     };
-}
-
-function makeDraggable(element, {handle, onStop, onMove, reset, restore, id} = {}) {
-    onMove = onMove || (state => assignStyleState(element, state));
-    const {
-        onStop: _onStop, onMove: _onMove
-    } = lsProxy(element, {id: id + "-popup-position", reset, restore, onStop, onMove});
+    if (state) {
+        _onMove(state);
+        _onStop?.(state);
+    }
 
     handle = handle || element;
     handle.style["user-select"] = "none";
@@ -1053,12 +1026,18 @@ function makeDraggable(element, {handle, onStop, onMove, reset, restore, id} = {
         });
     });
 }
-
 function makeResizable(element, props = {}) {
-    let {
-        minW, minH, size, onStop, onMove,
-        id, reset, restore,
-    } = Object.assign({minW: 240, minH: 240, size: 12, onMove: (state => assignStyleState(element, state))}, props);
+    const {
+        minW, minH, size, onStop: _onStop, onMove, state
+    } = Object.assign({minW: 240, minH: 240, size: 12}, props);
+    const _onMove = state => {
+        onMove?.(state);
+        assignStyleState(element, state);
+    };
+    if (state) {
+        _onMove(state);
+        _onStop?.(state);
+    }
 
     const lrCorner = document.createElement("div");
     lrCorner.style.cssText =
@@ -1066,10 +1045,6 @@ function makeResizable(element, props = {}) {
         `bottom: ${-(size / 2)}px; right: ${-(size / 2)}px; ` +
         `position: absolute; background-color: transparent; cursor: se-resize;`;
     element.append(lrCorner);
-
-    const {
-        onStop: _onStop, onMove: _onMove
-    } = lsProxy(element, {id: id + "-popup-size", reset, restore, onStop, onMove});
 
     ["pointerdown", "touchstart"].forEach(event => {
         lrCorner.addEventListener(event,event => {
@@ -1103,6 +1078,39 @@ function makeResizable(element, props = {}) {
             addEventListener("touchend",  reset);
         });
     });
+}
+function storeStateInLS({onMove, onStop, id: lsName, reset, restore}) {
+    if (reset && lsName) {
+        localStorage.removeItem(lsName);
+    }
+    if (!restore || !lsName) {
+        return {onMove, onStop};
+    }
+    const stateJson = localStorage.getItem(lsName);
+    let state = null;
+    if (stateJson) {
+        state = JSON.parse(stateJson);
+    }
+
+    function saveStateLS(state) {
+        localStorage.setItem(lsName, JSON.stringify(state));
+    }
+
+    let _onStop;
+    if (onStop) {
+        _onStop = function(state) {
+            onStop(state);
+            saveStateLS(state);
+        }
+    } else {
+        _onStop = saveStateLS;
+    }
+
+    return {
+        onMove,
+        onStop: _onStop,
+        state
+    };
 }
 
 // --------------------------
