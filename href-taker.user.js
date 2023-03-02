@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.1.0-2023.03.02
+// @version     0.1.1-2023.03.02
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -49,6 +49,7 @@ function initHrefTaker() {
      * @property {boolean} input_selector_disabled
      * @property {boolean} https
      * @property {boolean} auto
+     * @property {boolean} minimized
      */
 
     const {settings, updateSettings} = loadSettings();
@@ -70,6 +71,7 @@ function initHrefTaker() {
             input_selector_disabled: false,
             https: true,
             auto: true,
+            minimized: false,
         };
         const LocalStoreName = "ujs-href-taker";
 
@@ -100,7 +102,7 @@ function initHrefTaker() {
             }
             if (changedKeys.length) {
                 Object.assign(settings, newSettings);
-                localStorage.setItem(LocalStoreName, JSON.stringify(newSettings));
+                localStorage.setItem(LocalStoreName, JSON.stringify(settings));
                 callback?.(settings, changedKeys);
             }
         }
@@ -115,7 +117,7 @@ function initHrefTaker() {
     const methods = getRenders(settings, updateSettings);
 
     if (settings.auto) {
-        if (localStorage.getItem("href-taker-popup-minimized") === "true") {
+        if (settings.minimized === true) {
             methods.showMinimized();
         } else {
             methods.showPopup();
@@ -593,7 +595,7 @@ function getRenders(settings, updateSettings) {
         // ------
 
         function minimizePopup(resetPosition = false) {
-            localStorage.setItem("href-taker-popup-minimized", "true");
+            updateSettings({minimized: true});
             closePopup();
             renderMinimized(resetPosition);
         }
@@ -818,11 +820,11 @@ function getRenders(settings, updateSettings) {
         const openButton  = minimizedElem.querySelector( "#open-popup");
         const closeButton = minimizedElem.querySelector("#close-popup");
         openButton.addEventListener("click", event => {
-            localStorage.setItem("href-taker-popup-minimized", "false");
+            updateSettings({minimized: false});
             renderPopup();
         });
         closeButton.addEventListener("click", event => {
-            localStorage.setItem("href-taker-popup-minimized", "false");
+            updateSettings({minimized: false});
             closeMinimized();
         });
     }
