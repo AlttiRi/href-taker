@@ -470,9 +470,13 @@ fieldset, hr {
         const headerElem  = container.querySelector(`#result-list-header`);
         const contentElem = container.querySelector(`#result-list`);
         return {
-            clearList() {
+            clearList(addPrompt = false) {
                 headerElem.textContent = "Result list";
-                contentElem.innerHTML = "";
+                if (addPrompt) {
+                    contentElem.innerHTML = `<div id="result-list-prompt">Click here to list URLs...</div>`;
+                } else {
+                    contentElem.innerHTML = "";
+                }
             },
             insertUrls(urls) {
                 this.clearList();
@@ -795,6 +799,11 @@ function getRenders(settings, updateSettings) {
 
         listBtn.addEventListener("click", renderUrlList);
         listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
+        listBtn.addEventListener("contextmenu", event => {
+            event.preventDefault();
+            listHelper.clearList(true);
+            listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
+        });
 
         // ------
 
