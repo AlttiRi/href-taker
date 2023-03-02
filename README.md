@@ -15,11 +15,31 @@ _Popup can be not only closed, but minimized._
 
 _It keeps the state in `LocalStorage`._
 
+---
 
 To open the popup use the userscript manager's menu command:
 
 ![image](https://user-images.githubusercontent.com/16310547/222466876-7f023af9-3a75-4775-8235-28b4d64bb6e1.png)
 
+---
+
+The userscript has by default:
+
+```js
+// @match       *://*/*
+```
+
+It's recommended to overwrite the rule in the userscript manage settings to run the script only in the locations where you need it:
+
+![image](https://user-images.githubusercontent.com/16310547/222470203-28c52dba-af44-4546-8c8b-5f8d54dc4eac.png)
+
+---
+
+To use the userscript in `file://` pages you need to enable "Allow access to file URLs" checkbox in the userscript manager extension's setting:
+
+![image](https://user-images.githubusercontent.com/16310547/222470882-c438de1a-5a1e-45fb-b272-d0c5a6579735.png)
+
+---
 
 ### Filters
 
