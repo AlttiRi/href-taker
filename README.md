@@ -19,7 +19,7 @@ _It keeps the state in `LocalStorage`._
 
 To install open this URL: https://github.com/AlttiRi/href-taker/raw/master/href-taker.user.js
 
-_An istalled userscript manager extension is required for it._
+_An installed userscript manager extension is required for it._
 
 ---
 
