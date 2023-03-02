@@ -37,3 +37,13 @@ Checkboxes
 
 Extra checkboxes
 
+- Auto open
+- Auto list
+- Only unique
+- Sort
+- Reverse
+- No 1st-party
+- https
+- Trim brackets
+- Console log
+- Console vars
