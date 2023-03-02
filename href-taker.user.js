@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.1.6-2023.03.02
+// @version     0.1.7-2023.03.02
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -17,7 +17,7 @@ const debug = false;
 
 const {showPopup} = initHrefTaker();
 if (typeof GM_registerMenuCommand === "function") {
-    GM_registerMenuCommand("Show popup", showPopup);
+    GM_registerMenuCommand("Show popup", () => showPopup());
 }
 
 function addCSS(cssText, target = document.head) {
