@@ -53,6 +53,7 @@ function initHrefTaker() {
      * @property {boolean} minimized
      * @property {boolean} brackets_trim
      * @property {boolean} opened
+     * @property {boolean} reverse_only
      */
 
     const {settings, updateSettings} = loadSettings();
@@ -78,6 +79,7 @@ function initHrefTaker() {
             minimized: false,
             brackets_trim: true,
             opened: false,
+            reverse_only: false,
         };
         const LocalStoreName = "ujs-href-taker";
 
@@ -222,6 +224,7 @@ function getStaticContent(settings) {
         auto_list,
         brackets_trim,
         // opened,
+        reverse_only,
     } = settings;
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
@@ -425,6 +428,15 @@ button {
 }
 
 [data-only-text-url] #include-text-url-wrapper {
+    color: gray;
+}
+
+[data-reverse-only] #input-only-prompt,
+[data-reverse-only] #input-only {
+    text-decoration: line-through;
+}
+
+input[disabled] {
     color: gray;
 }
 
@@ -657,6 +669,9 @@ function getRenders(settings, updateSettings) {
             const inputDisabledList =    inputList.map(checkbox => [checkbox.name + "_disabled", checkbox.disabled]);
             const _settings = Object.fromEntries([checkboxDataList, inputDataList, inputDisabledList].flat());
             updateSettings(_settings);
+            updateHtml();
+        }
+        function updateHtml() {
             setSettingsDataAttributes();
             onStateChanged?.();
         }
@@ -677,6 +692,16 @@ function getRenders(settings, updateSettings) {
                     console.log(event);
                 }
             });
+        });
+
+        const inputOnlyPromptElem = querySelector(`#input-only-prompt`);
+        inputOnlyPromptElem.addEventListener("mousedown", event => {
+            const MIDDLE_BUTTON = 1;
+            if (event.button === MIDDLE_BUTTON) {
+                event.preventDefault();
+                updateSettings({reverse_only: !settings.reverse_only});
+                updateHtml();
+            }
         });
 
         // ------
@@ -762,14 +787,18 @@ function getRenders(settings, updateSettings) {
             const ignoreTexts = settings.input_ignore.trim().split(/\s+/g).filter(o => o);
 
             urls = urls.filter(urlFilter);
+            if (settings.https) {
+                urls = urls.map(url => url.startsWith("http://") ? url.replace("http://", "https://"): url);
+            }
             if (!settings.input_only_disabled && onlyTexts.length) {
-                urls = urls.filter(url => onlyTexts.some(text => url.includes(text)));
+                if (!settings.reverse_only) {
+                    urls = urls.filter(url =>  onlyTexts.some(text => url.includes(text)));
+                } else {
+                    urls = urls.filter(url => !onlyTexts.some(text => url.includes(text)));
+                }
             }
             if (!settings.input_ignore_disabled) {
                 urls = urls.filter(url => !ignoreTexts.some(text => url.includes(text)));
-            }
-            if (settings.https) {
-                urls = urls.map(url => url.startsWith("http://") ? url.replace("http://", "https://"): url);
             }
             if (settings.unique) {
                 urls = [...new Set(urls)];
