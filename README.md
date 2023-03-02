@@ -23,10 +23,17 @@ Additionally, with the middle mouse button (MMB) click on the "Only" prompt text
 
 ### Controls
 
+Buttons
+
 - **"List links"** button collects and lists the URLs. RMB click clears the list.
 - **"Copy"** button copies the links separated by a space. With RMB click the links will be separated by a new line (`\n`) character.
 - **"URLs to text"** button converts links' text to the original URL value. The second click reverts the changes.
 - **"Extra Settings"** button toggles showing the additional options.
 
+Checkboxes
+
 - **"Include text"** checkbox — to additionally parse URLs from text (`innerText`), not only from `a` tag elements.
 - **"Only text"** checkbox — to parse URLs only from the web page visible text content, not from `a` tags.
+
+Extra checkboxes
+

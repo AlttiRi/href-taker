@@ -291,11 +291,11 @@ function getStaticContent(settings) {
                 <div class="control-row-inner">    
                     <label title="Auto open the popup (or minimized one)">
                         <input type="checkbox" name="auto_open" ${checked(auto_open)}>
-                        Auto Open
+                        Auto open
                     </label>
                     <label title="Auto list URLs on the pop is shown">
                         <input type="checkbox" name="auto_list" ${checked(auto_list)}>
-                        Auto List
+                        Auto list
                     </label>                 
                     <label title="Only unique URLs">
                         <input type="checkbox" name="unique" ${checked(unique)}>
@@ -319,7 +319,7 @@ function getStaticContent(settings) {
                     </label>
                     <label title="Trim unmached closed brackets ], or ) with the followed content. Text URLs only.">
                         <input type="checkbox" name="brackets_trim" ${checked(brackets_trim)}>
-                        Trim Brackets
+                        Trim brackets
                     </label>
                 </div>
             </div>
