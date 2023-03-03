@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.1.8-2023.03.03
+// @version     0.1.9-2023.03.03
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -823,14 +823,18 @@ function getRenders(settings, updateSettings) {
             }
             if (settings.sort) {
                 urls = urls.sort((a, b) => {
-                    const aUrl = new URL(a);
-                    const bUrl = new URL(b);
-                    const aDomain = aUrl.hostname.split(".").slice(-2).join(".");
-                    const bDomain = bUrl.hostname.split(".").slice(-2).join(".");
-                    if (aDomain === bDomain) {
-                        return aUrl.origin.localeCompare(bUrl.origin);
+                    try {
+                        const aUrl = new URL(a);
+                        const bUrl = new URL(b);
+                        const aDomain = aUrl.hostname.split(".").slice(-2).join(".");
+                        const bDomain = bUrl.hostname.split(".").slice(-2).join(".");
+                        if (aDomain === bDomain) {
+                            return aUrl.origin.localeCompare(bUrl.origin);
+                        }
+                        return aDomain.localeCompare(bDomain);
+                    } catch (e) {
+                        return 1;
                     }
-                    return aDomain.localeCompare(bDomain);
                 });
             }
             if (settings.reverse) {
