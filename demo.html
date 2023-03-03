@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>HrefTaker Demo</title>
+    <script src="./href-taker.user.js" defer></script>
+</head>
+<body>
+
+<header style="display: flex; justify-content: center;">
+<div>
+    <p>Here is the webpage to demonstrate how the <a href="https://github.com/AlttiRi/href-taker/blob/master/href-taker.user.js" target="_blank">userscript</a> works.</p>
+    <p>Click on the button to open the popup.</p>
+    <p><button onclick="showPopup()">Show popup</button></p>
+    <hr>
+    <p><b>The below are listed different <i>example posts</i> to parses the URLs from them with the popup.</b></p>
+    <hr>
+</div>
+</header>
+
+<div class="post" id="main">
+    <h2>
+        <a href="https://github.com/AlttiRi/href-taker" target="_blank">HrefTaker</a>
+    </h2>
+    <div class="content">
+        <p>The userscript that adds a popup to collect URLs from a web page. It's mainly aimed for static websites.</p>
+        <p>It grabs the links from anchors' hrefs (a HTML tag) as well as from non-hyperlink visible text.</p>
+        See more here: <a href="https://github.com/AlttiRi/href-taker#hreftaker" target="_blank">https://github.com/AlttiRi/href-taker#hreftaker</a>
+        <p>Raw JS:<a href="https://github.com/AlttiRi/href-taker/raw/master/href-taker.user.js" target="_blank">href-taker.user.js</a></p>
+    </div>
+    <hr>
+</div>
+
+
+
+
+<div class="post" id="examples">
+    <h2>
+        Simple examples
+    </h2>
+    <div class="content">
+        <p>The follow links are in A tag:</p>
+        <p><a href="https://github.com"   rel="noreferrer noopener nofollow" target="_blank">GitHub</a></p>
+        <p><a href="http://github.com"    rel="noreferrer noopener nofollow" target="_blank">GitHub (http://)</a></p>
+        <p><a href="http://example.com/"  rel="noreferrer noopener nofollow" target="_blank"><b>http</b>://example.com/</a></p>
+        <p><a href="https://example.com/" rel="noreferrer noopener nofollow" target="_blank">https://example.com<b>/</b></a></p>
+        <p><a href="https://example.com"  rel="noreferrer noopener nofollow" target="_blank">https://example.com</a></p>
+        <p><a href="https://example.com/test" rel="noreferrer noopener nofollow" target="_blank">https://example.com/test</a></p>
+    </div>
+    <hr>
+</div>
+
+
+<div class="post" id="text">
+    <h2>
+        Text URLs
+    </h2>
+    <div class="content">
+        <p>Readme link: https://github.com/AlttiRi/href-taker#hreftaker</p>
+        <p>Made by AlttiRi. The profile URL: <span>https://github.com/AlttiRi</span></p>
+        <br>
+        <p>KeepLister Readme: https://github.com/AlttiRi/keep-lister#keeplister</p>
+        <p>KeepLister (Windows 10 scan): https://alttiri.github.io/keep-lister/?filepath=https://alttiri.github.io/json-flat-scans/windows-admin.json.gz</p>
+        <br>
+        <p>The follow will be ignored:</p>
+        <p>DuckDuckGo: https://duckduckgo.com/</p>
+        <p>YouTube: youtube.com</p>
+        <br>
+        <p>It will be parsed:</p>
+        <p>https://duckduckgo.com/?q=duckduckgo</p>
+        <p>youtube.com/@SpaceX</p>
+    </div>
+    <hr>
+</div>
+
+
+<div class="post" id="weather-1">
+    <div class="content">
+        https://www.windy.com/?77.777,-52.222,4
+    </div>
+    <hr>
+</div>
+
+
+
+<div class="post" id="html">
+    <h2>
+        <a href="">Plain HTML</a>
+    </h2>
+    <div class="content">
+        <span>
+            &lt;p&gt;DyE - Fantasy - Official Video&lt;br&gt;&lt;a href="https://www.youtube.com/watch?v=6QFwo57WKwg" rel="nofollow noopener noreferrer" target="_blank"&gt;&lt;span class="invisible"&gt;https://www.&lt;/span&gt;&lt;span class=""&gt;youtube.com/watch?v=6QFwo57WKwg&lt;/span&gt;&lt;span class="invisible"&gt;&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;
+        </span>
+        <span>
+            &lt;p&gt;Flairs - Truckers Delight (Official music video)&lt;br&gt;&lt;a href="https://www.youtube.com/watch?v=egcXvqiho4w" rel="nofollow noopener noreferrer" target="_blank"&gt;&lt;span class="invisible"&gt;https://www.&lt;/span&gt;&lt;span class=""&gt;youtube.com/watch?v=egcXvqiho4w&lt;/span&gt;&lt;span class="invisible"&gt;&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;
+        </span>
+    </div>
+    <hr>
+</div>
+
+
+<div class="post" id="accuweather-1">
+    <h2>
+        AccuWeather TW
+    </h2>
+    <div class="content">
+        <p><i>(the direct link with bit.ly text)</i></p>
+        <p><a href="https://www.accuweather.com/en/space-news/live-news/astronomy-news-current-space-events-2023/1480879" rel="noreferrer noopener nofollow" target="_blank">https://bit.ly/3IJnG7d</a></p>
+        <p>https://twitter.com/accuweather/status/1631393812911104000</p>
+    </div>
+    <hr>
+</div>
+
+<div id='1631460560314171392'><h4><a href='https://twitter.com/accuweather/status/1631460560314171392' rel="noreferrer noopener nofollow" target="_blank">1631460560314171392</a> by <a href='https://twitter.com/accuweather' rel="noreferrer noopener nofollow" target="_blank">accuweather</a></h4><div class='content'>The Windy City is experiencing a snowfall deficit this winter, but a big, travel-disrupting winter storm will help boost those seasonal totals later this week. https://bit.ly/3ESZ8aO</div><hr><div>2023.03.03 01:04:43</div><hr></div><br>
+
+<div id='1625044797269450752'><h4><a href='https://twitter.com/Windycom/status/1625044797269450752' rel="noreferrer noopener nofollow" target="_blank">1625044797269450752</a> by <a href='https://twitter.com/Windycom' rel="noreferrer noopener nofollow" target="_blank">Windycom</a></h4><div class='content'>#CycloneGabrielle lashes the north of New Zealand with heavy rain and extreme winds that may lead to flooding. Warnings have been issued. #NZ <br>Track Gabrielle at - http://bit.ly/3K1yYWy</div><hr><div>2023.02.13 08:10:46</div><hr></div><br>
+
+<div id='1629082259083993088'><h4><a href='https://twitter.com/Windycom/status/1629082259083993088' rel="noreferrer noopener nofollow" target="_blank">1629082259083993088</a> by <a href='https://twitter.com/Windycom' rel="noreferrer noopener nofollow" target="_blank">Windycom</a></h4><div class='content'>Severe storm Freddy is making landfall in #Mozambique with winds of 113km/h, 500 mm of rain, and flooding, expected in the following days. ⚠️🌧️ #freddy #storm #cyclone <br>Track the storm - http://bit.ly/cyclone-freddy</div><hr><div>2023.02.24 11:34:12</div><hr></div><br>
+
+<div id='1631108174161010689'><h4><a href='https://twitter.com/otacon212/status/1631108174161010689'>1631108174161010689</a> by <a href='https://twitter.com/otacon212'>otacon212</a></h4><div class='content'>Black
+
+    4K
+    1: https://files.catbox.moe/mjzwv3.jpg
+    2: https://files.catbox.moe/8n9vt0.jpg
+    3: https://files.catbox.moe/wvqwsl.jpg
+    4: https://files.catbox.moe/2jxx5q.jpg</div><hr><div>2023.03.02 01:44:27</div><hr></div><br>
+
+
+<div class="post" id="uuBETyA_yxc">
+    <h2>
+        <a href="https://www.youtube.com/watch?v=uuBETyA_yxc" rel="noreferrer noopener nofollow" target="_blank">U Got That | FULL VERSION [MMV]</a>
+    </h2>
+    <div class="content" style="white-space: pre">
+U Got that MMV
+========Gesugao ship girl illustration.=========
+
+■Artist    : ebiblue (海老ブルー)
+
+□Twitter   : https://twitter.com/ebiblue
+
+□instagram : https://www.instagram.com/ebiblue_gesu/
+
+□Youtube   : https://www.youtube.com/c/ebiblue_Official
+
+□Pixiv     : https://www.pixiv.net/users/379606
+
+====================================
+
+2 HOUR VERSION https://www.youtube.com/watch?v=g2Ga75ckv9c
+    </div>
+    <hr>
+</div>
+
+<div class="post" id="w">
+    <h2>
+        <a href="https://www.youtube.com/watch?v=z_HWtzUHm6s" rel="noreferrer noopener nofollow" target="_blank">[SFM] Shrekophone</a>
+    </h2>
+    <div class="content" style="white-space: pre">
+layers.mpeg
+
+Credits: De Hofnar - Zonnestraal (MÖWE Remix)
+https://itunes.apple.com/us/album/zonnestraal-single/id768833593
+I don't own this song.
+    </div>
+    <hr>
+</div>
+
+
+
+</body>
+</html>
