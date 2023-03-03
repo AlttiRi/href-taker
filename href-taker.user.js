@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.1.9-2023.03.03
+// @version     0.2.0-2023.03.03
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -958,16 +958,11 @@ function splitOnUnmatchedBrackets(url) {
     return [url, null];
 }
 function parseUrlsFromText(text, bracketsTrim = true) {
-    const regex = /[^\s<>"()]+\.[^\s<>"()]+\/[^\s<>"]+/g;
+    const regex = /[^\s<>"()\/]+\.[^\s<>"()]+\/[^\s<>"]+/g; // todo match `protocol://` to keep it
     const urls = [...text.matchAll(regex)]
         .map(match => match[0])
         .map(text => {
-            if (text.includes("://") && !text.startsWith("https")) { // prefer https
-                text = "https" + text.match(/:\/\/.+/)[0];
-            } else if (!text.startsWith("http")) {
-                text = ("https://" + text).replace(/:\/{3,}/, "://");
-            }
-            return text;
+            return "https://" + text; // consider all link are https
         });
     if (bracketsTrim) { // Trim unmatched closed brackets — ")", or "]" with the followed content
         return urls.flatMap(url => {
