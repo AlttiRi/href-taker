@@ -47,6 +47,12 @@ To use the userscript in `file://` pages you need to enable "Allow access to fil
 
 ---
 
+### Demo
+
+Here is a [demo webpage](https://alttiri.github.io/href-taker/demo) to try this popup.
+
+---
+
 ### Filters
 
 To filter the result list use "Only" and "Ignore" inputs.
