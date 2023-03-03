@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.1.7-2023.03.02
+// @version     0.1.8-2023.03.03
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -762,7 +762,7 @@ function getRenders(settings, updateSettings) {
         });
 
         function getUrlArray() {
-            return `/* ${urls.length.toString().padStart(2)} */ ${JSON.stringify(urls)},`;
+            return `/* ${urls.length.toString().padStart(2)} */ ${urls ? "[\"" + urls.join(`", "`) + "\"]" : "[]"},`;
         }
 
         // ------
