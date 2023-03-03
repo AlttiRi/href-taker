@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.0-2023.03.03
+// @version     0.2.1-2023.03.03
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -958,7 +958,7 @@ function splitOnUnmatchedBrackets(url) {
     return [url, null];
 }
 function parseUrlsFromText(text, bracketsTrim = true) {
-    const regex = /[^\s<>"()\/]+\.[^\s<>"()]+\/[^\s<>"]+/g; // todo match `protocol://` to keep it
+    const regex = /[^\s<>"():\/]+\.(?<host1>[^\s<>"()\/:]+(:\d+)?)\/[^\s<>"]+/g;
     const urls = [...text.matchAll(regex)]
         .map(match => match[0])
         .map(text => {
