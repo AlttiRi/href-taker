@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.7-2023.03.04
+// @version     0.2.8-2023.03.04
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1214,7 +1214,7 @@ function makeResizable(element, props = {}) {
             addEventListener("touchmove",   onMove);
             addEventListener("pointerup", onEnd);
             addEventListener("touchend",  onEnd);
-        }, {passive: true});
+        }, {passive: false});
     });
 }
 function storeStateInLS({onMove, onStop, id: lsName, reset, restore}) {
