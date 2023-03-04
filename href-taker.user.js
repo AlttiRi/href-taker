@@ -12,6 +12,14 @@
 // @noframes
 // ==/UserScript==
 
+//todo do not display www https
+// case-sensitive
+// .invisible {
+//     font-size: 0;
+//     line-height: 0;
+//     display: inline-block;
+//     width: 0;
+//     height: 0;
 
 const global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
 const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "alttiri.github.io"].some(h => location.hostname === h);
