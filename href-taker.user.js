@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.4-2023.03.04
+// @version     0.2.5-2023.03.04
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -713,7 +713,9 @@ function getRenders(settings, updateSettings) {
         // ------
 
         const selectorInput = querySelector(`input[name="input_selector"]`);
-        selectorInput.addEventListener("input", debounce(() => {
+        selectorInput.addEventListener("input", debounce(() => checkSelectorInputValue(), 450));
+        checkSelectorInputValue(true);
+        function checkSelectorInputValue(onlyCheckIsValid = false) {
             let isReasonableSelector = false;
             let isValidSelector = true;
             try {
@@ -726,16 +728,17 @@ function getRenders(settings, updateSettings) {
             }
             if (!isValidSelector) {
                 selectorInput.classList.add("red");
+                extraSettingsButton.classList.add("red");
                 return;
             }
             if (isReasonableSelector) {
                 selectorInput.classList.remove("red");
                 selectorInput.classList.remove("orange");
-            } else {
+            } else if (!onlyCheckIsValid) {
                 selectorInput.classList.add("orange");
             }
-
-        }, 450));
+            extraSettingsButton.classList.remove("red");
+        }
 
         // ------
         let urls = [];
