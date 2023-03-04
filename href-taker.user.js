@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.3-2023.03.04
+// @version     0.2.4-2023.03.04
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -9,6 +9,7 @@
 // @match       *://*/*
 // @grant       GM_registerMenuCommand
 // @grant       GM_addElement
+// @noframes
 // ==/UserScript==
 
 
