@@ -45,9 +45,9 @@
             if (!shadowRoot) {
                 return;
             }
-            updateSettings({[name]: value});
-            renderUrlList();
-            getShadowRoot().querySelector(`input[name="${name}"]`).value = value;
+            const input = shadowRoot.querySelector(`input[name="${name}"]`);
+            input.value = value;
+            input.dispatchEvent(new Event("input"));
         }
 
         function setCheckboxValue(name, checked) {
@@ -55,12 +55,13 @@
             if (!shadowRoot) {
                 return;
             }
+
+            const input = shadowRoot.querySelector(`input[name="${name}"]`);
             if (checked === undefined) {
-                checked = !settings[name];
+                checked = !input.checked;
             }
-            updateSettings({[name]: checked});
-            renderUrlList();
-            shadowRoot.querySelector(`input[name="${name}"]`).checked = checked;
+            input.checked = checked;
+            input.dispatchEvent(new Event("change"));
         }
 
         globalThis.setInputValue    = setInputValue;

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.8-2023.03.04
+// @version     0.2.9-2023.03.04
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -289,7 +289,7 @@ function getStaticContent(settings) {
                         Console log
                     </label>
                     <label title="Expose variables to console">
-                        <input type="checkbox" name="console_vars" ${checked(console_vars)} ${debug ? "disabled": ""}>
+                        <input type="checkbox" name="console_vars" ${checked(console_vars)}>
                         Console vars
                     </label>
                 </div>
