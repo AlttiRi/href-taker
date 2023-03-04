@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.9-2023.03.04
+// @version     0.2.10-2023.03.04
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -472,11 +472,6 @@ input[disabled] {
     transition: opacity 0.3s;
 }
 
-/*.minimized {*/
-/*    position: absolute;*/
-/*    top: 0;*/
-/*    right: 0;*/
-/*}*/
 
 #extra_settings .control-row-inner {
     flex-wrap: wrap;
