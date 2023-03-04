@@ -14,21 +14,6 @@
             max-width: 1280px;
             padding-bottom: 45px;
         }
-        header {
-            display: flex;
-            justify-content: start;
-            padding: 16px;
-            border: 2px solid gray;
-            max-width: 580px;
-        }
-        span[onclick] {
-            cursor: pointer;
-            text-decoration: underline;
-        }
-        span[onclick]:active {
-            text-shadow: gray 0 0 1px;
-            user-select: none;
-        }
     </style>
     <script defer>
         if (localStorage.getItem("ujs-href-taker") === null) {
@@ -70,7 +55,26 @@
 </head>
 <body>
 
+<script defer>
+    const headerHtmlText = `
 <header>
+<style>
+header {
+    display: flex;
+    justify-content: start;
+    padding: 16px;
+    border: 2px solid gray;
+    max-width: 580px;
+}
+span[onclick] {
+    cursor: pointer;
+    text-decoration: underline;
+}
+span[onclick]:active {
+    text-shadow: gray 0 0 1px;
+    user-select: none;
+}
+</style>
 <div>
     <p>Here is the webpage to demonstrate how the <a href="https://github.com/AlttiRi/href-taker/blob/master/href-taker.user.js" target="_blank">userscript</a> works.</p>
     <p>Click on the button to open the popup.</p>
@@ -116,7 +120,13 @@
     <p><b>The below are listed different <i>example posts</i> to parse the URLs from them with the popup.</b></p>
     <hr>
 </div>
-</header>
+</header>`;
+
+    const headerWrapper = document.createElement("div");
+    headerWrapper.attachShadow({mode: "open"});
+    headerWrapper.shadowRoot.innerHTML = headerHtmlText;
+    document.body.prepend(headerWrapper);
+</script>
 
 <div class="post" id="main">
     <h2>
