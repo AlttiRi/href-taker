@@ -1143,17 +1143,17 @@ function makeDraggable(element, {handle, onStop: _onStop, onMove, state} = {}) {
                 };
                 _onMove(state);
             }
-            function reset() {
+            function onEnd() {
                 removeEventListener("pointermove", onMove);
                 removeEventListener("touchmove",   onMove);
-                removeEventListener("pointerup", reset);
-                removeEventListener("touchend",  reset);
+                removeEventListener("pointerup", onEnd);
+                removeEventListener("touchend",  onEnd);
                 state && _onStop?.(state);
             }
             addEventListener("pointermove", onMove);
             addEventListener("touchmove",   onMove);
-            addEventListener("pointerup", reset);
-            addEventListener("touchend",  reset);
+            addEventListener("pointerup", onEnd);
+            addEventListener("touchend",  onEnd);
         }, {passive: true});
     });
 }
@@ -1196,17 +1196,17 @@ function makeResizable(element, props = {}) {
                 };
                 _onMove(state);
             }
-            function reset() {
+            function onEnd() {
                 removeEventListener("pointermove", onMove);
                 removeEventListener("touchmove",   onMove);
-                removeEventListener("pointerup", reset);
-                removeEventListener("touchend",  reset);
+                removeEventListener("pointerup", onEnd);
+                removeEventListener("touchend",  onEnd);
                 state && _onStop?.(state);
             }
             addEventListener("pointermove", onMove);
             addEventListener("touchmove",   onMove);
-            addEventListener("pointerup", reset);
-            addEventListener("touchend",  reset);
+            addEventListener("pointerup", onEnd);
+            addEventListener("touchend",  onEnd);
         }, {passive: true});
     });
 }
