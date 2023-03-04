@@ -697,6 +697,10 @@ function getRenders(settings, updateSettings) {
                 input.toggleAttribute("disabled");
                 saveSetting();
             });
+            promptElem.addEventListener("dblclick", event => {
+                input.value = "";
+                saveSetting();
+            });
 
             // todo save suggestions
             input.addEventListener("keyup", event => {
