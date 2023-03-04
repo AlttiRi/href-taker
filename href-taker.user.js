@@ -764,13 +764,27 @@ function getRenders(settings, updateSettings) {
             const MIDDLE_BUTTON = 1;
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
-                void navigator.clipboard.writeText(getUrlArray());
+                void navigator.clipboard.writeText(getCodeArrays(urls));
                 void clicked(copyButton);
             }
         });
 
-        function getUrlArray() {
-            return `/* ${urls.length.toString().padStart(2)} */ ${urls ? "[\"" + urls.join(`", "`) + "\"]" : "[]"},`;
+        function getCodeArrays(items, size = 100) {
+            const jsonArray = a => `${a.length ? "[\"" + a.join(`", "`) + "\"]" : "[]"}`;
+            if (items.length <= size) {
+                return `/* ${items.length.toString().padStart(3)} */ ${jsonArray(items)},`;
+            }
+            const len = s => s.toString().length;
+            const count = Math.trunc(items.length / size);
+            const comment = items.length.toString().padStart(1 + len(items.length)) + " ".repeat(3 + len(count));
+            const parts = [`/* ${comment} */`];
+            for (let i = 0; i <= count; i++) {
+                const part = items.slice(size * i, size + size * i);
+                const page = `(${i + 1})`.padStart(2 + len(count));
+                const pageCount = part.length.toString().padStart(1 + len(items.length));
+                parts.push(`/* ${pageCount} ${page} */ ${jsonArray(part)},`);
+            }
+            return parts.join("\n");
         }
 
         // ------
@@ -849,7 +863,7 @@ function getRenders(settings, updateSettings) {
                 urls.reverse();
             }
             if (settings.console_log) {
-                console.log(getUrlArray());
+                console.log(getCodeArrays(urls));
             }
             if (settings.console_vars) {
                 global.urls = urls;
@@ -1251,4 +1265,3 @@ function storeStateInLS({onMove, onStop, id: lsName, reset, restore}) {
     };
 }
 
-// --------------------------
