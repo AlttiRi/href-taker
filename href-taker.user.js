@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.5-2023.03.04
+// @version     0.2.7-2023.03.04
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -33,6 +33,28 @@ function addCSS(cssText, target = document.head) {
 
 
 function initHrefTaker() {
+    const {settings, updateSettings} = loadSettings();
+
+    // {showPopup, closePopup, showMinimized, closeMinimized, close}
+    const render = getRenders(settings, updateSettings);
+
+    if (settings.auto_open || settings.opened) {
+        if (settings.minimized === true) {
+            render.showMinimized();
+        } else {
+            render.showPopup();
+        }
+    }
+    const methods = {...render, settings, updateSettings};
+    if (settings.console_vars) {
+        Object.assign(global, methods);
+    }
+
+    return methods;
+}
+
+/** @return {{settings: Settings, updateSettings: function}} */
+function loadSettings() {
     /**
      * @typedef {Object|null} Settings
      * @property {string}  input_only
@@ -58,90 +80,72 @@ function initHrefTaker() {
      * @property {boolean} reverse_only
      */
 
-    const {settings, updateSettings} = loadSettings();
-    function loadSettings() {
-        const defaultSettings = {
-            input_only: "",
-            input_only_disabled: false,
-            input_ignore: "",
-            input_ignore_disabled: false,
-            include_text_url: true,
-            only_text_url: false,
-            console_log: debug,
-            console_vars: debug,
-            unique: true,
-            sort: true,
-            reverse: false,
-            ignore_first_party: true,
-            input_selector: "body",
-            input_selector_disabled: false,
-            https: true,
-            auto_open: false,
-            auto_list: true,
-            minimized: false,
-            brackets_trim: true,
-            opened: debug,
-            reverse_only: false,
-        };
-        const LocalStoreName = "ujs-href-taker";
+    /** @type {Settings} */
+    const defaultSettings = {
+        input_only: "",
+        input_only_disabled: false,
+        input_ignore: "",
+        input_ignore_disabled: false,
+        include_text_url: true,
+        only_text_url: false,
+        console_log: debug,
+        console_vars: debug,
+        unique: true,
+        sort: true,
+        reverse: false,
+        ignore_first_party: true,
+        input_selector: "body",
+        input_selector_disabled: false,
+        https: true,
+        auto_open: false,
+        auto_list: true,
+        minimized: false,
+        brackets_trim: true,
+        opened: debug,
+        reverse_only: false,
+    };
+    const LocalStoreName = "ujs-href-taker";
 
-        /** @type Settings */
-        let savedSettings;
-        try {
-            savedSettings = JSON.parse(localStorage.getItem(LocalStoreName)) || {};
-        } catch (e) {
-            console.error("[ujs][href-taker]", e);
-            localStorage.removeItem(LocalStoreName);
-            savedSettings = {};
-        }
-        const settings = Object.assign(defaultSettings, savedSettings);
+    /** @type Settings */
+    let savedSettings;
+    try {
+        savedSettings = JSON.parse(localStorage.getItem(LocalStoreName)) || {};
+    } catch (e) {
+        console.error("[ujs][href-taker]", e);
+        localStorage.removeItem(LocalStoreName);
+        savedSettings = {};
+    }
+    const settings = Object.assign(defaultSettings, savedSettings);
 
-        const str = input => JSON.stringify(input);
-        function updateSettings(newSettings, callback) {
-            const changedKeys = [];
-            for (const [key, newValue] of Object.entries(newSettings)) {
-                if (settings[key] === undefined && newValue !== undefined) {
-                    changedKeys.push(key);
-                } else
-                if (typeof newValue === "object" && str(settings[key]) !== str(newValue)) {
-                    changedKeys.push(key);
-                } else
-                if (settings[key] !== newValue) {
-                    changedKeys.push(key);
-                }
+    const str = input => JSON.stringify(input);
+    function updateSettings(newSettings, callback) {
+        const changedKeys = [];
+        for (const [key, newValue] of Object.entries(newSettings)) {
+            if (settings[key] === undefined && newValue !== undefined) {
+                changedKeys.push(key);
+            } else
+            if (typeof newValue === "object" && str(settings[key]) !== str(newValue)) {
+                changedKeys.push(key);
+            } else
+            if (settings[key] !== newValue) {
+                changedKeys.push(key);
             }
-            if (changedKeys.length) {
-                Object.assign(settings, newSettings);
-                localStorage.setItem(LocalStoreName, JSON.stringify(settings));
-                callback?.(settings, changedKeys);
-            }
-            return changedKeys;
         }
-
-        return {
-            settings,
-            updateSettings
-        };
-    }
-
-    // {showPopup, closePopup, showMinimized, closeMinimized, close}
-    const methods = getRenders(settings, updateSettings);
-
-    if (settings.auto_open || settings.opened) {
-        if (settings.minimized === true) {
-            methods.showMinimized();
-        } else {
-            methods.showPopup();
+        if (changedKeys.length) {
+            Object.assign(settings, newSettings);
+            localStorage.setItem(LocalStoreName, JSON.stringify(settings));
+            callback?.(settings, changedKeys);
         }
+        return changedKeys;
     }
 
-    if (settings.console_vars) {
-        Object.assign(global, {...methods, settings, updateSettings});
-    }
-
-    return methods;
+    return {
+        settings,
+        updateSettings
+    };
 }
 
+/** @param {Settings} settings */
 function getStaticContent(settings) {
     /**
      * Removes `<style>` and `</style>` tags are required for IDE syntax highlighting.
