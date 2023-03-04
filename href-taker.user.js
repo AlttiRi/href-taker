@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.10-2023.03.04
+// @version     0.2.11-2023.03.04
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -817,7 +817,20 @@ function getRenders(settings, updateSettings) {
         });
 
         // ------
-
+        const urlComparator = (a, b) => {
+            try {
+                const aUrl = new URL(a);
+                const bUrl = new URL(b);
+                const aDomain = aUrl.hostname.split(".").slice(-2).join(".");
+                const bDomain = bUrl.hostname.split(".").slice(-2).join(".");
+                if (aDomain === bDomain) {
+                    return aUrl.origin.localeCompare(bUrl.origin);
+                }
+                return aDomain.localeCompare(bDomain);
+            } catch (e) {
+                return 1;
+            }
+        };
         function recomputeUrlList() {
             const selector = getSelector();
             urls = parseUrls(selector, {
@@ -847,20 +860,7 @@ function getRenders(settings, updateSettings) {
                 urls = [...new Set(urls)];
             }
             if (settings.sort) {
-                urls = urls.sort((a, b) => {
-                    try {
-                        const aUrl = new URL(a);
-                        const bUrl = new URL(b);
-                        const aDomain = aUrl.hostname.split(".").slice(-2).join(".");
-                        const bDomain = bUrl.hostname.split(".").slice(-2).join(".");
-                        if (aDomain === bDomain) {
-                            return aUrl.origin.localeCompare(bUrl.origin);
-                        }
-                        return aDomain.localeCompare(bDomain);
-                    } catch (e) {
-                        return 1;
-                    }
-                });
+                urls.sort(urlComparator);
             }
             if (settings.reverse) {
                 urls.reverse();
