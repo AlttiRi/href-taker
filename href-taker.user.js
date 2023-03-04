@@ -1153,7 +1153,7 @@ function makeDraggable(element, {handle, onStop: _onStop, onMove, state} = {}) {
             addEventListener("touchmove",   onMove);
             addEventListener("pointerup", reset);
             addEventListener("touchend",  reset);
-        });
+        }, {passive: true});
     });
 }
 function makeResizable(element, props = {}) {
@@ -1206,7 +1206,7 @@ function makeResizable(element, props = {}) {
             addEventListener("touchmove",   onMove);
             addEventListener("pointerup", reset);
             addEventListener("touchend",  reset);
-        });
+        }, {passive: true});
     });
 }
 function storeStateInLS({onMove, onStop, id: lsName, reset, restore}) {
