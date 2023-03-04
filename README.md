@@ -55,7 +55,7 @@ Here is a [demo webpage](https://alttiri.github.io/href-taker/demo) to try this 
 
 ### Filters
 
-To filter the result list use "Only" and "Ignore" inputs.
+To filter the result list use "Only" and "Ignore" inputs. The inputs are case-sensitive.
 
 The result list will have any URL which includes any word from **Only** input and no one from **Ignore** input.
 
