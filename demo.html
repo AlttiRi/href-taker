@@ -78,21 +78,29 @@
     <p><i>Remember, you can move the popup.</i></p>
     <hr>
     <p>
-        By default, it parses URLs from <span onclick="setInputValue('input_selector', 'body')"><code>body</code> selector</span>.
-        You can specify the selector by setting, for example, <span onclick="setInputValue('input_selector', '.content');"><code>.content</code> as <b>Selector</b> input value</span>
-        in Extra Settings.
+        By default, it parses URLs from <span onclick="setInputValue('input_selector', 'body')"><code>body</code></span> element.
+        <br>
+        In <b>Extra Settings</b> you can specify the selector.
+        <br>
+        For example, set <b>Selector</b> input value to <span onclick="setInputValue('input_selector', '.content');"><code>.content</code></span>.
     </p>
     <p>Also note, that, by default, <span onclick="setCheckboxValue('ignore_first_party')">1st party links</span> are not displayed.</p>
 
     <p>
-        To list links, for example, from Twitter and ArtStation put
-        <span onclick="setInputValue('input_only', 'twitter artstation')"><code>twitter artstation</code></span>
-        in <b>Only</b> input.
+        To list links, for example, from Twitter and ArtStation put in <b>Only</b> input:
+        <br>
+        <span onclick="setInputValue('input_only', 'twitter artstation')"><code>twitter artstation</code></span>.
+    </p>
+    <p>
+        To list YouTube videos put in in <b>Only</b> input:
+        <br>
+        <span onclick="setInputValue('input_only', 'youtube.com/shorts youtube.com/watch youtu.be')"><code>youtube.com/shorts youtube.com/watch youtu.be</code></span>.
     </p>
 
     <p>
-        To list everything except example.com and wikipedia.org sites just put
-        <span onclick="setInputValue('input_ignore', 'example.com wikipedia.org')"><code>example.com wikipedia.org</code> in <b>Ignore</b> input</span>.
+        To list everything except example.com and wikipedia.org sites just put in <b>Ignore</b> input:
+        <br>
+        <span onclick="setInputValue('input_ignore', 'example.com wikipedia.org')"><code>example.com wikipedia.org</code></span>.
     </p>
 
     <p>
@@ -104,7 +112,7 @@
     </p>
 
     <hr>
-    <p><b>The below are listed different <i>example posts</i> to parses the URLs from them with the popup.</b></p>
+    <p><b>The below are listed different <i>example posts</i> to parse the URLs from them with the popup.</b></p>
     <hr>
 </div>
 </header>
@@ -273,6 +281,12 @@ I don't own this song.
         [https://en.wikipedia.org/wiki/HTML](https://www.wikipedia.org/wiki/HTML)
         <br>
         [https://www.wikipedia.org/wiki/CSS](https://en.wikipedia.org/wiki/CSS)
+        <br>
+        [lofi hip hop radio - beats to relax/study to](https://youtu.be/jfKfPfyJRdk)
+        <br>
+        [SpaceX Falcon 9 Starlink Group 4-13 launch and landing](https://www.youtube.com/shorts/xuAEv0am9A0)
+        <br>
+        [Starlink Mission](https://www.youtube.com/watch?v=BAkApUbevaA)
     </div>
     <hr>
 </div>
