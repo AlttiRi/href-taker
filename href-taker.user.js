@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.1-2023.03.03
+// @version     0.2.2-2023.03.04
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -13,7 +13,7 @@
 
 
 const global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
-const debug = false;
+const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "alttiri.github.io"].some(h => location.hostname === h);
 
 const {showPopup} = initHrefTaker();
 if (typeof GM_registerMenuCommand === "function") {
@@ -66,8 +66,8 @@ function initHrefTaker() {
             input_ignore_disabled: false,
             include_text_url: true,
             only_text_url: false,
-            console_log: false,
-            console_vars: true,
+            console_log: debug,
+            console_vars: debug,
             unique: true,
             sort: true,
             reverse: false,
@@ -135,7 +135,7 @@ function initHrefTaker() {
     }
 
     if (settings.console_vars) {
-        Object.assign(global, methods);
+        Object.assign(global, {...methods, settings, updateSettings});
     }
 
     return methods;
@@ -284,7 +284,7 @@ function getStaticContent(settings) {
                         Console log
                     </label>
                     <label title="Expose variables to console">
-                        <input type="checkbox" name="console_vars" ${checked(console_vars)}>
+                        <input type="checkbox" name="console_vars" ${checked(console_vars)} ${debug ? "disabled": ""}>
                         Console vars
                     </label>
                 </div>

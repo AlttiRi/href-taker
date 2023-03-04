@@ -16,11 +16,56 @@
         }
         header {
             display: flex;
-            justify-content: center;
-            padding: 45px 0;
+            justify-content: start;
+            padding: 16px;
+            border: 2px solid gray;
+            max-width: 580px;
+        }
+        span[onclick] {
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        span[onclick]:active {
+            text-shadow: gray 0 0 1px;
+            user-select: none;
         }
     </style>
-    <script src="./href-taker.user.js" defer></script>
+    <script defer type="module">
+        if (localStorage.getItem("ujs-href-taker") === null) {
+            localStorage.setItem("ujs-href-taker", JSON.stringify({console_vars: true}));
+        }
+
+        import "./href-taker.user.js";
+
+        const getShadowRoot = () => document.querySelector("#href-taker-outer-shadow-wrapper")?.shadowRoot;
+        globalThis.getShadowRoot = getShadowRoot();
+
+        function setInputValue(name, value) {
+            const shadowRoot = getShadowRoot();
+            if (!shadowRoot) {
+                return;
+            }
+            updateSettings({[name]: value});
+            renderUrlList();
+            getShadowRoot().querySelector(`input[name="${name}"]`).value = value;
+        }
+
+        function setCheckboxValue(name, checked) {
+            const shadowRoot = getShadowRoot();
+            if (!shadowRoot) {
+                return;
+            }
+            if (checked === undefined) {
+                checked = !settings[name];
+            }
+            updateSettings({[name]: checked});
+            renderUrlList();
+            shadowRoot.querySelector(`input[name="${name}"]`).checked = checked;
+        }
+
+        globalThis.setInputValue    = setInputValue;
+        globalThis.setCheckboxValue = setCheckboxValue;
+    </script>
 </head>
 <body>
 
@@ -29,6 +74,35 @@
     <p>Here is the webpage to demonstrate how the <a href="https://github.com/AlttiRi/href-taker/blob/master/href-taker.user.js" target="_blank">userscript</a> works.</p>
     <p>Click on the button to open the popup.</p>
     <p><button onclick="showPopup()">Show popup</button></p>
+    <br>
+    <p><i>Remember, you can move the popup.</i></p>
+    <hr>
+    <p>
+        By default, it parses URLs from <span onclick="setInputValue('input_selector', 'body')"><code>body</code> selector</span>,
+        for example, you can change it to <span onclick="setInputValue('input_selector', '.content');"><code>.content</code> selector</span>
+        in Extra Settings.
+    </p>
+    <p>Also note, that, by default, <span onclick="setCheckboxValue('ignore_first_party')">1st party links</span> are not displayed.</p>
+
+    <p>
+        To list link, for example, links from Twitter and ArtStation put
+        <span onclick="setInputValue('input_only', 'twitter artstation')"><code>twitter artstation</code></span>
+        in <b>Only</b> input.
+    </p>
+
+    <p>
+        To list everything except example.com and wikipedia.org sited just put
+        <span onclick="setInputValue('input_ignore', 'example.com wikipedia.org')"><code>example.com wikipedia.org</code> in <b>Ignore</b> input</span>.
+    </p>
+
+    <p>
+        To list everything make both
+        <span onclick="setInputValue('input_only', '')">input <b>Only</b></span>
+        and
+        <span onclick="setInputValue('input_ignore', '')">input <b>Ignore</b></span>
+        empty.
+    </p>
+
     <hr>
     <p><b>The below are listed different <i>example posts</i> to parses the URLs from them with the popup.</b></p>
     <hr>
@@ -73,6 +147,7 @@
         Text URLs
     </h2>
     <div class="content">
+        <p>Online demo: https://alttiri.github.io/href-taker/demo</p>
         <p>Readme link: https://github.com/AlttiRi/href-taker#hreftaker</p>
         <p>Made by AlttiRi. The profile URL: <span>https://github.com/AlttiRi</span></p>
         <br>
