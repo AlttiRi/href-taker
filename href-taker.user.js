@@ -332,7 +332,7 @@ function getStaticContent(settings) {
                         <input type="checkbox" name="https" ${checked(https)}>
                         https
                     </label>                        
-                    <label title="Case-sensitive matching">
+                    <label title="Case-sensitive matching.\n&quot;SITE.COM/QWE&quot; != &quot;site.com/qwe&quot;">
                         <input type="checkbox" name="case_sensitive" ${checked(case_sensitive)}>
                         Case-sensitive
                     </label>
