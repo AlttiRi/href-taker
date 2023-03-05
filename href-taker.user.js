@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.16-2023.03.05
+// @version     0.2.17-2023.03.05
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -95,7 +95,7 @@ function loadSettings() {
         unique: true,
         sort: true,
         reverse: false,
-        ignore_first_party: true,
+        ignore_first_party: false,
         input_selector: "body",
         input_selector_disabled: false,
         https: true,
@@ -260,7 +260,7 @@ function getStaticContent(settings) {
         </label>
     </fieldset>
     <fieldset>
-        <legend>Controls</legend>  
+        <legend>Controls</legend>
         <div class="control-row">
             <div class="control-row-inner">
                 <button title="From anchors" name="list_button" class="short">List links</button>
@@ -268,7 +268,7 @@ function getStaticContent(settings) {
                     <label title="Include URLs parsed from text">
                         <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
                         Include text
-                    </label>   
+                    </label>
                 </span>
                 <label title="Only URLs parsed from text">
                     <input type="checkbox" name="only_text_url" ${checked(only_text_url)}>
@@ -307,7 +307,7 @@ function getStaticContent(settings) {
                     <label title="Auto list URLs on the pop is shown">
                         <input type="checkbox" name="auto_list" ${checked(auto_list)}>
                         Auto list
-                    </label>                 
+                    </label>
                     <label title="Only unique URLs">
                         <input type="checkbox" name="unique" ${checked(unique)}>
                         Only unique
@@ -320,10 +320,6 @@ function getStaticContent(settings) {
                         <input type="checkbox" name="reverse" ${checked(reverse)}>
                         Reverse
                     </label>
-                    <label title="Don't list 1st-party URLs">
-                        <input type="checkbox" name="ignore_first_party" ${checked(ignore_first_party)}>
-                        No 1st-party
-                    </label>                        
                     <label title="Replace http:// with https://">
                         <input type="checkbox" name="https" ${checked(https)}>
                         https
@@ -331,14 +327,18 @@ function getStaticContent(settings) {
                     <label title="Hide https://www. prefix in the list">
                         <input type="checkbox" name="hide_prefix" ${checked(hide_prefix)}>
                         Hide prefix
-                    </label>                        
-                    <label title="Case-sensitive matching.\n&quot;SITE.COM/QWE&quot; != &quot;site.com/qwe&quot;">
-                        <input type="checkbox" name="case_sensitive" ${checked(case_sensitive)}>
-                        Case-sensitive
                     </label>
                     <label title="Trim unmached closed brackets ], or ) with the followed content. Text URLs only.">
                         <input type="checkbox" name="brackets_trim" ${checked(brackets_trim)}>
                         Trim brackets
+                    </label>
+                    <label title="Don't list 1st-party URLs">
+                        <input type="checkbox" name="ignore_first_party" ${checked(ignore_first_party)}>
+                        No 1st-party
+                    </label>
+                    <label title="Case-sensitive matching.\n&quot;SITE.COM/QWE&quot; != &quot;site.com/qwe&quot;">
+                        <input type="checkbox" name="case_sensitive" ${checked(case_sensitive)}>
+                        Case-sensitive
                     </label>
                 </div>
             </div>
@@ -353,11 +353,11 @@ function getStaticContent(settings) {
 
     </fieldset>
     <fieldset id="result-list-wrapper">
-        <legend id="result-list-header">Result list</legend>            
+        <legend id="result-list-header">Result list</legend>
         <div id="result-list">
             <div id="result-list-prompt">Click here to list URLs...</div>
         </div>
-    </fieldset>      
+    </fieldset>
 </div>`;
     const popupCss = cssFromStyle`
 <style>
