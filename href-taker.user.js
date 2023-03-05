@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.13-2023.03.05
+// @version     0.2.14-2023.03.05
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -12,13 +12,6 @@
 // @noframes
 // ==/UserScript==
 
-//todo do not display www https
-// .invisible {
-//     font-size: 0;
-//     line-height: 0;
-//     display: inline-block;
-//     width: 0;
-//     height: 0;
 
 const global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
 const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "alttiri.github.io"].some(h => location.hostname === h);
@@ -86,6 +79,7 @@ function loadSettings() {
      * @property {boolean} opened
      * @property {boolean} reverse_input_only
      * @property {boolean} case_sensitive
+     * @property {boolean} hide_prefix
      */
 
     /** @type {Settings} */
@@ -112,6 +106,7 @@ function loadSettings() {
         opened: debug,
         reverse_input_only: false,
         case_sensitive: false,
+        hide_prefix: true,
     };
     const LocalStoreName = "ujs-href-taker";
 
@@ -240,7 +235,8 @@ function getStaticContent(settings) {
         brackets_trim,
         // opened,
         // reverse_input_only,
-        case_sensitive
+        case_sensitive,
+        hide_prefix,
     } = settings;
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
@@ -331,6 +327,10 @@ function getStaticContent(settings) {
                     <label title="Replace http:// with https://">
                         <input type="checkbox" name="https" ${checked(https)}>
                         https
+                    </label>
+                    <label title="Hide https://www. prefix in the lins">
+                        <input type="checkbox" name="hide_prefix" ${checked(hide_prefix)}>
+                        Hide prefix
                     </label>                        
                     <label title="Case-sensitive matching.\n&quot;SITE.COM/QWE&quot; != &quot;site.com/qwe&quot;">
                         <input type="checkbox" name="case_sensitive" ${checked(case_sensitive)}>
@@ -361,6 +361,13 @@ function getStaticContent(settings) {
 </div>`;
     const popupCss = cssFromStyle`
 <style>
+.invisible {
+    width: 0;
+    height: 0;
+    font-size: 0;
+    line-height: 0;
+    display: inline-block;
+}
 .hidden {
     display: none!important;
 }
@@ -525,7 +532,13 @@ fieldset, hr {
 
                 let resultHtml = "";
                 for (const url of urls) {
-                    const html = `<div class="url-item"><a href="${url}" target="_blank" rel="noreferrer noopener">${url}</a></div>`;
+                    let linkHtml = url;
+                    if (settings.hide_prefix) {
+                        const {pre, after} = url.match(/(?<pre>^https?:\/\/(www\.)?)?(?<after>.+)/i).groups;
+                        linkHtml = `<span class="invisible">${pre}</span>${after}`;
+                    }
+
+                    const html = `<div class="url-item"><a href="${url}" target="_blank" rel="noreferrer noopener">${linkHtml}</a></div>`;
                     resultHtml += html;
                 }
                 contentElem.insertAdjacentHTML("beforeend", resultHtml);
