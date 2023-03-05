@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.14-2023.03.05
+// @version     0.2.15-2023.03.05
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -534,8 +534,15 @@ fieldset, hr {
                 for (const url of urls) {
                     let linkHtml = url;
                     if (settings.hide_prefix) {
-                        const {pre, after} = url.match(/(?<pre>^https?:\/\/(www\.)?)?(?<after>.+)/i).groups;
-                        linkHtml = `<span class="invisible">${pre}</span>${after}`;
+                        let {pre, after} = url.match(/(?<pre>^https?:\/\/(www\.)?)?(?<after>.+)/i).groups;
+                        try {
+                            if (after.endsWith("/") && new URL(url).pathname === "/") {
+                                after = `${after.slice(0, -1)}<span class="invisible">/</span>`;
+                            }
+                        } catch (e) {
+                            console.error(url, e);
+                        }
+                        linkHtml = `<span class="invisible">${pre || ""}</span>${after}`;
                     }
 
                     const html = `<div class="url-item"><a href="${url}" target="_blank" rel="noreferrer noopener">${linkHtml}</a></div>`;
