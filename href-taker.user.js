@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.15-2023.03.05
+// @version     0.2.16-2023.03.05
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -328,7 +328,7 @@ function getStaticContent(settings) {
                         <input type="checkbox" name="https" ${checked(https)}>
                         https
                     </label>
-                    <label title="Hide https://www. prefix in the lins">
+                    <label title="Hide https://www. prefix in the list">
                         <input type="checkbox" name="hide_prefix" ${checked(hide_prefix)}>
                         Hide prefix
                     </label>                        
