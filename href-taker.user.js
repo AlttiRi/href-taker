@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.17-2023.03.05
+// @version     0.2.18-2023.03.05
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -361,6 +361,10 @@ function getStaticContent(settings) {
 </div>`;
     const popupCss = cssFromStyle`
 <style>
+.url-pad {
+    padding-top: 2px;
+    display: block;
+}
 .invisible {
     width: 0;
     height: 0;
@@ -514,6 +518,7 @@ fieldset, hr {
     function getListHelper(container) {
         const headerElem  = container.querySelector(`#result-list-header`);
         const contentElem = container.querySelector(`#result-list`);
+        const mainHost = url => new URL(url).hostname.split(".").slice(-2).join(".");
         return {
             clearList(addPrompt = false) {
                 headerElem.textContent = "Result list";
@@ -531,6 +536,7 @@ fieldset, hr {
                 headerElem.innerHTML = `Result list (${urls.length}) <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
 
                 let resultHtml = "";
+                let prev = urls[0];
                 for (const url of urls) {
                     let linkHtml = url;
                     if (settings.hide_prefix) {
@@ -543,6 +549,17 @@ fieldset, hr {
                             console.error(url, e);
                         }
                         linkHtml = `<span class="invisible">${pre || ""}</span>${after}`;
+                    }
+
+                    if (settings.sort) {
+                        try {
+                            if (mainHost(prev) !== mainHost(url)) {
+                                resultHtml += `<span class="url-pad"></span>`;
+                            }
+                            prev = url;
+                        } catch (e) {
+                            console.error(url, e);
+                        }
                     }
 
                     const html = `<div class="url-item"><a href="${url}" target="_blank" rel="noreferrer noopener">${linkHtml}</a></div>`;
