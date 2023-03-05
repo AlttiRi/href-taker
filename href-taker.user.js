@@ -13,7 +13,6 @@
 // ==/UserScript==
 
 //todo do not display www https
-// case-sensitive
 // .invisible {
 //     font-size: 0;
 //     line-height: 0;
@@ -85,7 +84,8 @@ function loadSettings() {
      * @property {boolean} minimized
      * @property {boolean} brackets_trim
      * @property {boolean} opened
-     * @property {boolean} reverse_only
+     * @property {boolean} reverse_input_only
+     * @property {boolean} case_sensitive
      */
 
     /** @type {Settings} */
@@ -110,7 +110,8 @@ function loadSettings() {
         minimized: false,
         brackets_trim: true,
         opened: debug,
-        reverse_only: false,
+        reverse_input_only: false,
+        case_sensitive: false,
     };
     const LocalStoreName = "ujs-href-taker";
 
@@ -238,7 +239,8 @@ function getStaticContent(settings) {
         auto_list,
         brackets_trim,
         // opened,
-        reverse_only,
+        // reverse_input_only,
+        case_sensitive
     } = settings;
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
@@ -329,6 +331,10 @@ function getStaticContent(settings) {
                     <label title="Replace http:// with https://">
                         <input type="checkbox" name="https" ${checked(https)}>
                         https
+                    </label>                        
+                    <label title="Case-sensitive matching">
+                        <input type="checkbox" name="case_sensitive" ${checked(case_sensitive)}>
+                        Case-sensitive
                     </label>
                     <label title="Trim unmached closed brackets ], or ) with the followed content. Text URLs only.">
                         <input type="checkbox" name="brackets_trim" ${checked(brackets_trim)}>
@@ -445,8 +451,8 @@ button {
     color: gray;
 }
 
-[data-reverse-only] #input-only-prompt,
-[data-reverse-only] #input-only {
+[data-reverse-input-only] #input-only-prompt,
+[data-reverse-input-only] #input-only {
     text-decoration: line-through;
 }
 
@@ -716,7 +722,7 @@ function getRenders(settings, updateSettings) {
             const MIDDLE_BUTTON = 1;
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
-                updateSettings({reverse_only: !settings.reverse_only});
+                updateSettings({reverse_input_only: !settings.reverse_input_only});
                 updateHtml();
             }
         });
@@ -843,22 +849,36 @@ function getRenders(settings, updateSettings) {
                 bracketsTrim:    settings.brackets_trim,
             });
 
-            const onlyTexts = settings.input_only.trim().split(/\s+/g).filter(o => o);
-            const ignoreTexts = settings.input_ignore.trim().split(/\s+/g).filter(o => o);
+            let onlyTexts = settings.input_only.trim().split(/\s+/g).filter(o => o);
+            let ignoreTexts = settings.input_ignore.trim().split(/\s+/g).filter(o => o);
+            if (!settings.case_sensitive) {
+                onlyTexts = onlyTexts.map(text => text.toLowerCase());
+                ignoreTexts = ignoreTexts.map(text => text.toLowerCase());
+            }
+
+            let matchOnly;
+            let matchIgnore;
+            if (!settings.case_sensitive) {
+                matchOnly   = url =>   onlyTexts.some(text => url.toLowerCase().includes(text));
+                matchIgnore = url => ignoreTexts.some(text => url.toLowerCase().includes(text));
+            } else {
+                matchOnly   = url =>   onlyTexts.some(text => url.includes(text));
+                matchIgnore = url => ignoreTexts.some(text => url.includes(text));
+            }
 
             urls = urls.filter(urlFilter);
             if (settings.https) {
                 urls = urls.map(url => url.startsWith("http://") ? url.replace("http://", "https://"): url);
             }
             if (!settings.input_only_disabled && onlyTexts.length) {
-                if (!settings.reverse_only) {
-                    urls = urls.filter(url =>  onlyTexts.some(text => url.includes(text)));
+                if (!settings.reverse_input_only) {
+                    urls = urls.filter(url =>  matchOnly(url));
                 } else {
-                    urls = urls.filter(url => !onlyTexts.some(text => url.includes(text)));
+                    urls = urls.filter(url => !matchOnly(url));
                 }
             }
             if (!settings.input_ignore_disabled) {
-                urls = urls.filter(url => !ignoreTexts.some(text => url.includes(text)));
+                urls = urls.filter(url => !matchIgnore(url));
             }
             if (settings.unique) {
                 urls = [...new Set(urls)];
