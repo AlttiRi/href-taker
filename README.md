@@ -93,3 +93,8 @@ Extra checkboxes
 Selector
 
 - It defines from which element(s) to parse URLs. By default, it's `body` selector.
+
+---
+
+### See also
+ - [HrefLister](https://github.com/AlttiRi/href-lister)
