@@ -84,6 +84,7 @@ Extra checkboxes
 - **"Only unique"** — to list only unique URLs without duplicates.
 - **"Sort"** — to sort URLs by `hostname`.
 - **"Reverse"** — to revers order the result URLs list.
+- **"Case-sensitive"** — for case-sensitive matching.
 - **"No 1st-party"** — to exclude 1st-party links, and list only 3rd-party ones.
 - **"https"** — to replace `http://` with `https://`.
 - **"Trim brackets"** — to enable extra logic for text URL parsing for links are included `(`,`)`,`[`,`]` characters.
