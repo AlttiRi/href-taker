@@ -55,7 +55,7 @@ Here is a [demo webpage](https://alttiri.github.io/href-taker/demo) to try this 
 
 ### Filters
 
-To filter the result list use "Only" and "Ignore" inputs. The inputs are case-sensitive.
+To filter the result list use "Only" and "Ignore" inputs.
 
 The result list will have any URL which includes any word from **Only** input and no one from **Ignore** input.
 
@@ -84,6 +84,7 @@ Extra checkboxes
 - **"Only unique"** — to list only unique URLs without duplicates.
 - **"Sort"** — to sort URLs by `hostname`.
 - **"Reverse"** — to revers order the result URLs list.
+- **"Case-sensitive"** — for case-sensitive matching.
 - **"No 1st-party"** — to exclude 1st-party links, and list only 3rd-party ones.
 - **"https"** — to replace `http://` with `https://`.
 - **"Trim brackets"** — to enable extra logic for text URL parsing for links are included `(`,`)`,`[`,`]` characters.
@@ -93,3 +94,8 @@ Extra checkboxes
 Selector
 
 - It defines from which element(s) to parse URLs. By default, it's `body` selector.
+
+---
+
+### See also
+ - [HrefLister](https://github.com/AlttiRi/href-lister)
