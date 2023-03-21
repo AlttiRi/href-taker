@@ -14,6 +14,13 @@
             max-width: 1280px;
             padding-bottom: 45px;
         }
+
+        body {
+            display: grid;
+        }
+        body > div {
+            overflow: auto;
+        }
     </style>
     <script defer>
         if (localStorage.getItem("ujs-href-taker") === null) {
