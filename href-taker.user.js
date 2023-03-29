@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.4.2-2023.03.29
+// @version     0.4.3-2023.03.29
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -81,6 +81,9 @@ function loadSettings() {
      * @property {boolean} case_sensitive
      * @property {boolean} hide_prefix
      * @property {boolean} show_tags
+     * @property {boolean} tags_collapsed
+     * @property {boolean} filters_collapsed
+     * @property {boolean} controls_collapsed
      */
 
     /** @type {Settings} */
@@ -109,6 +112,9 @@ function loadSettings() {
         case_sensitive: false,
         hide_prefix: true,
         show_tags: false,
+        tags_collapsed: false,
+        filters_collapsed: false,
+        controls_collapsed: false,
     };
     const LocalStoreName = "ujs-href-taker";
 
@@ -240,6 +246,9 @@ function getStaticContent(settings) {
         case_sensitive,
         hide_prefix,
         show_tags,
+        // tags_collapsed,
+        // filters_collapsed,
+        // controls_collapsed,
     } = settings;
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
@@ -252,12 +261,12 @@ function getStaticContent(settings) {
     </div>
 
     <div id="tags-main">
-        <div class="fieldset-line">
+        <div class="fieldset-line" data-header_name="tags">
             <hr class="pre">
             <span class="legend-like wrap">Tags</span>
             <hr class="after">
         </div>
-        <div class="content">
+        <div class="content" data-content_name="tags">
             <div class="tags">        
                 <span class="tag tag-add"><span class="plus">+</span></span>  
                 <div class="tags-wrapper"></div>     
@@ -268,12 +277,12 @@ function getStaticContent(settings) {
         </div>
     </div>
 
-    <div class="fieldset-line">
+    <div class="fieldset-line" data-header_name="filters">
         <hr class="pre">
         <span class="legend-like wrap">Filters</span>
         <hr class="after">
     </div>
-    <div class="text-inputs-wrapper content">
+    <div class="text-inputs-wrapper content" data-content_name="filters">
         <div class="input-line">
             <label>
                 <span class="input-prompt" id="input-only-prompt">Only</span>
@@ -288,12 +297,12 @@ function getStaticContent(settings) {
         </div>
     </div>
 
-    <div class="fieldset-line">
+    <div class="fieldset-line" data-header_name="controls">
         <hr class="pre">
         <span class="legend-like wrap">Controls</span>
         <hr class="after">
     </div>
-    <div class="content">
+    <div class="content" data-content_name="controls">
         <div class="control-row">
             <div class="control-row-inner">
                 <button title="From anchors" name="list_button" class="short">List links</button>
@@ -401,6 +410,17 @@ function getStaticContent(settings) {
 </div>`;
     const popupCss = cssFromStyle`
 <style>
+
+[data-tags-collapsed] [data-content_name="tags"] {
+    display: none;
+}
+[data-filters-collapsed] [data-content_name="filters"] {
+    display: none;
+}
+[data-controls-collapsed] [data-content_name="controls"] {
+    display: none;
+}
+
 .content {
     padding: 1px 6px;
 }
@@ -1194,6 +1214,17 @@ function getRenders(settings, updateSettings) {
             listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
             void clicked(listBtn);
         });
+
+        // ------
+
+        const headers = [...querySelectorAll(`[data-header_name]`)];
+        for (const header of headers) {
+            header.addEventListener("click", event => {
+                const name = header.dataset.header_name;
+                updateSettings({[name + "_collapsed"]: !settings[name + "_collapsed"]});
+                setSettingsDataAttributes();
+            });
+        }
 
         // ------
 
