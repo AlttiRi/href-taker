@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.3.2-2023.03.29
+// @version     0.4.0-2023.03.29
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -250,20 +250,34 @@ function getStaticContent(settings) {
         <button id="minimize-button">_</button>
         <button id="close-button">X</button>
     </div>
-    <fieldset class="text-inputs-wrapper">
-        <legend id="legend-filters">Filters</legend>
-        <label>
-            <span class="input-prompt" id="input-only-prompt">Only</span>
-            <input id="input-only" type="text" name="input_only" value="${input_only}" ${disabled(input_only_disabled)} spellcheck="false">
-        </label>
-        <hr>
-        <label>
-            <span class="input-prompt" id="input-ignore-prompt">Ignore</span>
-            <input id="input-ignore" type="text" name="input_ignore" value="${input_ignore}" ${disabled(input_ignore_disabled)} spellcheck="false">
-        </label>
-    </fieldset>
-    <fieldset>
-        <legend>Controls</legend>
+    
+    <div class="fieldset-line">
+        <hr class="pre">
+        <span class="legend-like wrap" style="position: relative;">Filters</span>
+        <hr class="after">
+    </div>
+    <div class="text-inputs-wrapper content">
+        <div class="input-line">
+            <label>
+                <span class="input-prompt" id="input-only-prompt">Only</span>
+                <input id="input-only" type="text" name="input_only" value="${input_only}" ${disabled(input_only_disabled)} spellcheck="false">
+            </label>
+        </div>
+        <div class="input-line">
+            <label>
+                <span class="input-prompt" id="input-ignore-prompt">Ignore</span>
+                <input id="input-ignore" type="text" name="input_ignore" value="${input_ignore}" ${disabled(input_ignore_disabled)} spellcheck="false">
+            </label>
+        </div>
+    </div>
+    
+    
+    <div class="fieldset-line">
+        <hr class="pre">
+        <span class="legend-like wrap">Controls</span>
+        <hr class="after">
+    </div>
+    <div class="content">
         <div class="control-row">
             <div class="control-row-inner">
                 <button title="From anchors" name="list_button" class="short">List links</button>
@@ -356,28 +370,80 @@ function getStaticContent(settings) {
                 </label>
             </div>
         </div>
-    </fieldset>
+    </div>
     
-    <fieldset id="tags-fieldset">
-        <legend id="tags-fieldset-legend">Tags</legend>
-        <div class="tags">        
-            <span class="tag tag-add"><span class="plus">+</span></span>  
-            <div class="tags-wrapper"></div>     
-        </div>   
-        <div class="tags-prompt-wrapper hidden">  
-            <div class="tags-prompt"></div>
-        </div>   
-    </fieldset>
+    <div id="tags-fieldset">
+        <div class="fieldset-line">
+            <hr class="pre">
+            <span class="legend-like wrap">Tags</span>
+            <hr class="after">
+        </div>
+        <div class="content">
+            <div class="tags">        
+                <span class="tag tag-add"><span class="plus">+</span></span>  
+                <div class="tags-wrapper"></div>     
+            </div>   
+            <div class="tags-prompt-wrapper hidden">  
+                <div class="tags-prompt"></div>
+            </div>   
+        </div>
+    </div>
     
-    <fieldset id="result-list-wrapper">
-        <legend id="result-list-header">Result list</legend>
+    <div class="fieldset-line">
+        <hr class="pre">
+        <span class="legend-like" id="result-list-header">Result list</span>
+        <hr class="after">
+    </div>    
+    <div id="result-list-wrapper" class="content">
         <div id="result-list">
             <div id="result-list-prompt">Click here to list URLs...</div>
         </div>
-    </fieldset>
+    </div>
 </div>`;
     const popupCss = cssFromStyle`
 <style>
+.content {
+    padding: 1px 6px;
+}
+.input-line {
+    padding-bottom: 3px;
+    padding-top: 3px;
+}
+
+.fieldset-line {
+    padding-top: 2px;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+.fieldset-line .pre {
+    width: 20px;
+    height: 1px;
+    border: 0;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, .25) 70%);
+}
+.fieldset-line .after {
+    height: 1px;
+    flex-grow: 2;
+    border: 0;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, .25) 0%, rgba(0, 0, 0, 0.05) 70%);
+}
+.legend-like {
+    padding: 0 1px;
+    user-select: none;
+}
+.legend-like.wrap:hover {
+    text-shadow: 0 0 1px rgba(0, 0, 0, .25);
+    cursor: pointer;
+}
+
+hr.main {
+  width: 100%;
+  height: 1px;
+  border: 0;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0) 10%, rgba(0, 0, 0, .25), rgba(0, 0, 0, 0) 90%);
+}
+
 #tags-fieldset {
     display: none;
 }
@@ -485,7 +551,8 @@ a {
 }
 #result-list-wrapper {
     width: calc(720px - 24px);
-    padding: 4px 4px 8px 12px;
+    padding-top: 4px;
+    /*padding: 4px 4px 8px 12px;*/
     flex-grow: 1;
     overflow-y: hidden;
 }
@@ -826,7 +893,7 @@ function getRenders(settings, updateSettings) {
                 restore: true,
                 id: "ujs-href-taker-popup-size",
                 onMove(state) {
-                    resultListElem.style.width = (parseInt(state.width) - 24) + "px";
+                    resultListElem.style.width = (parseInt(state.width) - 8) + "px";
                 },
             })
         });
