@@ -251,9 +251,26 @@ function getStaticContent(settings) {
         <button id="close-button">X</button>
     </div>
     
+    <div id="tags-fieldset">
+        <div class="fieldset-line">
+            <hr class="pre">
+            <span class="legend-like wrap">Tags</span>
+            <hr class="after">
+        </div>
+        <div class="content">
+            <div class="tags">        
+                <span class="tag tag-add"><span class="plus">+</span></span>  
+                <div class="tags-wrapper"></div>     
+            </div>   
+            <div class="tags-prompt-wrapper hidden">  
+                <div class="tags-prompt"></div>
+            </div>   
+        </div>
+    </div>
+    
     <div class="fieldset-line">
         <hr class="pre">
-        <span class="legend-like wrap" style="position: relative;">Filters</span>
+        <span class="legend-like wrap">Filters</span>
         <hr class="after">
     </div>
     <div class="text-inputs-wrapper content">
@@ -371,24 +388,7 @@ function getStaticContent(settings) {
             </div>
         </div>
     </div>
-    
-    <div id="tags-fieldset">
-        <div class="fieldset-line">
-            <hr class="pre">
-            <span class="legend-like wrap">Tags</span>
-            <hr class="after">
-        </div>
-        <div class="content">
-            <div class="tags">        
-                <span class="tag tag-add"><span class="plus">+</span></span>  
-                <div class="tags-wrapper"></div>     
-            </div>   
-            <div class="tags-prompt-wrapper hidden">  
-                <div class="tags-prompt"></div>
-            </div>   
-        </div>
-    </div>
-    
+   
     <div class="fieldset-line">
         <hr class="pre">
         <span class="legend-like" id="result-list-header">Result list</span>
@@ -431,6 +431,7 @@ function getStaticContent(settings) {
 .legend-like {
     padding: 0 1px;
     user-select: none;
+    position: relative;
 }
 .legend-like.wrap:hover {
     text-shadow: 0 0 1px rgba(0, 0, 0, .25);
@@ -469,6 +470,7 @@ hr.main {
     border: 1px solid gray;
     border-radius: 3px;
     box-shadow: 0 0 4px gray;
+    z-index: 3;
 }
 .tags {
     display: flex;
@@ -580,7 +582,7 @@ button.long {
 }
 
 button {
-    margin: 4px;
+    margin: 3px;
 }
 .control-row {
    display: flex;
