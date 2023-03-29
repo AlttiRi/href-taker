@@ -285,7 +285,6 @@ function getStaticContent(settings) {
         <div class="control-row">
             <div class="control-row-inner">
                 <button title="Copy URLs separated by space" name="copy_button" class="short">Copy</button>
-                <button title="Close it" name="close_button" class="short">Close</button>
             </div>
             <button title="Show Extra Settings" name="extra_settings_button" class="long">Extra Settings</button>
         </div>
@@ -842,10 +841,8 @@ function getRenders(settings, updateSettings) {
 
         // ------
 
-        const closeButton    = querySelector(`button[name="close_button"]`);
+        const closeButton = querySelector("#close-button");
         closeButton.addEventListener("click", closeShadowContainer);
-        const closeButton2   = querySelector("#close-button");
-        closeButton2.addEventListener("click", closeShadowContainer);
 
         // ------
 
