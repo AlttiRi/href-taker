@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.4.3-2023.03.29
+// @version     0.4.4-2023.03.29
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -330,16 +330,6 @@ function getStaticContent(settings) {
         <div class="hidden" id="extra_settings">
             <hr>
             <div class="control-row">
-                <div class="control-row-inner">
-                    <label title="Log the result list to console">
-                        <input type="checkbox" name="console_log" ${checked(console_log)}>
-                        Console log
-                    </label>
-                    <label title="Expose variables to console">
-                        <input type="checkbox" name="console_vars" ${checked(console_vars)}>
-                        Console vars
-                    </label>
-                </div>
                 <div class="control-row-inner">    
                     <label title="Auto open the popup (or minimized one)">
                         <input type="checkbox" name="auto_open" ${checked(auto_open)}>
@@ -384,6 +374,14 @@ function getStaticContent(settings) {
                     <label title="Show Tags">
                         <input type="checkbox" name="show_tags" ${checked(show_tags)}>
                         Tags
+                    </label>
+                    <label title="Log the result list to console">
+                        <input type="checkbox" name="console_log" ${checked(console_log)}>
+                        Console log
+                    </label>
+                    <label title="Expose variables to console">
+                        <input type="checkbox" name="console_vars" ${checked(console_vars)}>
+                        Console vars
                     </label>
                 </div>
             </div>
