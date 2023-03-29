@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.2.18-2023.03.05
+// @version     0.3.0-2023.03.29
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -80,6 +80,7 @@ function loadSettings() {
      * @property {boolean} reverse_input_only
      * @property {boolean} case_sensitive
      * @property {boolean} hide_prefix
+     * @property {boolean} show_tags
      */
 
     /** @type {Settings} */
@@ -107,6 +108,7 @@ function loadSettings() {
         reverse_input_only: false,
         case_sensitive: false,
         hide_prefix: true,
+        show_tags: false,
     };
     const LocalStoreName = "ujs-href-taker";
 
@@ -237,6 +239,7 @@ function getStaticContent(settings) {
         // reverse_input_only,
         case_sensitive,
         hide_prefix,
+        show_tags,
     } = settings;
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
@@ -340,6 +343,10 @@ function getStaticContent(settings) {
                         <input type="checkbox" name="case_sensitive" ${checked(case_sensitive)}>
                         Case-sensitive
                     </label>
+                    <label title="Show Tags">
+                        <input type="checkbox" name="show_tags" ${checked(show_tags)}>
+                        Tags
+                    </label>
                 </div>
             </div>
             <div class="text-inputs-wrapper">
@@ -350,8 +357,19 @@ function getStaticContent(settings) {
                 </label>
             </div>
         </div>
-
     </fieldset>
+    
+    <fieldset id="tags-fieldset">
+        <legend id="tags-fieldset-legend">Tags</legend>
+        <div class="tags">        
+            <span class="tag tag-add"><span class="plus">+</span></span>  
+            <div class="tags-wrapper"></div>     
+        </div>   
+        <div class="tags-prompt-wrapper hidden">  
+            <div class="tags-prompt"></div>
+        </div>   
+    </fieldset>
+    
     <fieldset id="result-list-wrapper">
         <legend id="result-list-header">Result list</legend>
         <div id="result-list">
@@ -361,6 +379,59 @@ function getStaticContent(settings) {
 </div>`;
     const popupCss = cssFromStyle`
 <style>
+#tags-fieldset {
+    display: none;
+}
+[data-show-tags] #tags-fieldset {
+    display: initial;
+}
+.tags-wrapper {
+    display: contents;
+}
+.tags-prompt-wrapper {
+    position: relative;
+}
+.tags-prompt {
+    position: absolute;
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    padding: 3px;
+    top: 5px;
+    background-color: white;
+    width: 100%;
+    border: 1px solid gray;
+    border-radius: 3px;
+    box-shadow: 0 0 4px gray;
+}
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+.tag {
+    border: 1px solid gray;
+    border-radius: 3px;
+    padding: 2px 4px;
+    user-select: none;
+    cursor: pointer;
+}
+.tag.disabled {
+    color: gray;
+    border-color: gray;
+}
+.plus {
+    pointer-events: none;
+    min-width: 36px;    
+    display: inline-flex;
+    justify-content: center;
+    transition: transform .15s;
+}
+.rotate .plus {
+    transform: rotate(45deg);
+}
+
 .url-pad {
     padding-top: 2px;
     display: block;
@@ -515,6 +586,90 @@ fieldset, hr {
 }
 </style>`;
 
+    function getTagsHelper(container) {
+        const tagsContainer       = container.querySelector(`.tags-wrapper`);
+        const tagsPopupContainer  = container.querySelector(`.tags-prompt`);
+
+        let onUpdateCb = null;
+
+        let tags = [];
+        tagsPopupContainer.addEventListener("click", event => {
+            const tagEl = /** @type {HTMLElement} */ event.target;
+            if (tagEl.classList.contains("tag") && !tagEl.classList.contains("disabled")) {
+                console.log(tagEl.dataset.url);
+                tagsContainer.append(tagEl.cloneNode(true));
+                tags.push(tagEl.dataset.url);
+                tagEl.classList.add("disabled");
+                onUpdateCb?.(tags);
+            }
+        });
+        tagsContainer.addEventListener("click", event => {
+            const tagEl = /** @type {HTMLElement} */ event.target;
+            if (tagEl.classList.contains("tag")) {
+                console.log(tagEl.dataset.url);
+                const popupTag = tagsPopupContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
+                popupTag.classList.remove("disabled");
+                tags = tags.filter(url => url !== tagEl.dataset.url);
+                tagEl.remove();
+                onUpdateCb?.(tags);
+            }
+        });
+
+        const addTagBtn = container.querySelector(".tag-add");
+        const tagsPopupWrapper = container.querySelector(".tags-prompt-wrapper");
+        addTagBtn.addEventListener("click", openTagsPopup);
+        function closeTagsPopup() {
+            addTagBtn.classList.remove("rotate");
+            tagsPopupWrapper.classList.add("hidden");
+            container.removeEventListener("click", closeTagsPopupOnClick);
+        }
+        function closeTagsPopupOnClick(event) {
+            const isTagPopup = event.target.closest(".tags-prompt-wrapper");
+            const isTag = event.target.classList.contains("tag") && !event.target.classList.contains("tag-add");
+            if (!isTagPopup && !isTag) {
+                closeTagsPopup();
+            }
+        }
+        async function openTagsPopup() {
+            if (tagsPopupWrapper.classList.contains("hidden")) {
+                addTagBtn.classList.add("rotate");
+                tagsPopupWrapper.classList.remove("hidden");
+                await sleep();
+                container.addEventListener("click", closeTagsPopupOnClick);
+            }
+        }
+
+        function render(urls, onUpdate) {
+            tagsContainer.innerHTML = "";
+            if (onUpdate) {
+                onUpdateCb = onUpdate;
+            }
+
+            const hostCountMap = {};
+            for (const url of urls) {
+                const host = url.match(/\w+\.\w+(?=\/)/)?.[0];
+                if (!host) {
+                    continue;
+                }
+                hostCountMap[host] = (hostCountMap[host] || 0) + 1;
+            }
+            const urlEntries = Object.entries(hostCountMap)
+                .sort(([k1, v1], [k2, v2]) => {
+                    return v2 - v1;
+                });
+
+            let tagsHtml = "";
+            for (const [k, v] of urlEntries) {
+                tagsHtml += `<span class="tag" title="${v}" data-url="${k}">${k}</span>`;
+            }
+            tagsPopupContainer.innerHTML = tagsHtml;
+        }
+
+        return {
+            render,
+        }
+    }
+
     function getListHelper(container) {
         const headerElem  = container.querySelector(`#result-list-header`);
         const contentElem = container.querySelector(`#result-list`);
@@ -577,6 +732,7 @@ fieldset, hr {
         minimizedHtml, minimizedCss,
         popupHtml, popupCss,
         getListHelper,
+        getTagsHelper,
     };
 }
 
@@ -586,6 +742,7 @@ function getRenders(settings, updateSettings) {
         minimizedHtml, minimizedCss,
         popupHtml, popupCss,
         getListHelper,
+        getTagsHelper,
     } = getStaticContent(settings);
 
     let shadowContainer = null;
@@ -937,11 +1094,27 @@ function getRenders(settings, updateSettings) {
         const listBtn = querySelector(`button[name="list_button"]`);
         const listHelper = getListHelper(shadowContainer);
 
+        const tagsHelper = getTagsHelper(shadowContainer);
+
         function renderUrlList() {
             recomputeUrlList();
             onStateChanged = renderUrlList;
             listHelper.contentElem.removeEventListener("click", renderUrlList);
+            const urlsForTags = settings.case_sensitive ? urls : urls.map(url => url.toLowerCase());
+            tagsHelper.render(urlsForTags, onTagsChanges);
             listHelper.insertUrls(urls);
+        }
+
+        function onTagsChanges(tags) {
+            let urlsFilteredByTags = urls;
+            if (tags.length) {
+                if (settings.case_sensitive) {
+                    urlsFilteredByTags = urls.filter(url => tags.some(tag => url.includes(tag)));
+                } else {
+                    urlsFilteredByTags = urls.filter(url => tags.some(tag => url.toLowerCase().includes(tag)));
+                }
+            }
+            listHelper.insertUrls(urlsFilteredByTags);
         }
 
         listBtn.addEventListener("click", renderUrlList);
