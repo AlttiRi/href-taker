@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.4.0-2023.03.29
+// @version     0.4.1-2023.03.29
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -250,8 +250,8 @@ function getStaticContent(settings) {
         <button id="minimize-button">_</button>
         <button id="close-button">X</button>
     </div>
-    
-    <div id="tags-fieldset">
+
+    <div id="tags-main">
         <div class="fieldset-line">
             <hr class="pre">
             <span class="legend-like wrap">Tags</span>
@@ -267,7 +267,7 @@ function getStaticContent(settings) {
             </div>   
         </div>
     </div>
-    
+
     <div class="fieldset-line">
         <hr class="pre">
         <span class="legend-like wrap">Filters</span>
@@ -287,8 +287,7 @@ function getStaticContent(settings) {
             </label>
         </div>
     </div>
-    
-    
+
     <div class="fieldset-line">
         <hr class="pre">
         <span class="legend-like wrap">Controls</span>
@@ -388,12 +387,12 @@ function getStaticContent(settings) {
             </div>
         </div>
     </div>
-   
+
     <div class="fieldset-line">
         <hr class="pre">
         <span class="legend-like" id="result-list-header">Result list</span>
         <hr class="after">
-    </div>    
+    </div>
     <div id="result-list-wrapper" class="content">
         <div id="result-list">
             <div id="result-list-prompt">Click here to list URLs...</div>
@@ -445,10 +444,10 @@ hr.main {
   background-image: linear-gradient(to right, rgba(0, 0, 0, 0) 10%, rgba(0, 0, 0, .25), rgba(0, 0, 0, 0) 90%);
 }
 
-#tags-fieldset {
+#tags-main {
     display: none;
 }
-[data-show-tags] #tags-fieldset {
+[data-show-tags] #tags-main {
     display: initial;
 }
 .tags-wrapper {
