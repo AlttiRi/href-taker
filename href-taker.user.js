@@ -504,6 +504,7 @@ hr.main {
 .tag.disabled {
     color: gray;
     border-color: gray;
+    opacity: 0.5;
 }
 .plus {
     pointer-events: none;
@@ -746,7 +747,8 @@ fieldset, hr {
 
             let tagsHtml = "";
             for (const [k, v] of urlEntries) {
-                tagsHtml += `<span class="tag" title="${v}" data-url="${k}">${k}</span>`;
+                const style = `background-color: ${getHsl(hashString(k), 90, 5)};`;
+                tagsHtml += `<span class="tag" title="${v}" data-url="${k}" style="${style}">${k}</span>`;
             }
             tagsPopupContainer.innerHTML = tagsHtml;
         }
@@ -1460,7 +1462,25 @@ async function clicked(elem) {
 
 
 
-
+function getHsl(seed, L = 40, dL = 20) {
+    const H = Math.trunc(360 * getRandomValue(seed));
+    const _L = Math.trunc((L + getRandomValue(seed + 1) * dL)) + "%";
+    return `hsl(${H}, 100%, ${_L})`;
+}
+function getRandomValue(seed = Date.now()) {
+    let x = seed + 0x6D2B79F5;
+    x = Math.imul(x ^ x >>> 15, x | 1);
+    x ^= x + Math.imul(x ^ x >>> 7, x | 61);
+    return ((x ^ x >>> 14) >>> 0) / 4294967296;
+}
+function getRandom(seed = Date.now()) { // mulberry32 algo
+    return function() {
+        let x = seed += 0x6D2B79F5;
+        x = Math.imul(x ^ x >>> 15, x | 1);
+        x ^= x + Math.imul(x ^ x >>> 7, x | 61);
+        return ((x ^ x >>> 14) >>> 0) / 4294967296; // 4 * 1024 ** 3;
+    }
+}
 
 // --------------------------
 
