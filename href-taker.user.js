@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.3.0-2023.03.29
+// @version     0.3.1-2023.03.29
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -865,8 +865,6 @@ function getRenders(settings, updateSettings) {
 
         // ------
 
-        let onStateChanged = null;
-
         const checkboxList  = [...querySelectorAll("input[type=checkbox]")];
         const inputList     = [...querySelectorAll("input[type=text]")];
         checkboxList.forEach(checkbox => {
@@ -884,9 +882,12 @@ function getRenders(settings, updateSettings) {
             updateSettings(_settings);
             updateHtml();
         }
+        let isListRendered = false;
         function updateHtml() {
             setSettingsDataAttributes();
-            onStateChanged?.();
+            if (isListRendered) {
+                renderUrlList();
+            }
         }
 
         ["input-only", "input-ignore", "input-selector"].forEach(name => {
@@ -1017,7 +1018,9 @@ function getRenders(settings, updateSettings) {
                 undoUrlsToText(selector);
             }
             urlTexted = !urlTexted;
-            onStateChanged?.();
+            if (isListRendered) {
+                renderUrlList();
+            }
         });
 
         // ------
@@ -1098,11 +1101,11 @@ function getRenders(settings, updateSettings) {
 
         function renderUrlList() {
             recomputeUrlList();
-            onStateChanged = renderUrlList;
             listHelper.contentElem.removeEventListener("click", renderUrlList);
             const urlsForTags = settings.case_sensitive ? urls : urls.map(url => url.toLowerCase());
             tagsHelper.render(urlsForTags, onTagsChanges);
             listHelper.insertUrls(urls);
+            isListRendered = true;
         }
 
         function onTagsChanges(tags) {
