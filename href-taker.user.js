@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.4.5-2023.03.29
+// @version     0.4.6-2023.03.30
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -724,6 +724,26 @@ fieldset, hr {
                 container.addEventListener("click", closeTagsPopupOnClick);
             }
         }
+        addTagBtn.addEventListener("contextmenu", event => {
+            event.preventDefault();
+            const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag:not(.disabled)")];
+            if (tagEls.length) {
+                for (const tagEl of tagEls) {
+                    console.log(tagEl.dataset.url);
+                    tagsContainer.append(tagEl.cloneNode(true));
+                    tags.push(tagEl.dataset.url);
+                    tagEl.classList.add("disabled");
+                }
+            } else {
+                tags = [];
+                const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag.disabled")];
+                for (const tagEl of tagEls) {
+                    tagEl.classList.remove("disabled");
+                }
+                tagsContainer.innerHTML = "";
+            }
+            onUpdateCb?.(tags);
+        });
 
         function render(urls, onUpdate) {
             tags = [];
