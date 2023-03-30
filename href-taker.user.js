@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.0-2023.03.30
+// @version     0.6.1-2023.03.30
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -222,7 +222,7 @@ button:active:focus, .button:active:focus {
     const minimizedHtml = `
 <div id="popup-minimized">
     <div>
-        <span style="padding: 0 4px;">HrefTaker</span>        
+        <span>HrefTaker</span>        
         <button id="open-popup" title="Open popup">O</button>
         <button id="close-popup" title="Close popup">X</button>
     </div>
@@ -237,6 +237,9 @@ button:active:focus, .button:active:focus {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     border: 1px solid gray;
     border-radius: 2px;
+}
+#popup-minimized span {
+    padding: 0 4px;
 }
 </style>`;
 
@@ -323,7 +326,7 @@ button:active:focus, .button:active:focus {
     <div class="content" data-content_name="controls">
         <div class="control-row">
             <div class="control-row-inner">
-                <button title="From anchors" name="list_button" class="short" style="margin-left: 0;">List links</button>
+                <button title="From anchors" name="list_button" class="short btn-left">List links</button>
                 <span id="include-text-url-wrapper">
                     <label title="Include URLs parsed from text">
                         <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
@@ -336,14 +339,14 @@ button:active:focus, .button:active:focus {
                 </label>
             </div>
             <div>
-                <button name="to_text_button" class="long" style="margin-right: 0;">URLs to text</button>
+                <button name="to_text_button" class="long btn-right">URLs to text</button>
             </div>
         </div>
         <div class="control-row">
             <div class="control-row-inner">
-                <button title="Copy URLs separated by space" name="copy_button" class="short" style="margin-left: 0;">Copy</button>
+                <button title="Copy URLs separated by space" name="copy_button" class="short btn-left">Copy</button>
             </div>
-            <button title="Show Extra Settings" name="extra_settings_button" class="long" style="margin-right: 0;">Extra Settings</button>
+            <button title="Show Extra Settings" name="extra_settings_button" class="long btn-right">Extra Settings</button>
         </div>
         <div class="hidden" id="extra_settings">
             <hr>
@@ -426,6 +429,12 @@ button:active:focus, .button:active:focus {
 </div>`;
     const popupCss = cssFromStyle`
 <style>
+.btn-left {
+    margin-left: 0;
+}
+.btn-right {
+    margin-right: 0;
+}
 
 [data-tags-collapsed] [data-content_name="tags"] {
     display: none;
