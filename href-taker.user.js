@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.5-2023.03.30
+// @version     0.6.6-2023.03.30
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -84,6 +84,7 @@ function loadSettings() {
      * @property {boolean} tags_collapsed
      * @property {boolean} filters_collapsed
      * @property {boolean} controls_collapsed
+     * @property {boolean} unselectable
      */
 
     /** @type {Settings} */
@@ -115,6 +116,7 @@ function loadSettings() {
         tags_collapsed: false,
         filters_collapsed: false,
         controls_collapsed: false,
+        unselectable: false,
     };
     const LocalStoreName = "ujs-href-taker";
 
@@ -273,6 +275,7 @@ button.clicked, .button.clicked {
         // tags_collapsed,
         // filters_collapsed,
         // controls_collapsed,
+        unselectable,
     } = settings;
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
@@ -348,6 +351,10 @@ button.clicked, .button.clicked {
         <div class="control-row">
             <div class="control-row-inner">
                 <button title="Copy URLs separated by space" name="copy_button" class="short btn-left">Copy</button>
+                <label title="Unselectable and unsearchable (with Ctrl + F) text in the result URLs list">
+                    <input type="checkbox" name="unselectable" ${checked(unselectable)}>
+                    Ephemeral
+                </label>
             </div>
             <button title="Show Extra Settings" name="extra_settings_button" class="long btn-right">Extra Settings</button>
         </div>
@@ -432,6 +439,20 @@ button.clicked, .button.clicked {
 </div>`;
     const popupCss = cssFromStyle`
 <style>
+[data-text]:after {
+    content: attr(data-text);
+}
+.prefix-space {
+    width: 0;
+    display: inline-block;
+    left: -2px;
+    position: relative;
+}
+
+#extra_settings label {
+    min-width: 120px;
+}
+
 .btn-left {
     margin-left: 0;
 }
@@ -931,14 +952,23 @@ fieldset, hr {
                     let linkHtml = url;
                     if (settings.hide_prefix) {
                         let {pre, after} = url.match(/(?<pre>^https?:\/\/(www\.)?)?(?<after>.+)/i).groups;
+                        let end = "";
                         try {
                             if (after.endsWith("/") && new URL(url).pathname === "/") {
-                                after = `${after.slice(0, -1)}<span class="invisible">/</span>`;
+                                after = after.slice(0, -1);
+                                end = `<span class="invisible">/</span>`;
                             }
                         } catch (e) {
                             console.error(url, e);
                         }
-                        linkHtml = `<span class="invisible">${pre || ""}</span>${after}`;
+                        if (settings.unselectable) {
+                            after = `<span class="visible" data-text="${after}"></span><span class="invisible">${after}</span>`;
+                        }
+                        linkHtml = `<span class="invisible">${pre || ""}</span>${after}${end}`;
+                        if (settings.unselectable) {
+                            const prefixSpace = `<span class="prefix-space">&nbsp;</span>`;
+                            linkHtml = prefixSpace + linkHtml;
+                        }
                     }
 
                     if (settings.sort) {
@@ -1112,12 +1142,16 @@ function getRenders(settings, updateSettings) {
             const inputDataList     =    inputList.map(checkbox => [checkbox.name, checkbox.value]);
             const inputDisabledList =    inputList.map(checkbox => [checkbox.name + "_disabled", checkbox.disabled]);
             const _settings = Object.fromEntries([checkboxDataList, inputDataList, inputDisabledList].flat());
-            updateSettings(_settings);
-            updateHtml();
+            const changedKeys = updateSettings(_settings);
+            updateHtml(changedKeys);
         }
         let isListRendered = false;
-        function updateHtml() {
+        function updateHtml(changedSettingsKeys) {
             setSettingsDataAttributes();
+            if (changedSettingsKeys?.[0] === "unselectable" && changedSettingsKeys.length === 1) {
+                refreshUrlList();
+                return;
+            }
             if (isListRendered) {
                 renderUrlList();
             }
@@ -1199,8 +1233,13 @@ function getRenders(settings, updateSettings) {
 
         const tagsHelper = getTagsHelper(shadowContainer);
 
+        function refreshUrlList() {
+            if (isListRendered) {
+                listHelper.insertUrls(tagsHelper.filter(urls));
+            }
+        }
         function renderUrlList() {
-            recomputeUrlList();
+            reparseUrlList();
             listHelper.contentElem.removeEventListener("click", renderUrlList);
             const urlsForTags = settings.case_sensitive ? urls : urls.map(url => url.toLowerCase());
             tagsHelper.render(urlsForTags, onTagsChanges);
@@ -1301,7 +1340,7 @@ function getRenders(settings, updateSettings) {
                 return 1;
             }
         };
-        function recomputeUrlList() {
+        function reparseUrlList() {
             const selector = getSelector();
             urls = parseUrls(selector, {
                 includeTextUrls: settings.include_text_url,
