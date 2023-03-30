@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.4.8-2023.03.30
+// @version     0.4.9-2023.03.30
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -681,25 +681,27 @@ fieldset, hr {
         let tags = [];
         tagsPopupContainer.addEventListener("click", event => {
             const tagEl = /** @type {HTMLElement} */ event.target;
-            if (tagEl.classList.contains("tag") && !tagEl.classList.contains("disabled")) {
-                console.log(tagEl.dataset.url);
-                tagsContainer.append(tagEl.cloneNode(true));
-                tags.push(tagEl.dataset.url);
-                tagEl.classList.add("disabled");
-                onUpdateCb?.(tags);
+            if (!tagEl.classList.contains("tag") || tagEl.classList.contains("disabled")) {
+                return;
             }
+            console.log(tagEl.dataset.url);
+            tagsContainer.append(tagEl.cloneNode(true));
+            tags.push(tagEl.dataset.url);
+            tagEl.classList.add("disabled");
+            onUpdateCb?.(tags);
         });
         tagsContainer.addEventListener("click", event => {
             const tagEl = /** @type {HTMLElement} */ event.target;
-            if (tagEl.classList.contains("tag")) {
-                console.log(tagEl.dataset.url);
-                const popupTag = tagsPopupContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
-                popupTag.classList.remove("disabled");
-                tags = tags.filter(url => url !== tagEl.dataset.url);
-                tagEl.remove();
-                updateAddTagBtn();
-                onUpdateCb?.(tags);
+            if (!tagEl.classList.contains("tag")) {
+                return;
             }
+            console.log(tagEl.dataset.url);
+            const popupTag = tagsPopupContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
+            popupTag.classList.remove("disabled");
+            tags = tags.filter(url => url !== tagEl.dataset.url);
+            tagEl.remove();
+            updateAddTagBtn();
+            onUpdateCb?.(tags);
         });
 
         tagsContainer.addEventListener("contextmenu", event => {
