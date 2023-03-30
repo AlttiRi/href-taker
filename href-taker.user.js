@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.2-2023.03.30
+// @version     0.6.3-2023.03.30
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -215,6 +215,9 @@ button:hover, .button:hover {
     background-color: rgba(0, 0, 0, 0.03);
 }
 button:active:focus, .button:active:focus {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+button.clicked, .button.clicked {
     background-color: rgba(0, 0, 0, 0.1);
 }
 </style>`;
@@ -834,7 +837,6 @@ fieldset, hr {
             const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag:not(.disabled)")];
             if (tagEls.length) {
                 for (const tagEl of tagEls) {
-                    console.log(tagEl.dataset.url);
                     tagsContainer.append(tagEl.cloneNode(true));
                     tags.push(tagEl.dataset.url);
                     tagEl.classList.add("disabled");
@@ -881,8 +883,21 @@ fieldset, hr {
             tagsEls.forEach(tag => tag.style.backgroundColor = tag.dataset.color);
         }
 
+        function filter(urls) {
+            let urlsFilteredByTags = urls;
+            if (tags.length) {
+                if (settings.case_sensitive) {
+                    urlsFilteredByTags = urls.filter(url => tags.some(tag => url.includes(tag)));
+                } else {
+                    urlsFilteredByTags = urls.filter(url => tags.some(tag => url.toLowerCase().includes(tag)));
+                }
+            }
+            return urlsFilteredByTags;
+        }
+
         return {
             render,
+            filter,
         }
     }
 
@@ -1167,26 +1182,56 @@ function getRenders(settings, updateSettings) {
         }
 
         // ------
+
         let urls = [];
         if (settings.console_vars) {
             global.urls = urls;
         }
+
+        // ------
+
+        const listBtn = querySelector(`button[name="list_button"]`);
+        const listHelper = getListHelper(shadowContainer);
+
+        const tagsHelper = getTagsHelper(shadowContainer);
+
+        function renderUrlList() {
+            recomputeUrlList();
+            listHelper.contentElem.removeEventListener("click", renderUrlList);
+            const urlsForTags = settings.case_sensitive ? urls : urls.map(url => url.toLowerCase());
+            tagsHelper.render(urlsForTags, onTagsChanges);
+            listHelper.insertUrls(urls);
+            isListRendered = true;
+        }
+        function onTagsChanges() {
+            listHelper.insertUrls(tagsHelper.filter(urls));
+        }
+
+        listBtn.addEventListener("click", renderUrlList);
+        listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
+        listBtn.addEventListener("contextmenu", event => {
+            event.preventDefault();
+            listHelper.clearList(true);
+            listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
+            void clicked(listBtn);
+        });
+
         // ------
 
         const copyButton = querySelector(`button[name="copy_button"]`);
         copyButton.addEventListener("click", event => {
-            void navigator.clipboard.writeText(urls.join(" "));
+            void navigator.clipboard.writeText(tagsHelper.filter(urls).join(" "));
         });
         copyButton.addEventListener("contextmenu", event => {
             event.preventDefault();
-            void navigator.clipboard.writeText(urls.join("\n"));
+            void navigator.clipboard.writeText(tagsHelper.filter(urls).join("\n"));
             void clicked(copyButton);
         });
         copyButton.addEventListener("pointerdown", event => {
             const MIDDLE_BUTTON = 1;
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
-                void navigator.clipboard.writeText(getCodeArrays(urls));
+                void navigator.clipboard.writeText(getCodeArrays(tagsHelper.filter(urls)));
                 void clicked(copyButton);
             }
         });
@@ -1308,41 +1353,6 @@ function getRenders(settings, updateSettings) {
             }
         }
 
-        const listBtn = querySelector(`button[name="list_button"]`);
-        const listHelper = getListHelper(shadowContainer);
-
-        const tagsHelper = getTagsHelper(shadowContainer);
-
-        function renderUrlList() {
-            recomputeUrlList();
-            listHelper.contentElem.removeEventListener("click", renderUrlList);
-            const urlsForTags = settings.case_sensitive ? urls : urls.map(url => url.toLowerCase());
-            tagsHelper.render(urlsForTags, onTagsChanges);
-            listHelper.insertUrls(urls);
-            isListRendered = true;
-        }
-
-        function onTagsChanges(tags) {
-            let urlsFilteredByTags = urls;
-            if (tags.length) {
-                if (settings.case_sensitive) {
-                    urlsFilteredByTags = urls.filter(url => tags.some(tag => url.includes(tag)));
-                } else {
-                    urlsFilteredByTags = urls.filter(url => tags.some(tag => url.toLowerCase().includes(tag)));
-                }
-            }
-            listHelper.insertUrls(urlsFilteredByTags);
-        }
-
-        listBtn.addEventListener("click", renderUrlList);
-        listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
-        listBtn.addEventListener("contextmenu", event => {
-            event.preventDefault();
-            listHelper.clearList(true);
-            listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
-            void clicked(listBtn);
-        });
-
         // ------
 
         const headers = [...querySelectorAll(`[data-header_name]`)];
@@ -1361,6 +1371,7 @@ function getRenders(settings, updateSettings) {
         }
         if (settings.console_vars) {
             Object.assign(global, {renderUrlList});
+            Object.assign(global, {filterTags: tagsHelper.filter});
         }
 
         // ------
@@ -1581,7 +1592,10 @@ function sleep(ms) {
 }
 
 async function clicked(elem) {
+    elem.classList.add("clicked");
     elem.blur();
+    await sleep(125);
+    elem.classList.remove("clicked");
 }
 
 // --------------------------
