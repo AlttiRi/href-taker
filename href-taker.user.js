@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.5.0-2023.03.30
+// @version     0.6.0-2023.03.30
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -199,12 +199,30 @@ function getStaticContent(settings) {
 #shadow-content-wrapper > * {
     pointer-events: all;
 }
+button, .button {
+    min-width: 24px;
+    background-color: white;
+    border: 1px solid gray;
+    padding: 2px;
+    border-radius: 3px;
+    outline: none !important;
+}
+button:focus:not(.button-no-outline), .button:focus:not(.button-no-outline) {
+    border: 1px solid black;
+}
+
+button:hover, .button:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+button:active:focus, .button:active:focus {
+    background-color: rgba(0, 0, 0, 0.1);
+}
 </style>`;
 
     const minimizedHtml = `
 <div id="popup-minimized">
     <div>
-        HrefTaker
+        <span style="padding: 0 4px;">HrefTaker</span>        
         <button id="open-popup" title="Open popup">O</button>
         <button id="close-popup" title="Close popup">X</button>
     </div>
@@ -268,7 +286,7 @@ function getStaticContent(settings) {
         </div>
         <div class="content" data-content_name="tags">
             <div class="tags">        
-                <span class="tag tag-add"><span class="plus">+</span></span>  
+                <span class="tag tag-add button button-no-outline" tabindex="0"><span class="plus">+</span></span>  
                 <div class="tags-wrapper"></div>     
             </div>   
             <div class="tags-prompt-wrapper hidden">  
@@ -305,7 +323,7 @@ function getStaticContent(settings) {
     <div class="content" data-content_name="controls">
         <div class="control-row">
             <div class="control-row-inner">
-                <button title="From anchors" name="list_button" class="short">List links</button>
+                <button title="From anchors" name="list_button" class="short" style="margin-left: 0;">List links</button>
                 <span id="include-text-url-wrapper">
                     <label title="Include URLs parsed from text">
                         <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
@@ -318,14 +336,14 @@ function getStaticContent(settings) {
                 </label>
             </div>
             <div>
-                <button name="to_text_button" class="long">URLs to text</button>
+                <button name="to_text_button" class="long" style="margin-right: 0;">URLs to text</button>
             </div>
         </div>
         <div class="control-row">
             <div class="control-row-inner">
-                <button title="Copy URLs separated by space" name="copy_button" class="short">Copy</button>
+                <button title="Copy URLs separated by space" name="copy_button" class="short" style="margin-left: 0;">Copy</button>
             </div>
-            <button title="Show Extra Settings" name="extra_settings_button" class="long">Extra Settings</button>
+            <button title="Show Extra Settings" name="extra_settings_button" class="long" style="margin-right: 0;">Extra Settings</button>
         </div>
         <div class="hidden" id="extra_settings">
             <hr>
@@ -670,9 +688,6 @@ fieldset, hr {
     border-color: aliceblue;
 }
 
-.clicked {
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-}
 </style>`;
 
     function getTagsHelper(container) {
@@ -806,6 +821,7 @@ fieldset, hr {
 
         addTagBtn.addEventListener("contextmenu", event => {
             event.preventDefault();
+            void clicked(addTagBtn);
             const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag:not(.disabled)")];
             if (tagEls.length) {
                 for (const tagEl of tagEls) {
@@ -1554,9 +1570,7 @@ function sleep(ms) {
 }
 
 async function clicked(elem) {
-    elem.classList.add("clicked");
-    await sleep(120);
-    elem.classList.remove("clicked");
+    elem.blur();
 }
 
 // --------------------------
