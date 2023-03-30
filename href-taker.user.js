@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.4-2023.03.30
+// @version     0.6.5-2023.03.30
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -518,6 +518,7 @@ hr.main {
     border-radius: 3px;
     box-shadow: 0 0 4px gray;
     z-index: 3;
+    min-height: 32px;
 }
 .tags {
     display: flex;
