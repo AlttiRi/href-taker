@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.6-2023.03.30
+// @version     0.6.7-2023.03.30
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -556,7 +556,7 @@ hr.main {
 .tag:after {
     content: attr(data-url);
 }
-.tag.disabled.i {
+.tag.disabled.inactive {
      opacity: 0.4;
 }
 .tag.disabled {
@@ -759,7 +759,7 @@ fieldset, hr {
             }
             const popupTag = tagsPopupContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
             popupTag.classList.remove("disabled");
-            popupTag.classList.remove("i");
+            popupTag.classList.remove("inactive");
             tags = tags.filter(url => url !== tagEl.dataset.url);
             tagEl.remove();
             updateAddTagBtn();
@@ -776,10 +776,10 @@ fieldset, hr {
             const disabled = tagEl.classList.toggle("disabled");
             if (disabled) {
                 tags = tags.filter(url => url !== tagEl.dataset.url);
-                popupTag.classList.add("i");
+                popupTag.classList.add("inactive");
             } else {
                 tags.push(tagEl.dataset.url);
-                popupTag.classList.remove("i");
+                popupTag.classList.remove("inactive");
             }
             updateAddTagBtn();
             onUpdateCb?.(tags);
@@ -794,16 +794,16 @@ fieldset, hr {
             if (!inList) {
                 tagEl.classList.add("disabled");
                 tagsContainer.append(tagEl.cloneNode(true));
-                tagEl.classList.add("i");
+                tagEl.classList.add("inactive");
             } else {
                 const listTag = tagsContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
                 const disabled = listTag.classList.toggle("disabled");
                 if (disabled) {
                     tags = tags.filter(url => url !== listTag.dataset.url);
-                    tagEl.classList.add("i");
+                    tagEl.classList.add("inactive");
                 } else {
                     tags.push(listTag.dataset.url);
-                    tagEl.classList.remove("i");
+                    tagEl.classList.remove("inactive");
                 }
             }
             updateAddTagBtnTitle();
@@ -851,7 +851,7 @@ fieldset, hr {
             const popupTags = [...tagsPopupWrapper.querySelectorAll(".tag")];
             const total = popupTags.length;
             const selected = popupTags.filter(t => t.classList.contains("disabled")).length;
-            const inactive = popupTags.filter(t => t.classList.contains("i")).length;
+            const inactive = popupTags.filter(t => t.classList.contains("inactive")).length;
             const inactiveText = inactive ? ` (${selected - inactive})` : "";
             addTagBtn.title = `${selected}${inactiveText} of ${total}`;
         }
