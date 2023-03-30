@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.4.7-2023.03.30
+// @version     0.4.8-2023.03.30
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -700,6 +700,22 @@ fieldset, hr {
                 updateAddTagBtn();
                 onUpdateCb?.(tags);
             }
+        });
+
+        tagsContainer.addEventListener("contextmenu", event => {
+            const tagEl = /** @type {HTMLElement} */ event.target;
+            if (!tagEl.classList.contains("tag")) {
+                return;
+            }
+            event.preventDefault();
+            const disabled = tagEl.classList.toggle("disabled");
+            if (disabled) {
+                tags = tags.filter(url => url !== tagEl.dataset.url);
+            } else {
+                tags.push(tagEl.dataset.url);
+            }
+            updateAddTagBtn();
+            onUpdateCb?.(tags);
         });
 
         const addTagBtn        = container.querySelector(".tag-add");
