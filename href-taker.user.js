@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.4.9-2023.03.30
+// @version     0.4.10-2023.03.30
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -501,10 +501,13 @@ hr.main {
     user-select: none;
     cursor: pointer;
 }
+.tag.disabled.i {
+     opacity: 0.4;
+}
 .tag.disabled {
     color: gray;
     border-color: gray;
-    opacity: 0.5;
+    opacity: 0.6;
 }
 .plus {
     pointer-events: none;
@@ -681,13 +684,20 @@ fieldset, hr {
         let tags = [];
         tagsPopupContainer.addEventListener("click", event => {
             const tagEl = /** @type {HTMLElement} */ event.target;
-            if (!tagEl.classList.contains("tag") || tagEl.classList.contains("disabled")) {
+            if (!tagEl.classList.contains("tag")) {
                 return;
             }
-            console.log(tagEl.dataset.url);
-            tagsContainer.append(tagEl.cloneNode(true));
-            tags.push(tagEl.dataset.url);
-            tagEl.classList.add("disabled");
+            const disabled = tagEl.classList.contains("disabled");
+            if (disabled) {
+                const listTag = tagsContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
+                listTag.remove();
+                tags = tags.filter(url => url !== tagEl.dataset.url);
+            } else {
+                tagsContainer.append(tagEl.cloneNode(true));
+                tags.push(tagEl.dataset.url);
+            }
+            tagEl.classList.toggle("disabled");
+
             onUpdateCb?.(tags);
         });
         tagsContainer.addEventListener("click", event => {
@@ -695,9 +705,9 @@ fieldset, hr {
             if (!tagEl.classList.contains("tag")) {
                 return;
             }
-            console.log(tagEl.dataset.url);
             const popupTag = tagsPopupContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
             popupTag.classList.remove("disabled");
+            popupTag.classList.remove("i");
             tags = tags.filter(url => url !== tagEl.dataset.url);
             tagEl.remove();
             updateAddTagBtn();
@@ -710,13 +720,41 @@ fieldset, hr {
                 return;
             }
             event.preventDefault();
+            const popupTag = tagsPopupContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
             const disabled = tagEl.classList.toggle("disabled");
             if (disabled) {
                 tags = tags.filter(url => url !== tagEl.dataset.url);
+                popupTag.classList.add("i");
             } else {
                 tags.push(tagEl.dataset.url);
+                popupTag.classList.remove("i");
             }
             updateAddTagBtn();
+            onUpdateCb?.(tags);
+        });
+        tagsPopupContainer.addEventListener("contextmenu", event => {
+            const tagEl = /** @type {HTMLElement} */ event.target;
+            if (!tagEl.classList.contains("tag")) {
+                return;
+            }
+            event.preventDefault();
+            const inList = tagEl.classList.contains("disabled");
+            if (!inList) {
+                tagEl.classList.add("disabled");
+                tagsContainer.append(tagEl.cloneNode(true));
+                tagEl.classList.add("i");
+            } else {
+                const listTag = tagsContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
+                const disabled = listTag.classList.toggle("disabled");
+                if (disabled) {
+                    tags = tags.filter(url => url !== listTag.dataset.url);
+                    tagEl.classList.add("i");
+                } else {
+                    tags.push(listTag.dataset.url);
+                    tagEl.classList.remove("i");
+                }
+            }
+
             onUpdateCb?.(tags);
         });
 
