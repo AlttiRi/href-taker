@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.4.6-2023.03.30
+// @version     0.4.7-2023.03.30
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -697,17 +697,20 @@ fieldset, hr {
                 popupTag.classList.remove("disabled");
                 tags = tags.filter(url => url !== tagEl.dataset.url);
                 tagEl.remove();
+                updateAddTagBtn();
                 onUpdateCb?.(tags);
             }
         });
 
-        const addTagBtn = container.querySelector(".tag-add");
+        const addTagBtn        = container.querySelector(".tag-add");
+        const addTagBtnContent = container.querySelector(".tag-add span");
         const tagsPopupWrapper = container.querySelector(".tags-prompt-wrapper");
         addTagBtn.addEventListener("click", openTagsPopup);
         function closeTagsPopup() {
             addTagBtn.classList.remove("rotate");
             tagsPopupWrapper.classList.add("hidden");
             container.removeEventListener("click", closeTagsPopupOnClick);
+            updateAddTagBtn();
         }
         function closeTagsPopupOnClick(event) {
             const isTagPopup = event.target.closest(".tags-prompt-wrapper");
@@ -720,10 +723,22 @@ fieldset, hr {
             if (tagsPopupWrapper.classList.contains("hidden")) {
                 addTagBtn.classList.add("rotate");
                 tagsPopupWrapper.classList.remove("hidden");
+                updateAddTagBtn();
                 await sleep();
                 container.addEventListener("click", closeTagsPopupOnClick);
             }
         }
+
+        function updateAddTagBtn() {
+            const isClosed = tagsPopupWrapper.classList.contains("hidden");
+            const isAllTagsSelected = tagsPopupWrapper.querySelector(".tag:not(.disabled)") === null;
+            if (isClosed && isAllTagsSelected) {
+                addTagBtnContent.textContent = "–";
+            } else {
+                addTagBtnContent.textContent = "+";
+            }
+        }
+
         addTagBtn.addEventListener("contextmenu", event => {
             event.preventDefault();
             const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag:not(.disabled)")];
@@ -742,6 +757,7 @@ fieldset, hr {
                 }
                 tagsContainer.innerHTML = "";
             }
+            updateAddTagBtn();
             onUpdateCb?.(tags);
         });
 
