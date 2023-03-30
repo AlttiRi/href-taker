@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.1-2023.03.30
+// @version     0.6.2-2023.03.30
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -873,10 +873,12 @@ fieldset, hr {
 
             let tagsHtml = "";
             for (const [k, v] of urlEntries) {
-                const style = `background-color: ${getHsl(hashString(k), 90, 5)};`;
-                tagsHtml += `<span class="tag" title="${v}" data-url="${k}" style="${style}">${k}</span>`;
+                const color = getHsl(hashString(k), 90, 5);
+                tagsHtml += `<span class="tag" title="${v}" data-url="${k}" data-color="${color}">${k}</span>`;
             }
             tagsPopupContainer.innerHTML = tagsHtml;
+            const tagsEls = [...tagsPopupContainer.querySelectorAll(`.tag[data-color]`)];
+            tagsEls.forEach(tag => tag.style.backgroundColor = tag.dataset.color);
         }
 
         return {
