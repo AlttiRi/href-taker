@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.7-2023.03.30
+// @version     0.6.8-2023.03.31
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -601,6 +601,9 @@ hr.main {
 a {
     text-decoration: none;
 }
+.url-item.clicked {
+    background-color: #eeeeee55;
+}
 
 /*:root {*/
 /*  --width: 720px;*/
@@ -926,10 +929,18 @@ fieldset, hr {
         }
     }
 
-    function getListHelper(container) {
+    function getListHelper(container, init = true) {
         const headerElem  = container.querySelector(`#result-list-header`);
         const contentElem = container.querySelector(`#result-list`);
         const mainHost = url => new URL(url).hostname.split(".").slice(-2).join(".");
+        if (init) {
+            contentElem.addEventListener("click", event => {
+                if (!event.target.classList.contains("visible")) {
+                    return;
+                }
+                event.target.closest(".url-item").classList.add("clicked");
+            });
+        }
         return {
             clearList(addPrompt = false) {
                 headerElem.textContent = "Result list";
@@ -1229,7 +1240,7 @@ function getRenders(settings, updateSettings) {
         // ------
 
         const listBtn = querySelector(`button[name="list_button"]`);
-        const listHelper = getListHelper(shadowContainer);
+        const listHelper = getListHelper(shadowContainer, true);
 
         const tagsHelper = getTagsHelper(shadowContainer);
 
