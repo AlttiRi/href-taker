@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.9-2023.03.31
+// @version     0.6.10-2023.03.31
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -602,7 +602,7 @@ a {
     text-decoration: none;
 }
 .url-item.clicked {
-    background-color: #eeeeee55;
+    background-color: #eeeeee99;
 }
 
 /*:root {*/
@@ -929,18 +929,26 @@ fieldset, hr {
         }
     }
 
-    function getListHelper(container, init = true) {
+    function getListHelper(container) {
         const headerElem  = container.querySelector(`#result-list-header`);
         const contentElem = container.querySelector(`#result-list`);
         const mainHost = url => new URL(url).hostname.split(".").slice(-2).join(".");
-        if (init) {
-            contentElem.addEventListener("click", event => {
-                if (!event.target.classList.contains("visible")) {
-                    return;
-                }
-                event.target.closest(".url-item").classList.add("clicked");
-            });
-        }
+
+        const clickedUrls = new Set();
+        contentElem.addEventListener("click", event => {
+            if (!event.target.classList.contains("visible")) {
+                return;
+            }
+            const urlItem = event.target.closest(".url-item");
+            urlItem.classList.add("clicked");
+            const url = urlItem.querySelector("a").href;
+            clickedUrls.add(url);
+            const dupLinks = [...contentElem.querySelectorAll(`.url-item:not(.clicked) a[href="${url}"]`)];
+            for (const dupLink of dupLinks) {
+                dupLink.closest(".url-item").classList.add("clicked");
+            }
+        });
+
         return {
             clearList(addPrompt = false) {
                 headerElem.textContent = "Result list";
@@ -975,7 +983,7 @@ fieldset, hr {
                         if (settings.unselectable) {
                             after = `<span class="visible" data-text="${after}"></span><span class="invisible">${after}</span>`;
                         } else {
-                            after = `<span class="visible"">${after}</span>`;
+                            after = `<span class="visible">${after}</span>`;
                         }
                         linkHtml = `<span class="invisible">${pre || ""}</span>${after}${end}`;
                         if (settings.unselectable) {
@@ -994,8 +1002,8 @@ fieldset, hr {
                             console.error(url, e);
                         }
                     }
-
-                    const html = `<div class="url-item"><a href="${url}" target="_blank" rel="noreferrer noopener">${linkHtml}</a></div>`;
+                    const clicked = clickedUrls.has(url) ? " clicked" : "";
+                    const html = `<div class="url-item${clicked}"><a href="${url}" target="_blank" rel="noreferrer noopener">${linkHtml}</a></div>`;
                     resultHtml += html;
                 }
                 contentElem.insertAdjacentHTML("beforeend", resultHtml);
@@ -1242,7 +1250,7 @@ function getRenders(settings, updateSettings) {
         // ------
 
         const listBtn = querySelector(`button[name="list_button"]`);
-        const listHelper = getListHelper(shadowContainer, true);
+        const listHelper = getListHelper(shadowContainer);
 
         const tagsHelper = getTagsHelper(shadowContainer);
 
