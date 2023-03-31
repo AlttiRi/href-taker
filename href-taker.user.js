@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.8-2023.03.31
+// @version     0.6.9-2023.03.31
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -974,6 +974,8 @@ fieldset, hr {
                         }
                         if (settings.unselectable) {
                             after = `<span class="visible" data-text="${after}"></span><span class="invisible">${after}</span>`;
+                        } else {
+                            after = `<span class="visible"">${after}</span>`;
                         }
                         linkHtml = `<span class="invisible">${pre || ""}</span>${after}${end}`;
                         if (settings.unselectable) {
