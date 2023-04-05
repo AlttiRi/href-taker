@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.10-2023.03.31
+// @version     0.6.11-2023.04.05
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1706,6 +1706,7 @@ function makeDraggable(element, {handle, onStop: _onStop, onMove, state} = {}) {
 
     handle = handle || element;
     handle.style["user-select"] = "none";
+    handle.style["touch-action"] = "none";
     element.style.position = "absolute";
 
     ["pointerdown", "touchstart"].forEach(event => {
@@ -1754,7 +1755,7 @@ function makeResizable(element, props = {}) {
     lrCorner.style.cssText =
         `width: ${size}px; height: ${size}px; border-radius: ${(size / 2)}px;` +
         `bottom: ${-(size / 2)}px; right: ${-(size / 2)}px; ` +
-        `position: absolute; background-color: transparent; cursor: se-resize;`;
+        `position: absolute; background-color: transparent; cursor: se-resize; touch-action: none;`;
     element.append(lrCorner);
 
     ["pointerdown", "touchstart"].forEach(event => {
