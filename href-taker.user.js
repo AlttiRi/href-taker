@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.12-2023.04.05
+// @version     0.6.13-2023.04.05
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1755,18 +1755,19 @@ function makeResizable(element, props = {}) {
     lrCorner.style.cssText =
         `width: ${size}px; height: ${size}px; border-radius: ${(size / 2)}px;` +
         `bottom: ${-(size / 2)}px; right: ${-(size / 2)}px; ` +
-        `position: absolute; background-color: transparent; cursor: se-resize;`;
+        `position: absolute; background-color: transparent; cursor: se-resize; touch-action: none;`;
     element.append(lrCorner);
 
     ["pointerdown", "touchstart"].forEach(event => {
         lrCorner.addEventListener(event,event => {
-            event.cancelable && event.preventDefault();
+            event.cancelable && event.preventDefault(); // Do not select popup's inner text.
             event = event.targetTouches?.[0] || event;
             const offsetX = event.clientX - element.offsetLeft - parseInt(getComputedStyle(element).width);
             const offsetY = event.clientY - element.offsetTop  - parseInt(getComputedStyle(element).height);
 
             let state;
             function onMove(event) {
+                event.cancelable && event.preventDefault(); // FF `touchmove` fix
                 event = event.targetTouches?.[0] || event;
                 let x = event.clientX - element.offsetLeft - offsetX;
                 let y = event.clientY - element.offsetTop  - offsetY;
@@ -1786,7 +1787,7 @@ function makeResizable(element, props = {}) {
                 state && _onStop?.(state);
             }
             addEventListener("pointermove", onMove);
-            addEventListener("touchmove",   onMove, {passive: true});
+            addEventListener("touchmove",   onMove, {passive: false});
             addEventListener("pointerup", onEnd);
             addEventListener("touchend",  onEnd);
         }, {passive: false});
