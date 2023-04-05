@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.11-2023.04.05
+// @version     0.6.12-2023.04.05
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1732,7 +1732,7 @@ function makeDraggable(element, {handle, onStop: _onStop, onMove, state} = {}) {
                 state && _onStop?.(state);
             }
             addEventListener("pointermove", onMove);
-            addEventListener("touchmove",   onMove);
+            addEventListener("touchmove",   onMove, {passive: true});
             addEventListener("pointerup", onEnd);
             addEventListener("touchend",  onEnd);
         }, {passive: true});
@@ -1741,7 +1741,7 @@ function makeDraggable(element, {handle, onStop: _onStop, onMove, state} = {}) {
 function makeResizable(element, props = {}) {
     const {
         minW, minH, size, onStop: _onStop, onMove, state
-    } = Object.assign({minW: 240, minH: 240, size: 12}, props);
+    } = Object.assign({minW: 240, minH: 240, size: 16}, props);
     const _onMove = state => {
         onMove?.(state);
         assignStyleState(element, state);
@@ -1755,12 +1755,13 @@ function makeResizable(element, props = {}) {
     lrCorner.style.cssText =
         `width: ${size}px; height: ${size}px; border-radius: ${(size / 2)}px;` +
         `bottom: ${-(size / 2)}px; right: ${-(size / 2)}px; ` +
-        `position: absolute; background-color: transparent; cursor: se-resize; touch-action: none;`;
+        `position: absolute; background-color: transparent; cursor: se-resize;`;
     element.append(lrCorner);
 
     ["pointerdown", "touchstart"].forEach(event => {
         lrCorner.addEventListener(event,event => {
-            event.preventDefault();
+            event.cancelable && event.preventDefault();
+            event = event.targetTouches?.[0] || event;
             const offsetX = event.clientX - element.offsetLeft - parseInt(getComputedStyle(element).width);
             const offsetY = event.clientY - element.offsetTop  - parseInt(getComputedStyle(element).height);
 
@@ -1785,7 +1786,7 @@ function makeResizable(element, props = {}) {
                 state && _onStop?.(state);
             }
             addEventListener("pointermove", onMove);
-            addEventListener("touchmove",   onMove);
+            addEventListener("touchmove",   onMove, {passive: true});
             addEventListener("pointerup", onEnd);
             addEventListener("touchend",  onEnd);
         }, {passive: false});
