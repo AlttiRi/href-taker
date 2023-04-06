@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.16-2023.04.06
+// @version     0.6.17-2023.04.06
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1726,11 +1726,10 @@ function makeDraggable(element, {handle, onStop: _onStop, onMove, state} = {}) {
         }
         function onEnd() {
             handle.removeEventListener("pointermove", onMove);
-            handle.removeEventListener("pointerup", onEnd);
             state && _onStop?.(state);
         }
         handle.addEventListener("pointermove", onMove, {passive: true});
-        handle.addEventListener("pointerup", onEnd, {passive: true});
+        handle.addEventListener("lostpointercapture", onEnd, {once: true});
     }, {passive: true});
 }
 function makeResizable(element, props = {}) {
@@ -1774,11 +1773,10 @@ function makeResizable(element, props = {}) {
         }
         function onEnd() {
             lrCorner.removeEventListener("pointermove", onMove);
-            lrCorner.removeEventListener("pointerup", onEnd);
             state && _onStop?.(state);
         }
         lrCorner.addEventListener("pointermove", onMove, {passive: true});
-        lrCorner.addEventListener("pointerup", onEnd, {passive: true});
+        lrCorner.addEventListener("lostpointercapture", onEnd, {once: true});
     }, {passive: true});
 }
 function storeStateInLS({onMove, onStop, id: lsName, reset, restore}) {
