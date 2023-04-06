@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.13-2023.04.05
+// @version     0.6.14-2023.04.06
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1709,7 +1709,7 @@ function makeDraggable(element, {handle, onStop: _onStop, onMove, state} = {}) {
     handle.style["touch-action"] = "none";
     element.style.position = "absolute";
 
-    ["pointerdown", "touchstart"].forEach(event => {
+    ["pointerdown"].forEach(event => {
         handle.addEventListener(event, event => {
             event = event.targetTouches?.[0] || event;
             const offsetY = event.clientY - parseInt(getComputedStyle(element).top);
@@ -1726,15 +1726,11 @@ function makeDraggable(element, {handle, onStop: _onStop, onMove, state} = {}) {
             }
             function onEnd() {
                 removeEventListener("pointermove", onMove);
-                removeEventListener("touchmove",   onMove);
                 removeEventListener("pointerup", onEnd);
-                removeEventListener("touchend",  onEnd);
                 state && _onStop?.(state);
             }
             addEventListener("pointermove", onMove);
-            addEventListener("touchmove",   onMove, {passive: true});
             addEventListener("pointerup", onEnd);
-            addEventListener("touchend",  onEnd);
         }, {passive: true});
     });
 }
@@ -1758,7 +1754,7 @@ function makeResizable(element, props = {}) {
         `position: absolute; background-color: transparent; cursor: se-resize; touch-action: none;`;
     element.append(lrCorner);
 
-    ["pointerdown", "touchstart"].forEach(event => {
+    ["pointerdown"].forEach(event => {
         lrCorner.addEventListener(event,event => {
             event.cancelable && event.preventDefault(); // Do not select popup's inner text.
             event = event.targetTouches?.[0] || event;
@@ -1767,7 +1763,6 @@ function makeResizable(element, props = {}) {
 
             let state;
             function onMove(event) {
-                event.cancelable && event.preventDefault(); // FF `touchmove` fix
                 event = event.targetTouches?.[0] || event;
                 let x = event.clientX - element.offsetLeft - offsetX;
                 let y = event.clientY - element.offsetTop  - offsetY;
@@ -1781,15 +1776,11 @@ function makeResizable(element, props = {}) {
             }
             function onEnd() {
                 removeEventListener("pointermove", onMove);
-                removeEventListener("touchmove",   onMove);
                 removeEventListener("pointerup", onEnd);
-                removeEventListener("touchend",  onEnd);
                 state && _onStop?.(state);
             }
             addEventListener("pointermove", onMove);
-            addEventListener("touchmove",   onMove, {passive: false});
             addEventListener("pointerup", onEnd);
-            addEventListener("touchend",  onEnd);
         }, {passive: false});
     });
 }
