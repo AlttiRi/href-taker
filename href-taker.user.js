@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.14-2023.04.06
+// @version     0.6.15-2023.04.06
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1712,6 +1712,7 @@ function makeDraggable(element, {handle, onStop: _onStop, onMove, state} = {}) {
     ["pointerdown"].forEach(event => {
         handle.addEventListener(event, event => {
             event = event.targetTouches?.[0] || event;
+            handle.setPointerCapture(event.pointerId);
             const offsetY = event.clientY - parseInt(getComputedStyle(element).top);
             const offsetX = event.clientX - parseInt(getComputedStyle(element).left);
 
@@ -1725,12 +1726,12 @@ function makeDraggable(element, {handle, onStop: _onStop, onMove, state} = {}) {
                 _onMove(state);
             }
             function onEnd() {
-                removeEventListener("pointermove", onMove);
-                removeEventListener("pointerup", onEnd);
+                handle.removeEventListener("pointermove", onMove);
+                handle.removeEventListener("pointerup", onEnd);
                 state && _onStop?.(state);
             }
-            addEventListener("pointermove", onMove);
-            addEventListener("pointerup", onEnd);
+            handle.addEventListener("pointermove", onMove);
+            handle.addEventListener("pointerup", onEnd);
         }, {passive: true});
     });
 }
@@ -1756,8 +1757,8 @@ function makeResizable(element, props = {}) {
 
     ["pointerdown"].forEach(event => {
         lrCorner.addEventListener(event,event => {
-            event.cancelable && event.preventDefault(); // Do not select popup's inner text.
             event = event.targetTouches?.[0] || event;
+            lrCorner.setPointerCapture(event.pointerId);
             const offsetX = event.clientX - element.offsetLeft - parseInt(getComputedStyle(element).width);
             const offsetY = event.clientY - element.offsetTop  - parseInt(getComputedStyle(element).height);
 
@@ -1775,13 +1776,13 @@ function makeResizable(element, props = {}) {
                 _onMove(state);
             }
             function onEnd() {
-                removeEventListener("pointermove", onMove);
-                removeEventListener("pointerup", onEnd);
+                lrCorner.removeEventListener("pointermove", onMove);
+                lrCorner.removeEventListener("pointerup", onEnd);
                 state && _onStop?.(state);
             }
-            addEventListener("pointermove", onMove);
-            addEventListener("pointerup", onEnd);
-        }, {passive: false});
+            lrCorner.addEventListener("pointermove", onMove);
+            lrCorner.addEventListener("pointerup", onEnd);
+        }, {passive: true});
     });
 }
 function storeStateInLS({onMove, onStop, id: lsName, reset, restore}) {
