@@ -1709,31 +1709,29 @@ function makeDraggable(element, {handle, onStop: _onStop, onMove, state} = {}) {
     handle.style["touch-action"] = "none";
     element.style.position = "absolute";
 
-    ["pointerdown"].forEach(event => {
-        handle.addEventListener(event, event => {
-            event = event.targetTouches?.[0] || event;
-            handle.setPointerCapture(event.pointerId);
-            const offsetY = event.clientY - parseInt(getComputedStyle(element).top);
-            const offsetX = event.clientX - parseInt(getComputedStyle(element).left);
+    handle.addEventListener("pointerdown", event => {
+        event = event.targetTouches?.[0] || event;
+        handle.setPointerCapture(event.pointerId);
+        const offsetY = event.clientY - parseInt(getComputedStyle(element).top);
+        const offsetX = event.clientX - parseInt(getComputedStyle(element).left);
 
-            let state;
-            function onMove(event) {
-                event = event.targetTouches?.[0] || event;
-                state = {
-                    top:  (event.clientY - offsetY) + "px",
-                    left: (event.clientX - offsetX) + "px",
-                };
-                _onMove(state);
-            }
-            function onEnd() {
-                handle.removeEventListener("pointermove", onMove);
-                handle.removeEventListener("pointerup", onEnd);
-                state && _onStop?.(state);
-            }
-            handle.addEventListener("pointermove", onMove);
-            handle.addEventListener("pointerup", onEnd);
-        }, {passive: true});
-    });
+        let state;
+        function onMove(event) {
+            event = event.targetTouches?.[0] || event;
+            state = {
+                top:  (event.clientY - offsetY) + "px",
+                left: (event.clientX - offsetX) + "px",
+            };
+            _onMove(state);
+        }
+        function onEnd() {
+            handle.removeEventListener("pointermove", onMove);
+            handle.removeEventListener("pointerup", onEnd);
+            state && _onStop?.(state);
+        }
+        handle.addEventListener("pointermove", onMove);
+        handle.addEventListener("pointerup", onEnd);
+    }, {passive: true});
 }
 function makeResizable(element, props = {}) {
     const {
@@ -1755,35 +1753,33 @@ function makeResizable(element, props = {}) {
         `position: absolute; background-color: transparent; cursor: se-resize; touch-action: none;`;
     element.append(lrCorner);
 
-    ["pointerdown"].forEach(event => {
-        lrCorner.addEventListener(event,event => {
-            event = event.targetTouches?.[0] || event;
-            lrCorner.setPointerCapture(event.pointerId);
-            const offsetX = event.clientX - element.offsetLeft - parseInt(getComputedStyle(element).width);
-            const offsetY = event.clientY - element.offsetTop  - parseInt(getComputedStyle(element).height);
+    lrCorner.addEventListener("pointerdown",event => {
+        event = event.targetTouches?.[0] || event;
+        lrCorner.setPointerCapture(event.pointerId);
+        const offsetX = event.clientX - element.offsetLeft - parseInt(getComputedStyle(element).width);
+        const offsetY = event.clientY - element.offsetTop  - parseInt(getComputedStyle(element).height);
 
-            let state;
-            function onMove(event) {
-                event = event.targetTouches?.[0] || event;
-                let x = event.clientX - element.offsetLeft - offsetX;
-                let y = event.clientY - element.offsetTop  - offsetY;
-                if (x < minW) { x = minW; }
-                if (y < minH) { y = minH; }
-                state = {
-                    width:  x + "px",
-                    height: y + "px",
-                };
-                _onMove(state);
-            }
-            function onEnd() {
-                lrCorner.removeEventListener("pointermove", onMove);
-                lrCorner.removeEventListener("pointerup", onEnd);
-                state && _onStop?.(state);
-            }
-            lrCorner.addEventListener("pointermove", onMove);
-            lrCorner.addEventListener("pointerup", onEnd);
-        }, {passive: true});
-    });
+        let state;
+        function onMove(event) {
+            event = event.targetTouches?.[0] || event;
+            let x = event.clientX - element.offsetLeft - offsetX;
+            let y = event.clientY - element.offsetTop  - offsetY;
+            if (x < minW) { x = minW; }
+            if (y < minH) { y = minH; }
+            state = {
+                width:  x + "px",
+                height: y + "px",
+            };
+            _onMove(state);
+        }
+        function onEnd() {
+            lrCorner.removeEventListener("pointermove", onMove);
+            lrCorner.removeEventListener("pointerup", onEnd);
+            state && _onStop?.(state);
+        }
+        lrCorner.addEventListener("pointermove", onMove);
+        lrCorner.addEventListener("pointerup", onEnd);
+    }, {passive: true});
 }
 function storeStateInLS({onMove, onStop, id: lsName, reset, restore}) {
     if (reset && lsName) {
