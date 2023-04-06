@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.17-2023.04.06
+// @version     0.6.18-2023.04.06
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1098,7 +1098,7 @@ function getRenders(settings, updateSettings) {
 
         const headerElem     = querySelector("#popup-header");
         const resultListElem = querySelector("#result-list-wrapper");
-        makeDraggable(popupElem, {
+        makeMovable(popupElem, {
             handle: headerElem,
             ...storeStateInLS({
                 reset: resetPosition,
@@ -1461,7 +1461,7 @@ function getRenders(settings, updateSettings) {
         const minimizedElem = querySelector("#popup-minimized");
         addCSS(minimizedCss, minimizedElem);
 
-        makeDraggable(minimizedElem, {
+        makeMovable(minimizedElem, {
             ...storeStateInLS({
                 reset: resetPosition,
                 restore: true,
@@ -1694,7 +1694,7 @@ function assignStyleState(element, state) {
     }
 }
 
-function makeDraggable(element, {handle, onStop: _onStop, onMove, state} = {}) {
+function makeMovable(element, {handle, onStop: _onStop, onMove, state} = {}) {
     const _onMove = state => {
         onMove?.(state);
         assignStyleState(element, state);
