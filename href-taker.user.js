@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.19-2023.04.09
+// @version     0.6.20-2023.04.09
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1711,8 +1711,6 @@ function makeMovable(element, {handle, onStop: _onStop, onMove, state} = {}) {
 
     handle.addEventListener("pointerdown", event => {
         event = event.targetTouches?.[0] || event;
-        if (event.target !== event.currentTarget) { return; }
-        handle.setPointerCapture(event.pointerId);
         const offsetY = event.clientY - parseInt(getComputedStyle(element).top);
         const offsetX = event.clientX - parseInt(getComputedStyle(element).left);
 
@@ -1726,11 +1724,11 @@ function makeMovable(element, {handle, onStop: _onStop, onMove, state} = {}) {
             _onMove(state);
         }
         function onEnd() {
-            handle.removeEventListener("pointermove", onMove);
+            removeEventListener("pointermove", onMove);
             state && _onStop?.(state);
         }
-        handle.addEventListener("pointermove", onMove, {passive: true});
-        handle.addEventListener("lostpointercapture", onEnd, {once: true});
+        addEventListener("pointermove", onMove, {passive: true});
+        addEventListener("pointerup", onEnd, {once: true});
     }, {passive: true});
 }
 function makeResizable(element, props = {}) {
