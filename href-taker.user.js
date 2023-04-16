@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.21-2023.04.16
+// @version     0.6.22-2023.04.16
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -439,6 +439,13 @@ button.clicked, .button.clicked {
 </div>`;
     const popupCss = cssFromStyle`
 <style>
+#popup[tabindex="-1"] {
+    outline: none;
+}
+#popup:focus {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
 [data-text]:after {
     content: attr(data-text);
 }
@@ -615,7 +622,8 @@ a {
     height: 580px;
     border: 1px solid darkgray;
     padding: 6px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+    transition: box-shadow 0.1s;
     display: flex;
     flex-direction: column;
 }
