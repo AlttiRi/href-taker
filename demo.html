@@ -21,6 +21,16 @@
         body > div {
             overflow: auto;
         }
+
+        .readme {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            padding: 2px 8px;
+            margin: 1px;
+            color: #a9a9a9;
+            text-decoration: none;
+        }
     </style>
     <script defer>
         if (localStorage.getItem("ujs-href-taker") === null) {
@@ -61,6 +71,7 @@
     </script>
 </head>
 <body>
+<a class="readme" title="Open Readme" href="https://github.com/AlttiRi/href-taker#hreftaker" target="_blank" rel="noopener"><i>i</i></a>
 
 <script defer>
     const headerHtmlText = `
