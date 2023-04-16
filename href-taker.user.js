@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.20-2023.04.09
+// @version     0.6.21-2023.04.16
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -753,7 +753,7 @@ fieldset, hr {
             }
             tagEl.classList.toggle("disabled");
             updateAddTagBtnTitle();
-            onUpdateCb?.(tags);
+            onUpdateCb?.();
         });
         tagsContainer.addEventListener("click", event => {
             const tagEl = /** @type {HTMLElement} */ event.target;
@@ -766,7 +766,7 @@ fieldset, hr {
             tags = tags.filter(url => url !== tagEl.dataset.url);
             tagEl.remove();
             updateAddTagBtn();
-            onUpdateCb?.(tags);
+            onUpdateCb?.();
         });
 
         tagsContainer.addEventListener("contextmenu", event => {
@@ -785,7 +785,7 @@ fieldset, hr {
                 popupTag.classList.remove("inactive");
             }
             updateAddTagBtn();
-            onUpdateCb?.(tags);
+            onUpdateCb?.();
         });
         tagsPopupContainer.addEventListener("contextmenu", event => {
             const tagEl = /** @type {HTMLElement} */ event.target;
@@ -810,7 +810,7 @@ fieldset, hr {
                 }
             }
             updateAddTagBtnTitle();
-            onUpdateCb?.(tags);
+            onUpdateCb?.();
         });
 
         const addTagBtn        = container.querySelector(".tag-add");
@@ -878,7 +878,7 @@ fieldset, hr {
                 tagsContainer.innerHTML = "";
             }
             updateAddTagBtn();
-            onUpdateCb?.(tags);
+            onUpdateCb?.();
         });
 
         function render(urls, onUpdate) {
