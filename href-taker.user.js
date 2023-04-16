@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.25-2023.04.16
+// @version     0.6.26-2023.04.16
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -116,7 +116,7 @@ function loadSettings() {
         tags_collapsed: false,
         filters_collapsed: false,
         controls_collapsed: false,
-        unselectable: false,
+        unselectable: true,
     };
     const LocalStoreName = "ujs-href-taker";
 
@@ -351,10 +351,6 @@ button.clicked, .button.clicked {
         <div class="control-row">
             <div class="control-row-inner">
                 <button title="Copy URLs separated by space" name="copy_button" class="short btn-left">Copy</button>
-                <label title="Unselectable and unsearchable (with Ctrl + F) text in the result URLs list">
-                    <input type="checkbox" name="unselectable" ${checked(unselectable)}>
-                    Ephemeral
-                </label>
             </div>
             <button title="Show Extra Settings" name="extra_settings_button" class="long btn-right">Extra Settings</button>
         </div>
@@ -413,6 +409,10 @@ button.clicked, .button.clicked {
                     <label title="Expose variables to console">
                         <input type="checkbox" name="console_vars" ${checked(console_vars)}>
                         Console vars
+                    </label>
+                    <label title="Unselectable and unsearchable (with Ctrl + F) text in the result URLs list">
+                        <input type="checkbox" name="unselectable" ${checked(unselectable)}>
+                        Ephemeral
                     </label>
                 </div>
             </div>
@@ -583,13 +583,21 @@ hr.main {
     padding-top: 2px;
     display: block;
 }
-.invisible {
+
+[data-hide-prefix] .invisible {
     width: 0;
     height: 0;
     font-size: 0;
     line-height: 0;
     display: inline-block;
 }
+#popup[data-unselectable]:not(:focus) [data-unselectable-text]:after {
+    content: attr(data-unselectable-text);
+}
+#popup[data-unselectable]:not(:focus) .selectable {
+    display: none;
+}
+
 .hidden {
     display: none!important;
 }
@@ -976,6 +984,24 @@ fieldset, hr {
             }
         });
 
+        function urlToHtml(url) {
+            let {prefix = "", main} = url.match(/(?<prefix>^https?:\/\/(www\.)?)?(?<main>.+)/i).groups;
+            let end = "";
+            try {
+                if (main.endsWith("/") && new URL(url).pathname === "/") {
+                    main = main.slice(0, -1);
+                    end = "/";
+                }
+            } catch (e) {
+                console.error(url, e);
+            }
+
+            prefix && (prefix = `<span class="invisible" data-unselectable-text="${prefix}"><span class="selectable">${prefix}</span></span>`);
+            end    && (end    = `<span class="invisible" data-unselectable-text="${end}"><span class="selectable">${end}</span></span>`);
+            main = `<span class="visible" data-unselectable-text="${main}"><span class="selectable">${main}</span></span>`;
+            return `${prefix}${main}${end}`;
+        }
+
         return {
             clearList(addPrompt = false) {
                 headerElem.textContent = "Result list";
@@ -995,27 +1021,7 @@ fieldset, hr {
                 let resultHtml = "";
                 let prev = urls[0];
                 for (const url of urls) {
-                    let linkHtml = url;
-                    if (settings.hide_prefix) {
-                        let {pre, after} = url.match(/(?<pre>^https?:\/\/(www\.)?)?(?<after>.+)/i).groups;
-                        let end = "";
-                        try {
-                            if (after.endsWith("/") && new URL(url).pathname === "/") {
-                                after = after.slice(0, -1);
-                                end = `<span class="invisible">/</span>`;
-                            }
-                        } catch (e) {
-                            console.error(url, e);
-                        }
-                        if (settings.unselectable) {
-                            after = `<span class="visible" data-text="${after}"></span>`;
-                            pre = "";
-                        } else {
-                            after = `<span class="visible">${after}</span>`;
-                        }
-                        linkHtml = `<span class="invisible">${pre || ""}</span>${after}${end}`;
-                    }
-
+                    let linkHtml = urlToHtml(url);
                     if (settings.sort) {
                         try {
                             if (mainHost(prev) !== mainHost(url)) {
