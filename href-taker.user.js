@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.24-2023.04.16
+// @version     0.6.25-2023.04.16
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -514,6 +514,9 @@ hr.main {
   background-image: linear-gradient(to right, rgba(0, 0, 0, 0) 10%, rgba(0, 0, 0, .25), rgba(0, 0, 0, 0) 90%);
 }
 
+.tags.reversed .tags-wrapper .tag {
+    text-decoration: line-through;
+}
 #tags-main {
     display: none;
 }
@@ -815,6 +818,7 @@ fieldset, hr {
             onUpdateCb?.();
         });
 
+        const tagsElem         = container.querySelector(".tags");
         const addTagBtn        = container.querySelector(".tag-add");
         const addTagBtnContent = container.querySelector(".tag-add span");
         const tagsPopupWrapper = container.querySelector(".tags-prompt-wrapper");
@@ -883,8 +887,21 @@ fieldset, hr {
             onUpdateCb?.();
         });
 
+        let tagsReversed = false;
+        addTagBtn.addEventListener("pointerdown", event => {
+            const MIDDLE_BUTTON = 1;
+            if (event.button !== MIDDLE_BUTTON) {
+                return;
+            }
+            event.preventDefault();
+
+            tagsReversed = tagsElem.classList.toggle("reversed");
+            onUpdateCb?.();
+        });
+
         function renderTags(urls, onUpdate) {
             tags = [];
+            tagsReversed = false;
             tagsContainer.innerHTML = "";
             if (onUpdate) {
                 onUpdateCb = onUpdate;
@@ -918,10 +935,16 @@ fieldset, hr {
         function filterTags(urls) {
             let urlsFilteredByTags = urls;
             if (tags.length) {
-                if (settings.case_sensitive) {
-                    urlsFilteredByTags = urls.filter(url => tags.some(tag => url.includes(tag)));
+                let matchOnly;
+                if (!settings.case_sensitive) {
+                    matchOnly = url => tags.some(tag => url.toLowerCase().includes(tag));
                 } else {
-                    urlsFilteredByTags = urls.filter(url => tags.some(tag => url.toLowerCase().includes(tag)));
+                    matchOnly = url => tags.some(tag => url.includes(tag));
+                }
+                if (!tagsReversed) {
+                    urlsFilteredByTags = urls.filter(url =>  matchOnly(url));
+                } else {
+                    urlsFilteredByTags = urls.filter(url => !matchOnly(url));
                 }
             }
             return urlsFilteredByTags;
