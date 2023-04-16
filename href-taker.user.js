@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.29-2023.04.16
+// @version     0.6.30-2023.04.16
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -786,7 +786,7 @@ fieldset, hr {
             onUpdateCb?.();
         });
 
-        tagsContainer.addEventListener("contextmenu", event => {
+        tagsContainer.addEventListener("contextmenu", /** @param {MouseEvent} event */ event => {
             const tagEl = /** @type {HTMLElement} */ event.target;
             if (!tagEl.classList.contains("tag")) {
                 return;
@@ -801,7 +801,7 @@ fieldset, hr {
                 tags.push(tagEl.dataset.url);
                 popupTag.classList.remove("inactive");
             }
-            updateAddTagBtn();
+            updateAddTagBtnTitle();
             onUpdateCb?.();
         });
         tagsPopupContainer.addEventListener("contextmenu", event => {
@@ -941,7 +941,7 @@ fieldset, hr {
             const tagsEls = [...tagsPopupContainer.querySelectorAll(`.tag[data-color]`)];
             tagsEls.forEach(tag => tag.style.backgroundColor = tag.dataset.color);
 
-            updateAddTagBtnTitle();
+            updateAddTagBtn();
         }
 
         function filterTags(urls) {
