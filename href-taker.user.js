@@ -281,7 +281,7 @@ button.clicked, .button.clicked {
     const disabled = isDisabled => isDisabled ? "disabled" : "";
 
     const popupHtml = `
-<div id="popup">
+<div id="popup" tabindex="-1">
     <div class="header" id="popup-header">
         <button id="minimize-button">_</button>
         <button id="close-button">X</button>
