@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.28-2023.04.16
+// @version     0.6.29-2023.04.16
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -985,6 +985,28 @@ fieldset, hr {
             const dupLinks = [...contentElem.querySelectorAll(`.url-item:not(.clicked) a[href="${url}"]`)];
             for (const dupLink of dupLinks) {
                 dupLink.closest(".url-item").classList.add("clicked");
+            }
+        });
+
+        contentElem.addEventListener("contextmenu", /** @param {MouseEvent} event */ event => {
+            if (!event.altKey) {
+                return;
+            }
+            if (!event.target.classList.contains("visible")) {
+                return;
+            }
+            event.preventDefault();
+            const urlItem = event.target.closest(".url-item");
+            const wasClicked = urlItem.classList.contains("clicked");
+            if (!wasClicked) {
+                return;
+            }
+            urlItem.classList.remove("clicked");
+            const url = urlItem.querySelector("a").href;
+            clickedUrls.delete(url);
+            const dupLinks = [...contentElem.querySelectorAll(`.url-item.clicked a[href="${url}"]`)];
+            for (const dupLink of dupLinks) {
+                dupLink.closest(".url-item").classList.remove("clicked");
             }
         });
 
