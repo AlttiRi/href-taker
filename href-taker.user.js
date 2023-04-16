@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.23-2023.04.16
+// @version     0.6.24-2023.04.16
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -883,7 +883,7 @@ fieldset, hr {
             onUpdateCb?.();
         });
 
-        function render(urls, onUpdate) {
+        function renderTags(urls, onUpdate) {
             tags = [];
             tagsContainer.innerHTML = "";
             if (onUpdate) {
@@ -911,9 +911,11 @@ fieldset, hr {
             tagsPopupContainer.innerHTML = tagsHtml;
             const tagsEls = [...tagsPopupContainer.querySelectorAll(`.tag[data-color]`)];
             tagsEls.forEach(tag => tag.style.backgroundColor = tag.dataset.color);
+
+            updateAddTagBtnTitle();
         }
 
-        function filter(urls) {
+        function filterTags(urls) {
             let urlsFilteredByTags = urls;
             if (tags.length) {
                 if (settings.case_sensitive) {
@@ -926,8 +928,8 @@ fieldset, hr {
         }
 
         return {
-            render,
-            filter,
+            renderTags,
+            filterTags,
         }
     }
 
@@ -1255,19 +1257,19 @@ function getRenders(settings, updateSettings) {
 
         function refreshUrlList() {
             if (isListRendered) {
-                listHelper.insertUrls(tagsHelper.filter(urls));
+                listHelper.insertUrls(tagsHelper.filterTags(urls));
             }
         }
         function renderUrlList() {
             reparseUrlList();
             listHelper.contentElem.removeEventListener("click", renderUrlList);
             const urlsForTags = settings.case_sensitive ? urls : urls.map(url => url.toLowerCase());
-            tagsHelper.render(urlsForTags, onTagsChanges);
+            tagsHelper.renderTags(urlsForTags, onTagsChanges);
             listHelper.insertUrls(urls);
             isListRendered = true;
         }
         function onTagsChanges() {
-            listHelper.insertUrls(tagsHelper.filter(urls));
+            listHelper.insertUrls(tagsHelper.filterTags(urls));
         }
 
         listBtn.addEventListener("click", renderUrlList);
@@ -1283,18 +1285,18 @@ function getRenders(settings, updateSettings) {
 
         const copyButton = querySelector(`button[name="copy_button"]`);
         copyButton.addEventListener("click", event => {
-            void navigator.clipboard.writeText(tagsHelper.filter(urls).join(" "));
+            void navigator.clipboard.writeText(tagsHelper.filterTags(urls).join(" "));
         });
         copyButton.addEventListener("contextmenu", event => {
             event.preventDefault();
-            void navigator.clipboard.writeText(tagsHelper.filter(urls).join("\n"));
+            void navigator.clipboard.writeText(tagsHelper.filterTags(urls).join("\n"));
             void clicked(copyButton);
         });
         copyButton.addEventListener("pointerdown", event => {
             const MIDDLE_BUTTON = 1;
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
-                void navigator.clipboard.writeText(getCodeArrays(tagsHelper.filter(urls)));
+                void navigator.clipboard.writeText(getCodeArrays(tagsHelper.filterTags(urls)));
                 void clicked(copyButton);
             }
         });
@@ -1434,7 +1436,7 @@ function getRenders(settings, updateSettings) {
         }
         if (settings.console_vars) {
             Object.assign(global, {renderUrlList});
-            Object.assign(global, {filterTags: tagsHelper.filter});
+            Object.assign(global, {filterTags: tagsHelper.filterTags});
         }
 
         // ------
