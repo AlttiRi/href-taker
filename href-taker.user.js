@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.22-2023.04.16
+// @version     0.6.23-2023.04.16
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -448,12 +448,6 @@ button.clicked, .button.clicked {
 
 [data-text]:after {
     content: attr(data-text);
-}
-.prefix-space {
-    width: 0;
-    display: inline-block;
-    left: -2px;
-    position: relative;
 }
 
 #extra_settings label {
@@ -989,15 +983,12 @@ fieldset, hr {
                             console.error(url, e);
                         }
                         if (settings.unselectable) {
-                            after = `<span class="visible" data-text="${after}"></span><span class="invisible">${after}</span>`;
+                            after = `<span class="visible" data-text="${after}"></span>`;
+                            pre = "";
                         } else {
                             after = `<span class="visible">${after}</span>`;
                         }
                         linkHtml = `<span class="invisible">${pre || ""}</span>${after}${end}`;
-                        if (settings.unselectable) {
-                            const prefixSpace = `<span class="prefix-space">&nbsp;</span>`;
-                            linkHtml = prefixSpace + linkHtml;
-                        }
                     }
 
                     if (settings.sort) {
