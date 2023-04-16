@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.26-2023.04.16
+// @version     0.6.27-2023.04.16
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -698,6 +698,10 @@ button {
     text-decoration: line-through;
 }
 
+button.active {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
 input[disabled] {
     color: gray;
 }
@@ -1154,6 +1158,7 @@ function getRenders(settings, updateSettings) {
         const extraSettings       = querySelector(`#extra_settings`);
         extraSettingsButton.addEventListener("click", event => {
             extraSettings.classList.toggle("hidden");
+            extraSettingsButton.classList.toggle("active");
         });
 
         // ------
@@ -1371,6 +1376,7 @@ function getRenders(settings, updateSettings) {
                 undoUrlsToText(selector);
             }
             urlTexted = !urlTexted;
+            urlsToTextButton.classList.toggle("active");
             if (isListRendered) {
                 renderUrlList();
             }
