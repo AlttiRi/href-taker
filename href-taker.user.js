@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.30-2023.04.16
+// @version     0.7.0-2023.04.16
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -786,20 +786,73 @@ fieldset, hr {
             onUpdateCb?.();
         });
 
+        function disableAllSelectedTagElems() {
+            for (const tag of tags) {
+                const tagEl = tagsContainer.querySelector(`[data-url="${tag}"]`);
+                const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"]`);
+                tagEl.classList.add("disabled");
+                popupTagEl.classList.add("inactive");
+            }
+            tags = [];
+        }
+        function enableAllSelectedTagElems() {
+            const tagElems = [...tagsContainer.querySelectorAll(`[data-url].disabled`)];
+            for (const tagEl of tagElems) {
+                const tag = tagEl.dataset.url;
+                const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"].inactive`);
+                tagEl.classList.remove("disabled");
+                popupTagEl.classList.remove("inactive");
+                tags.push(tag);
+            }
+        }
+        function enableTag(tagEl) {
+            const tag = tagEl.dataset.url;
+            const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"].inactive`);
+            tagEl.classList.remove("disabled");
+            popupTagEl.classList.remove("inactive");
+            tags.push(tag);
+        }
+        function disableTag(tagEl) {
+            const tag = tagEl.dataset.url;
+            const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"]`);
+            tagEl.classList.add("disabled");
+            popupTagEl.classList.add("inactive");
+            tags = tags.filter(t => t !== tag);
+        }
         tagsContainer.addEventListener("contextmenu", /** @param {MouseEvent} event */ event => {
-            const tagEl = /** @type {HTMLElement} */ event.target;
-            if (!tagEl.classList.contains("tag")) {
+            const currentTagEl = /** @type {HTMLElement} */ event.target;
+            if (!currentTagEl.classList.contains("tag")) {
                 return;
             }
             event.preventDefault();
-            const popupTag = tagsPopupContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
-            const disabled = tagEl.classList.toggle("disabled");
-            if (disabled) {
-                tags = tags.filter(url => url !== tagEl.dataset.url);
-                popupTag.classList.add("inactive");
+            if (event.shiftKey) {
+                const enabled = !currentTagEl.classList.contains("disabled");
+                if (enabled) {
+                    if (tags.length > 1) {
+                        disableAllSelectedTagElems();
+                        enableTag(currentTagEl);
+                    } else {
+                        enableAllSelectedTagElems();
+                    }
+                } else {
+                    const tagElems = [...tagsContainer.querySelectorAll(`[data-url]`)];
+                    if (tags.length + 1 === tagElems.length) {
+                        disableAllSelectedTagElems();
+                    } else {
+                        enableAllSelectedTagElems();
+                        disableTag(currentTagEl);
+                    }
+                }
             } else {
-                tags.push(tagEl.dataset.url);
-                popupTag.classList.remove("inactive");
+                const popupTag = tagsPopupContainer.querySelector(`[data-url="${currentTagEl.dataset.url}"]`);
+                const disabled = currentTagEl.classList.toggle("disabled");
+                if (disabled) {
+                    tags = tags.filter(tag => tag !== currentTagEl.dataset.url);
+                    popupTag.classList.add("inactive");
+                } else {
+                    tags.push(currentTagEl.dataset.url);
+                    popupTag.classList.remove("inactive");
+                }
             }
             updateAddTagBtnTitle();
             onUpdateCb?.();
@@ -892,6 +945,7 @@ fieldset, hr {
                 const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag.disabled")];
                 for (const tagEl of tagEls) {
                     tagEl.classList.remove("disabled");
+                    tagEl.classList.remove("inactive");
                 }
                 tagsContainer.innerHTML = "";
             }
