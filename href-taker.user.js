@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.6.27-2023.04.16
+// @version     0.6.28-2023.04.16
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -900,7 +900,7 @@ fieldset, hr {
         });
 
         let tagsReversed = false;
-        addTagBtn.addEventListener("pointerdown", event => {
+        addTagBtn.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
             const MIDDLE_BUTTON = 1;
             if (event.button !== MIDDLE_BUTTON) {
                 return;
@@ -1236,7 +1236,7 @@ function getRenders(settings, updateSettings) {
         });
 
         const inputOnlyPromptElem = querySelector(`#input-only-prompt`);
-        inputOnlyPromptElem.addEventListener("pointerdown", event => {
+        inputOnlyPromptElem.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
             const MIDDLE_BUTTON = 1;
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
@@ -1326,7 +1326,7 @@ function getRenders(settings, updateSettings) {
             void navigator.clipboard.writeText(tagsHelper.filterTags(urls).join("\n"));
             void clicked(copyButton);
         });
-        copyButton.addEventListener("pointerdown", event => {
+        copyButton.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
             const MIDDLE_BUTTON = 1;
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
