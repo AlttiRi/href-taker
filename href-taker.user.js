@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.7.1-2023.04.17
+// @version     0.7.2-2023.04.17
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1830,6 +1830,7 @@ function makeMovable(element, {handle, onStop: _onStop, onMove, state} = {}) {
 
         let state;
         function onMove(event) {
+            !handle.hasPointerCapture(event.pointerId) && handle.setPointerCapture(event.pointerId);
             event = event.targetTouches?.[0] || event;
             state = {
                 top:  (event.clientY - offsetY) + "px",
