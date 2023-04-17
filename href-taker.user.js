@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.7.0-2023.04.16
+// @version     0.7.1-2023.04.16
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -197,6 +197,8 @@ function getStaticContent(settings) {
     height: 100vh;
     pointer-events: none;
     z-index: 99999;
+    font-size: 16px;
+    font-family: serif;
 }
 #shadow-content-wrapper > * {
     pointer-events: all;
