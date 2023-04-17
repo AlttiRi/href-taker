@@ -4,7 +4,7 @@ The userscript that adds a popup to collect URLs from a web page. It's mainly ai
 
 It grabs the links from anchors' `href`s (`a` HTML tag) as well as from non-hyperlink visible text.
 
-![image](https://user-images.githubusercontent.com/16310547/220745223-a674587f-8863-4e94-8aa7-bdbd375ac6e8.png)
+![Screenshot](https://user-images.githubusercontent.com/16310547/232351246-7ba1837b-9e0f-4dfe-a329-1341be9769e2.png)
 
 
 _Popup is draggable and resizable. Use the upper edge to move the popup. To resize the popup use the right bottom corner._
