@@ -91,6 +91,11 @@ Extra checkboxes
 - **"Console log"** — to log some data to the console while working.
 - **"Console vars"** — to expose some variables into the console. For example, `urls` variable.
 
+Also in the extra settings you can enable the **tags feature**. It allows to filter URLs more convenient by hostname tags.
+
+![image](https://user-images.githubusercontent.com/16310547/232351342-87a4236a-a858-469b-bd86-a7aafe3c6238.png)
+
+
 Selector
 
 - It defines from which element(s) to parse URLs. By default, it's `body` selector.
