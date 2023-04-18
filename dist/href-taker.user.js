@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.8.0-2023.4.18-bf844d
+// @version     0.8.1-2023.4.18-7853de
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -291,6 +291,87 @@ button.clicked, .button.clicked {
     return {wrapperHtml, wrapperCss};
 }
 
+function getTags() {
+        const tagsHtml = `
+<div class="tags-list-wrapper">        
+    <span class="tag tag-add button button-no-outline" tabindex="0"><span class="plus">+</span></span>  
+    <div class="tags-list"></div>     
+</div>   
+<div class="tags-popup-wrapper hidden">  
+    <div class="tags-popup"></div>
+</div>`;
+
+        const tagsCss = cssFromStyle`
+<style>
+.tags.reversed .tags-list .tag {
+    text-decoration: line-through;
+}
+#tags-main {
+    display: none;
+}
+[data-show-tags] #tags-main {
+    display: initial;
+}
+.tags-list {
+    display: contents;
+}
+.tags-popup-wrapper {
+    position: relative;
+}
+.tags-popup {
+    position: absolute;
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    padding: 3px;
+    top: 5px;
+    background-color: white;
+    width: 100%;
+    border: 1px solid gray;
+    border-radius: 3px;
+    box-shadow: 0 0 4px gray;
+    z-index: 3;
+    min-height: 32px;
+}
+.tags-list-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+.tag {
+    border: 1px solid gray;
+    border-radius: 3px;
+    padding: 2px 4px;
+    user-select: none;
+    cursor: pointer;
+}
+.tag:after {
+    content: attr(data-tag);
+}
+.tag.selected, .tag.disabled {
+    color: gray;
+    border-color: gray;
+    opacity: 0.6;
+}
+.tag.selected.disabled {
+     opacity: 0.4;
+}
+.plus {
+    pointer-events: none;
+    min-width: 36px;    
+    display: inline-flex;
+    justify-content: center;
+    transition: transform .15s;
+}
+.rotate .plus {
+    transform: rotate(45deg);
+}
+</style>`;
+
+        return {tagsHtml, tagsCss};
+}
+
 /** @param {ScriptSettings} settings */
 function getPopup(settings) {
     const {
@@ -325,6 +406,8 @@ function getPopup(settings) {
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
 
+    const {tagsHtml, tagsCss} = getTags();
+
     const popupHtml = `
 <div id="popup" tabindex="-1">
     <div class="header" id="popup-header">
@@ -339,13 +422,7 @@ function getPopup(settings) {
             <hr class="after">
         </div>
         <div class="content" data-content_name="tags">
-            <div class="tags">        
-                <span class="tag tag-add button button-no-outline" tabindex="0"><span class="plus">+</span></span>  
-                <div class="tags-wrapper"></div>     
-            </div>   
-            <div class="tags-prompt-wrapper hidden">  
-                <div class="tags-prompt"></div>
-            </div>   
+            ${tagsHtml}
         </div>
     </div>
 
@@ -483,12 +560,15 @@ function getPopup(settings) {
     </div>
 </div>`;
 
-    const popupCss = cssFromStyle`
+    const popupCss = tagsCss + cssFromStyle`
 <style>
 #popup[tabindex="-1"] {
     outline: none;
 }
 #popup:focus {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+#popup:has(*:focus) {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
@@ -558,71 +638,6 @@ hr.main {
   height: 1px;
   border: 0;
   background-image: linear-gradient(to right, rgba(0, 0, 0, 0) 10%, rgba(0, 0, 0, .25), rgba(0, 0, 0, 0) 90%);
-}
-
-.tags.reversed .tags-wrapper .tag {
-    text-decoration: line-through;
-}
-#tags-main {
-    display: none;
-}
-[data-show-tags] #tags-main {
-    display: initial;
-}
-.tags-wrapper {
-    display: contents;
-}
-.tags-prompt-wrapper {
-    position: relative;
-}
-.tags-prompt {
-    position: absolute;
-    box-sizing: border-box;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3px;
-    padding: 3px;
-    top: 5px;
-    background-color: white;
-    width: 100%;
-    border: 1px solid gray;
-    border-radius: 3px;
-    box-shadow: 0 0 4px gray;
-    z-index: 3;
-    min-height: 32px;
-}
-.tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3px;
-}
-.tag {
-    border: 1px solid gray;
-    border-radius: 3px;
-    padding: 2px 4px;
-    user-select: none;
-    cursor: pointer;
-}
-.tag:after {
-    content: attr(data-url);
-}
-.tag.disabled.inactive {
-     opacity: 0.4;
-}
-.tag.disabled {
-    color: gray;
-    border-color: gray;
-    opacity: 0.6;
-}
-.plus {
-    pointer-events: none;
-    min-width: 36px;    
-    display: inline-flex;
-    justify-content: center;
-    transition: transform .15s;
-}
-.rotate .plus {
-    transform: rotate(45deg);
 }
 
 .url-pad {
@@ -700,7 +715,7 @@ a {
 .text-inputs-wrapper label {
     display: flex;
 }
- input[type="text"] {
+input[type="text"] {
     width: 100%;
     margin-left: 8px;
 }
@@ -801,163 +816,177 @@ fieldset, hr {
  * @param {ScriptSettings} settings
  */
 function getTagsHelper(container, settings) {
-    const tagsContainer       = container.querySelector(`.tags-wrapper`);
-    const tagsPopupContainer  = container.querySelector(`.tags-prompt`);
-
-    let onUpdateCb = null;
+    const tagsListContainerEl  = container.querySelector(`.tags-list`);
+    const tagsPopupContainerEl = container.querySelector(`.tags-popup`);
 
     let tags = [];
-    tagsPopupContainer.addEventListener("click", event => {
+    let tagsReversed = false;
+    let onUpdateCb = null;
+
+    /** @param {Event} event */
+    function getTagFromEvent(event) {
         const tagEl = /** @type {HTMLElement} */ event.target;
         if (!tagEl.classList.contains("tag")) {
-            return;
+            return null;
         }
-        const disabled = tagEl.classList.contains("disabled");
-        if (disabled) {
-            const listTag = tagsContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
-            listTag.remove();
-            tags = tags.filter(url => url !== tagEl.dataset.url);
+        return tagEl;
+    }
+
+    tagsPopupContainerEl.addEventListener("click", onClickSelectTagFromPopup);
+    /** @param {MouseEvent} event */
+    function onClickSelectTagFromPopup(event) {
+        const popupTagEl = getTagFromEvent(event);
+        if (!popupTagEl) { return; }
+
+        const selected = popupTagEl.classList.contains("selected");
+        if (selected) {
+            const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${popupTagEl.dataset.tag}"]`);
+            listTagEl.remove();
+            tags = tags.filter(tag => tag !== popupTagEl.dataset.tag);
         } else {
-            tagsContainer.append(tagEl.cloneNode(true));
-            tags.push(tagEl.dataset.url);
+            tagsListContainerEl.append(popupTagEl.cloneNode(true));
+            tags.push(popupTagEl.dataset.tag);
         }
-        tagEl.classList.toggle("disabled");
+        popupTagEl.classList.toggle("selected");
         updateAddTagBtnTitle();
         onUpdateCb?.();
-    });
-    tagsContainer.addEventListener("click", event => {
-        const tagEl = /** @type {HTMLElement} */ event.target;
-        if (!tagEl.classList.contains("tag")) {
-            return;
-        }
-        const popupTag = tagsPopupContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
+    }
+
+    /** @param {MouseEvent} event */
+    function onClickRemoveTagFromSelect(event) {
+        const listTagEl = getTagFromEvent(event);
+        if (!listTagEl) { return; }
+
+        const popupTag = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
+        popupTag.classList.remove("selected");
         popupTag.classList.remove("disabled");
-        popupTag.classList.remove("inactive");
-        tags = tags.filter(url => url !== tagEl.dataset.url);
-        tagEl.remove();
+        tags = tags.filter(tag => tag !== listTagEl.dataset.tag);
+        listTagEl.remove();
         updateAddTagBtn();
         onUpdateCb?.();
-    });
+    }
+    tagsListContainerEl.addEventListener("click", onClickRemoveTagFromSelect);
 
     function disableAllSelectedTagElems() {
         for (const tag of tags) {
-            const tagEl = tagsContainer.querySelector(`[data-url="${tag}"]`);
-            const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"]`);
-            tagEl.classList.add("disabled");
-            popupTagEl.classList.add("inactive");
+            const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${tag}"]`);
+            const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"]`);
+            listTagEl.classList.add("disabled");
+            popupTagEl.classList.add("disabled");
         }
         tags = [];
     }
     function enableAllSelectedTagElems() {
-        const tagElems = [...tagsContainer.querySelectorAll(`[data-url].disabled`)];
-        for (const tagEl of tagElems) {
-            const tag = tagEl.dataset.url;
-            const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"].inactive`);
-            tagEl.classList.remove("disabled");
-            popupTagEl.classList.remove("inactive");
+        const listTagEls = [...tagsListContainerEl.querySelectorAll(`[data-tag].disabled`)];
+        for (const listTagEl of listTagEls) {
+            const tag = listTagEl.dataset.tag;
+            const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"].disabled`);
+            listTagEl.classList.remove("disabled");
+            popupTagEl.classList.remove("disabled");
             tags.push(tag);
         }
     }
-    function enableTag(tagEl) {
-        const tag = tagEl.dataset.url;
-        const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"].inactive`);
-        tagEl.classList.remove("disabled");
-        popupTagEl.classList.remove("inactive");
+    function enableTag(listTagEl) {
+        const tag = listTagEl.dataset.tag;
+        const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"].disabled`);
+        listTagEl.classList.remove("disabled");
+        popupTagEl.classList.remove("disabled");
         tags.push(tag);
     }
-    function disableTag(tagEl) {
-        const tag = tagEl.dataset.url;
-        const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"]`);
-        tagEl.classList.add("disabled");
-        popupTagEl.classList.add("inactive");
+    function disableTag(listTagEl) {
+        const tag = listTagEl.dataset.tag;
+        const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"]`);
+        listTagEl.classList.add("disabled");
+        popupTagEl.classList.add("disabled");
         tags = tags.filter(t => t !== tag);
     }
-    tagsContainer.addEventListener("contextmenu", /** @param {MouseEvent} event */ event => {
-        const currentTagEl = /** @type {HTMLElement} */ event.target;
-        if (!currentTagEl.classList.contains("tag")) {
-            return;
+    function disableSelectedTag(listTagEl, popupTagEl) {
+        const disabled = listTagEl.classList.toggle("disabled");
+        if (disabled) {
+            tags = tags.filter(tag => tag !== listTagEl.dataset.tag);
+            popupTagEl.classList.add("disabled");
+        } else {
+            tags.push(listTagEl.dataset.tag);
+            popupTagEl.classList.remove("disabled");
         }
+    }
+
+    /** @param {MouseEvent} event */
+    function onContextMenuToggleDisablingSelectedTag(event) {
+        const listTagEl = getTagFromEvent(event);
+        if (!listTagEl) { return; }
+
         event.preventDefault();
         if (event.shiftKey) {
-            const enabled = !currentTagEl.classList.contains("disabled");
+            const enabled = !listTagEl.classList.contains("disabled");
             if (enabled) {
                 if (tags.length > 1) {
                     disableAllSelectedTagElems();
-                    enableTag(currentTagEl);
+                    enableTag(listTagEl);
                 } else {
                     enableAllSelectedTagElems();
                 }
             } else {
-                const tagElems = [...tagsContainer.querySelectorAll(`[data-url]`)];
-                if (tags.length + 1 === tagElems.length) {
+                const listTagEls = [...tagsListContainerEl.querySelectorAll(`[data-tag]`)];
+                if (tags.length + 1 === listTagEls.length) {
                     disableAllSelectedTagElems();
                 } else {
                     enableAllSelectedTagElems();
-                    disableTag(currentTagEl);
+                    disableTag(listTagEl);
                 }
             }
         } else {
-            const popupTag = tagsPopupContainer.querySelector(`[data-url="${currentTagEl.dataset.url}"]`);
-            const disabled = currentTagEl.classList.toggle("disabled");
-            if (disabled) {
-                tags = tags.filter(tag => tag !== currentTagEl.dataset.url);
-                popupTag.classList.add("inactive");
-            } else {
-                tags.push(currentTagEl.dataset.url);
-                popupTag.classList.remove("inactive");
-            }
+            const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
+            disableSelectedTag(listTagEl, popupTagEl);
         }
         updateAddTagBtnTitle();
         onUpdateCb?.();
-    });
-    tagsPopupContainer.addEventListener("contextmenu", event => {
-        const tagEl = /** @type {HTMLElement} */ event.target;
-        if (!tagEl.classList.contains("tag")) {
-            return;
-        }
-        event.preventDefault();
-        const inList = tagEl.classList.contains("disabled");
-        if (!inList) {
-            tagEl.classList.add("disabled");
-            tagsContainer.append(tagEl.cloneNode(true));
-            tagEl.classList.add("inactive");
-        } else {
-            const listTag = tagsContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
-            const disabled = listTag.classList.toggle("disabled");
-            if (disabled) {
-                tags = tags.filter(url => url !== listTag.dataset.url);
-                tagEl.classList.add("inactive");
-            } else {
-                tags.push(listTag.dataset.url);
-                tagEl.classList.remove("inactive");
-            }
-        }
-        updateAddTagBtnTitle();
-        onUpdateCb?.();
-    });
+    }
+    tagsListContainerEl.addEventListener("contextmenu", onContextMenuToggleDisablingSelectedTag);
 
-    const tagsElem         = container.querySelector(".tags");
-    const addTagBtn        = container.querySelector(".tag-add");
-    const addTagBtnContent = container.querySelector(".tag-add span");
-    const tagsPopupWrapper = container.querySelector(".tags-prompt-wrapper");
-    addTagBtn.addEventListener("click", openTagsPopup);
+    /** @param {MouseEvent} event */
+    function onContextMenuAddPopupTagOrToggleDisabling(event) {
+        const popupTagEl = getTagFromEvent(event);
+        if (!popupTagEl) { return; }
+
+        event.preventDefault();
+        const inList = popupTagEl.classList.contains("selected");
+        if (!inList) {
+            popupTagEl.classList.add("disabled");
+            tagsListContainerEl.append(popupTagEl.cloneNode(true));
+            popupTagEl.classList.add("selected");
+        } else {
+            const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${popupTagEl.dataset.tag}"]`);
+            disableSelectedTag(listTagEl, popupTagEl);
+        }
+        updateAddTagBtnTitle();
+        onUpdateCb?.();
+    }
+    tagsPopupContainerEl.addEventListener("contextmenu", onContextMenuAddPopupTagOrToggleDisabling);
+
+    const tagListWrapperEl   = container.querySelector(".tags-list-wrapper");
+    const tagsPopupWrapperEl = container.querySelector(".tags-popup-wrapper");
+    const addTagBtnEl        = container.querySelector(".tag-add");
+    const addTagBtnContentEl = container.querySelector(".tag-add span");
+
+    addTagBtnEl.addEventListener("click", openTagsPopup);
     function closeTagsPopup() {
-        addTagBtn.classList.remove("rotate");
-        tagsPopupWrapper.classList.add("hidden");
+        addTagBtnEl.classList.remove("rotate");
+        tagsPopupWrapperEl.classList.add("hidden");
         container.removeEventListener("click", closeTagsPopupOnClick);
         updateAddTagBtn();
     }
     function closeTagsPopupOnClick(event) {
-        const isTagPopup = event.target.closest(".tags-prompt-wrapper");
+        const isTagPopup = event.target.closest(".tags-popup-wrapper");
         const isTag = event.target.classList.contains("tag") && !event.target.classList.contains("tag-add");
         if (!isTagPopup && !isTag) {
             closeTagsPopup();
         }
     }
     async function openTagsPopup() {
-        if (tagsPopupWrapper.classList.contains("hidden")) {
-            addTagBtn.classList.add("rotate");
-            tagsPopupWrapper.classList.remove("hidden");
+        if (tagsPopupWrapperEl.classList.contains("hidden")) {
+            addTagBtnEl.classList.add("rotate");
+            tagsPopupWrapperEl.classList.remove("hidden");
             updateAddTagBtn();
             await sleep();
             container.addEventListener("click", closeTagsPopupOnClick);
@@ -965,63 +994,67 @@ function getTagsHelper(container, settings) {
     }
 
     function updateAddTagBtn() {
-        const isClosed = tagsPopupWrapper.classList.contains("hidden");
-        const isAllTagsSelected = tagsPopupWrapper.querySelector(".tag:not(.disabled)") === null;
+        const isClosed = tagsPopupWrapperEl.classList.contains("hidden");
+        const isAllTagsSelected = tagsPopupWrapperEl.querySelector(".tag:not(.selected)") === null;
         if (isClosed && isAllTagsSelected) {
-            addTagBtnContent.textContent = "–";
+            addTagBtnContentEl.textContent = "–";
         } else {
-            addTagBtnContent.textContent = "+";
+            addTagBtnContentEl.textContent = "+";
         }
         updateAddTagBtnTitle();
     }
     function updateAddTagBtnTitle() {
-        const popupTags = [...tagsPopupWrapper.querySelectorAll(".tag")];
+        const popupTags = [...tagsPopupWrapperEl.querySelectorAll(".tag")];
         const total = popupTags.length;
-        const selected = popupTags.filter(t => t.classList.contains("disabled")).length;
-        const inactive = popupTags.filter(t => t.classList.contains("inactive")).length;
-        const inactiveText = inactive ? ` (${selected - inactive})` : "";
-        addTagBtn.title = `${selected}${inactiveText} of ${total}`;
+        const selected = popupTags.filter(t => t.classList.contains("selected")).length;
+        const disabled = popupTags.filter(t => t.classList.contains("disabled")).length;
+        const disabledText = disabled ? ` (${selected - disabled})` : "";
+        addTagBtnEl.title = `${selected}${disabledText} of ${total}`;
     }
 
-    addTagBtn.addEventListener("contextmenu", event => {
+    /** @param {MouseEvent} event */
+    function onContextMenuSelectAllTagsOrClear(event) {
         event.preventDefault();
-        void clicked(addTagBtn);
-        const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag:not(.disabled)")];
+        void clicked(addTagBtnEl);
+        const tagEls = [...tagsPopupWrapperEl.querySelectorAll(".tag:not(.selected)")];
         if (tagEls.length) {
             for (const tagEl of tagEls) {
-                tagsContainer.append(tagEl.cloneNode(true));
-                tags.push(tagEl.dataset.url);
-                tagEl.classList.add("disabled");
+                tagsListContainerEl.append(tagEl.cloneNode(true));
+                tags.push(tagEl.dataset.tag);
+                tagEl.classList.add("selected");
             }
         } else {
             tags = [];
-            const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag.disabled")];
+            const tagEls = [...tagsPopupWrapperEl.querySelectorAll(".tag.selected")];
             for (const tagEl of tagEls) {
+                tagEl.classList.remove("selected");
                 tagEl.classList.remove("disabled");
-                tagEl.classList.remove("inactive");
             }
-            tagsContainer.innerHTML = "";
+            tagsListContainerEl.innerHTML = "";
         }
         updateAddTagBtn();
         onUpdateCb?.();
-    });
+    }
+    addTagBtnEl.addEventListener("contextmenu", onContextMenuSelectAllTagsOrClear);
 
-    let tagsReversed = false;
-    addTagBtn.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
+
+    /** @param {PointerEvent} event */
+    function onPointerDownReverseSelectedTags(event) {
         const MIDDLE_BUTTON = 1;
         if (event.button !== MIDDLE_BUTTON) {
             return;
         }
         event.preventDefault();
 
-        tagsReversed = tagsElem.classList.toggle("reversed");
+        tagsReversed = tagListWrapperEl.classList.toggle("reversed");
         onUpdateCb?.();
-    });
+    }
+    addTagBtnEl.addEventListener("pointerdown", onPointerDownReverseSelectedTags);
 
     function renderTags(urls, onUpdate) {
         tags = [];
         tagsReversed = false;
-        tagsContainer.innerHTML = "";
+        tagsListContainerEl.innerHTML = "";
         if (onUpdate) {
             onUpdateCb = onUpdate;
         }
@@ -1034,18 +1067,18 @@ function getTagsHelper(container, settings) {
             }
             hostCountMap[host] = (hostCountMap[host] || 0) + 1;
         }
-        const urlEntries = Object.entries(hostCountMap)
+        const hostCountEntries = Object.entries(hostCountMap)
             .sort(([k1, v1], [k2, v2]) => {
                 return v2 - v1;
             });
 
         let tagsHtml = "";
-        for (const [k, v] of urlEntries) {
+        for (const [k, v] of hostCountEntries) {
             const color = getHsl(hashString(k), 90, 5);
-            tagsHtml += `<span class="tag" title="${v}" data-url="${k}" data-color="${color}"></span>`;
+            tagsHtml += `<span class="tag" data-tag="${k}" title="${v}" data-color="${color}"></span>`;
         }
-        tagsPopupContainer.innerHTML = tagsHtml;
-        const tagsEls = [...tagsPopupContainer.querySelectorAll(`.tag[data-color]`)];
+        tagsPopupContainerEl.innerHTML = tagsHtml;
+        const tagsEls = [...tagsPopupContainerEl.querySelectorAll(`.tag[data-color]`)];
         tagsEls.forEach(tag => tag.style.backgroundColor = tag.dataset.color);
 
         updateAddTagBtn();

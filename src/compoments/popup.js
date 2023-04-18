@@ -1,4 +1,5 @@
 import {cssFromStyle} from "./util.js";
+import {getTags} from "./tags.js";
 
 
 /** @param {ScriptSettings} settings */
@@ -35,6 +36,8 @@ export function getPopup(settings) {
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
 
+    const {tagsHtml, tagsCss} = getTags();
+
     const popupHtml = `
 <div id="popup" tabindex="-1">
     <div class="header" id="popup-header">
@@ -49,13 +52,7 @@ export function getPopup(settings) {
             <hr class="after">
         </div>
         <div class="content" data-content_name="tags">
-            <div class="tags">        
-                <span class="tag tag-add button button-no-outline" tabindex="0"><span class="plus">+</span></span>  
-                <div class="tags-wrapper"></div>     
-            </div>   
-            <div class="tags-prompt-wrapper hidden">  
-                <div class="tags-prompt"></div>
-            </div>   
+            ${tagsHtml}
         </div>
     </div>
 
@@ -193,12 +190,15 @@ export function getPopup(settings) {
     </div>
 </div>`;
 
-    const popupCss = cssFromStyle`
+    const popupCss = tagsCss + cssFromStyle`
 <style>
 #popup[tabindex="-1"] {
     outline: none;
 }
 #popup:focus {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+#popup:has(*:focus) {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
@@ -268,71 +268,6 @@ hr.main {
   height: 1px;
   border: 0;
   background-image: linear-gradient(to right, rgba(0, 0, 0, 0) 10%, rgba(0, 0, 0, .25), rgba(0, 0, 0, 0) 90%);
-}
-
-.tags.reversed .tags-wrapper .tag {
-    text-decoration: line-through;
-}
-#tags-main {
-    display: none;
-}
-[data-show-tags] #tags-main {
-    display: initial;
-}
-.tags-wrapper {
-    display: contents;
-}
-.tags-prompt-wrapper {
-    position: relative;
-}
-.tags-prompt {
-    position: absolute;
-    box-sizing: border-box;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3px;
-    padding: 3px;
-    top: 5px;
-    background-color: white;
-    width: 100%;
-    border: 1px solid gray;
-    border-radius: 3px;
-    box-shadow: 0 0 4px gray;
-    z-index: 3;
-    min-height: 32px;
-}
-.tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3px;
-}
-.tag {
-    border: 1px solid gray;
-    border-radius: 3px;
-    padding: 2px 4px;
-    user-select: none;
-    cursor: pointer;
-}
-.tag:after {
-    content: attr(data-url);
-}
-.tag.disabled.inactive {
-     opacity: 0.4;
-}
-.tag.disabled {
-    color: gray;
-    border-color: gray;
-    opacity: 0.6;
-}
-.plus {
-    pointer-events: none;
-    min-width: 36px;    
-    display: inline-flex;
-    justify-content: center;
-    transition: transform .15s;
-}
-.rotate .plus {
-    transform: rotate(45deg);
 }
 
 .url-pad {
@@ -410,7 +345,7 @@ a {
 .text-inputs-wrapper label {
     display: flex;
 }
- input[type="text"] {
+input[type="text"] {
     width: 100%;
     margin-left: 8px;
 }
@@ -505,5 +440,3 @@ fieldset, hr {
 
     return {popupHtml, popupCss};
 }
-
-

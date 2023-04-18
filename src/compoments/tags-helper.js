@@ -6,163 +6,177 @@ import {clicked} from "./util.js";
  * @param {ScriptSettings} settings
  */
 export function getTagsHelper(container, settings) {
-    const tagsContainer       = container.querySelector(`.tags-wrapper`);
-    const tagsPopupContainer  = container.querySelector(`.tags-prompt`);
-
-    let onUpdateCb = null;
+    const tagsListContainerEl  = container.querySelector(`.tags-list`);
+    const tagsPopupContainerEl = container.querySelector(`.tags-popup`);
 
     let tags = [];
-    tagsPopupContainer.addEventListener("click", event => {
+    let tagsReversed = false;
+    let onUpdateCb = null;
+
+    /** @param {Event} event */
+    function getTagFromEvent(event) {
         const tagEl = /** @type {HTMLElement} */ event.target;
         if (!tagEl.classList.contains("tag")) {
-            return;
+            return null;
         }
-        const disabled = tagEl.classList.contains("disabled");
-        if (disabled) {
-            const listTag = tagsContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
-            listTag.remove();
-            tags = tags.filter(url => url !== tagEl.dataset.url);
+        return tagEl;
+    }
+
+    tagsPopupContainerEl.addEventListener("click", onClickSelectTagFromPopup);
+    /** @param {MouseEvent} event */
+    function onClickSelectTagFromPopup(event) {
+        const popupTagEl = getTagFromEvent(event);
+        if (!popupTagEl) { return; }
+
+        const selected = popupTagEl.classList.contains("selected");
+        if (selected) {
+            const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${popupTagEl.dataset.tag}"]`);
+            listTagEl.remove();
+            tags = tags.filter(tag => tag !== popupTagEl.dataset.tag);
         } else {
-            tagsContainer.append(tagEl.cloneNode(true));
-            tags.push(tagEl.dataset.url);
+            tagsListContainerEl.append(popupTagEl.cloneNode(true));
+            tags.push(popupTagEl.dataset.tag);
         }
-        tagEl.classList.toggle("disabled");
+        popupTagEl.classList.toggle("selected");
         updateAddTagBtnTitle();
         onUpdateCb?.();
-    });
-    tagsContainer.addEventListener("click", event => {
-        const tagEl = /** @type {HTMLElement} */ event.target;
-        if (!tagEl.classList.contains("tag")) {
-            return;
-        }
-        const popupTag = tagsPopupContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
+    }
+
+    /** @param {MouseEvent} event */
+    function onClickRemoveTagFromSelect(event) {
+        const listTagEl = getTagFromEvent(event);
+        if (!listTagEl) { return; }
+
+        const popupTag = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
+        popupTag.classList.remove("selected");
         popupTag.classList.remove("disabled");
-        popupTag.classList.remove("inactive");
-        tags = tags.filter(url => url !== tagEl.dataset.url);
-        tagEl.remove();
+        tags = tags.filter(tag => tag !== listTagEl.dataset.tag);
+        listTagEl.remove();
         updateAddTagBtn();
         onUpdateCb?.();
-    });
+    }
+    tagsListContainerEl.addEventListener("click", onClickRemoveTagFromSelect);
 
     function disableAllSelectedTagElems() {
         for (const tag of tags) {
-            const tagEl = tagsContainer.querySelector(`[data-url="${tag}"]`);
-            const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"]`);
-            tagEl.classList.add("disabled");
-            popupTagEl.classList.add("inactive");
+            const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${tag}"]`);
+            const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"]`);
+            listTagEl.classList.add("disabled");
+            popupTagEl.classList.add("disabled");
         }
         tags = [];
     }
     function enableAllSelectedTagElems() {
-        const tagElems = [...tagsContainer.querySelectorAll(`[data-url].disabled`)];
-        for (const tagEl of tagElems) {
-            const tag = tagEl.dataset.url;
-            const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"].inactive`);
-            tagEl.classList.remove("disabled");
-            popupTagEl.classList.remove("inactive");
+        const listTagEls = [...tagsListContainerEl.querySelectorAll(`[data-tag].disabled`)];
+        for (const listTagEl of listTagEls) {
+            const tag = listTagEl.dataset.tag;
+            const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"].disabled`);
+            listTagEl.classList.remove("disabled");
+            popupTagEl.classList.remove("disabled");
             tags.push(tag);
         }
     }
-    function enableTag(tagEl) {
-        const tag = tagEl.dataset.url;
-        const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"].inactive`);
-        tagEl.classList.remove("disabled");
-        popupTagEl.classList.remove("inactive");
+    function enableTag(listTagEl) {
+        const tag = listTagEl.dataset.tag;
+        const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"].disabled`);
+        listTagEl.classList.remove("disabled");
+        popupTagEl.classList.remove("disabled");
         tags.push(tag);
     }
-    function disableTag(tagEl) {
-        const tag = tagEl.dataset.url;
-        const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"]`);
-        tagEl.classList.add("disabled");
-        popupTagEl.classList.add("inactive");
+    function disableTag(listTagEl) {
+        const tag = listTagEl.dataset.tag;
+        const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"]`);
+        listTagEl.classList.add("disabled");
+        popupTagEl.classList.add("disabled");
         tags = tags.filter(t => t !== tag);
     }
-    tagsContainer.addEventListener("contextmenu", /** @param {MouseEvent} event */ event => {
-        const currentTagEl = /** @type {HTMLElement} */ event.target;
-        if (!currentTagEl.classList.contains("tag")) {
-            return;
+    function disableSelectedTag(listTagEl, popupTagEl) {
+        const disabled = listTagEl.classList.toggle("disabled");
+        if (disabled) {
+            tags = tags.filter(tag => tag !== listTagEl.dataset.tag);
+            popupTagEl.classList.add("disabled");
+        } else {
+            tags.push(listTagEl.dataset.tag);
+            popupTagEl.classList.remove("disabled");
         }
+    }
+
+    /** @param {MouseEvent} event */
+    function onContextMenuToggleDisablingSelectedTag(event) {
+        const listTagEl = getTagFromEvent(event);
+        if (!listTagEl) { return; }
+
         event.preventDefault();
         if (event.shiftKey) {
-            const enabled = !currentTagEl.classList.contains("disabled");
+            const enabled = !listTagEl.classList.contains("disabled");
             if (enabled) {
                 if (tags.length > 1) {
                     disableAllSelectedTagElems();
-                    enableTag(currentTagEl);
+                    enableTag(listTagEl);
                 } else {
                     enableAllSelectedTagElems();
                 }
             } else {
-                const tagElems = [...tagsContainer.querySelectorAll(`[data-url]`)];
-                if (tags.length + 1 === tagElems.length) {
+                const listTagEls = [...tagsListContainerEl.querySelectorAll(`[data-tag]`)];
+                if (tags.length + 1 === listTagEls.length) {
                     disableAllSelectedTagElems();
                 } else {
                     enableAllSelectedTagElems();
-                    disableTag(currentTagEl);
+                    disableTag(listTagEl);
                 }
             }
         } else {
-            const popupTag = tagsPopupContainer.querySelector(`[data-url="${currentTagEl.dataset.url}"]`);
-            const disabled = currentTagEl.classList.toggle("disabled");
-            if (disabled) {
-                tags = tags.filter(tag => tag !== currentTagEl.dataset.url);
-                popupTag.classList.add("inactive");
-            } else {
-                tags.push(currentTagEl.dataset.url);
-                popupTag.classList.remove("inactive");
-            }
+            const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
+            disableSelectedTag(listTagEl, popupTagEl);
         }
         updateAddTagBtnTitle();
         onUpdateCb?.();
-    });
-    tagsPopupContainer.addEventListener("contextmenu", event => {
-        const tagEl = /** @type {HTMLElement} */ event.target;
-        if (!tagEl.classList.contains("tag")) {
-            return;
-        }
-        event.preventDefault();
-        const inList = tagEl.classList.contains("disabled");
-        if (!inList) {
-            tagEl.classList.add("disabled");
-            tagsContainer.append(tagEl.cloneNode(true));
-            tagEl.classList.add("inactive");
-        } else {
-            const listTag = tagsContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
-            const disabled = listTag.classList.toggle("disabled");
-            if (disabled) {
-                tags = tags.filter(url => url !== listTag.dataset.url);
-                tagEl.classList.add("inactive");
-            } else {
-                tags.push(listTag.dataset.url);
-                tagEl.classList.remove("inactive");
-            }
-        }
-        updateAddTagBtnTitle();
-        onUpdateCb?.();
-    });
+    }
+    tagsListContainerEl.addEventListener("contextmenu", onContextMenuToggleDisablingSelectedTag);
 
-    const tagsElem         = container.querySelector(".tags");
-    const addTagBtn        = container.querySelector(".tag-add");
-    const addTagBtnContent = container.querySelector(".tag-add span");
-    const tagsPopupWrapper = container.querySelector(".tags-prompt-wrapper");
-    addTagBtn.addEventListener("click", openTagsPopup);
+    /** @param {MouseEvent} event */
+    function onContextMenuAddPopupTagOrToggleDisabling(event) {
+        const popupTagEl = getTagFromEvent(event);
+        if (!popupTagEl) { return; }
+
+        event.preventDefault();
+        const inList = popupTagEl.classList.contains("selected");
+        if (!inList) {
+            popupTagEl.classList.add("disabled");
+            tagsListContainerEl.append(popupTagEl.cloneNode(true));
+            popupTagEl.classList.add("selected");
+        } else {
+            const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${popupTagEl.dataset.tag}"]`);
+            disableSelectedTag(listTagEl, popupTagEl);
+        }
+        updateAddTagBtnTitle();
+        onUpdateCb?.();
+    }
+    tagsPopupContainerEl.addEventListener("contextmenu", onContextMenuAddPopupTagOrToggleDisabling);
+
+    const tagListWrapperEl   = container.querySelector(".tags-list-wrapper");
+    const tagsPopupWrapperEl = container.querySelector(".tags-popup-wrapper");
+    const addTagBtnEl        = container.querySelector(".tag-add");
+    const addTagBtnContentEl = container.querySelector(".tag-add span");
+
+    addTagBtnEl.addEventListener("click", openTagsPopup);
     function closeTagsPopup() {
-        addTagBtn.classList.remove("rotate");
-        tagsPopupWrapper.classList.add("hidden");
+        addTagBtnEl.classList.remove("rotate");
+        tagsPopupWrapperEl.classList.add("hidden");
         container.removeEventListener("click", closeTagsPopupOnClick);
         updateAddTagBtn();
     }
     function closeTagsPopupOnClick(event) {
-        const isTagPopup = event.target.closest(".tags-prompt-wrapper");
+        const isTagPopup = event.target.closest(".tags-popup-wrapper");
         const isTag = event.target.classList.contains("tag") && !event.target.classList.contains("tag-add");
         if (!isTagPopup && !isTag) {
             closeTagsPopup();
         }
     }
     async function openTagsPopup() {
-        if (tagsPopupWrapper.classList.contains("hidden")) {
-            addTagBtn.classList.add("rotate");
-            tagsPopupWrapper.classList.remove("hidden");
+        if (tagsPopupWrapperEl.classList.contains("hidden")) {
+            addTagBtnEl.classList.add("rotate");
+            tagsPopupWrapperEl.classList.remove("hidden");
             updateAddTagBtn();
             await sleep();
             container.addEventListener("click", closeTagsPopupOnClick);
@@ -170,63 +184,67 @@ export function getTagsHelper(container, settings) {
     }
 
     function updateAddTagBtn() {
-        const isClosed = tagsPopupWrapper.classList.contains("hidden");
-        const isAllTagsSelected = tagsPopupWrapper.querySelector(".tag:not(.disabled)") === null;
+        const isClosed = tagsPopupWrapperEl.classList.contains("hidden");
+        const isAllTagsSelected = tagsPopupWrapperEl.querySelector(".tag:not(.selected)") === null;
         if (isClosed && isAllTagsSelected) {
-            addTagBtnContent.textContent = "–";
+            addTagBtnContentEl.textContent = "–";
         } else {
-            addTagBtnContent.textContent = "+";
+            addTagBtnContentEl.textContent = "+";
         }
         updateAddTagBtnTitle();
     }
     function updateAddTagBtnTitle() {
-        const popupTags = [...tagsPopupWrapper.querySelectorAll(".tag")];
+        const popupTags = [...tagsPopupWrapperEl.querySelectorAll(".tag")];
         const total = popupTags.length;
-        const selected = popupTags.filter(t => t.classList.contains("disabled")).length;
-        const inactive = popupTags.filter(t => t.classList.contains("inactive")).length;
-        const inactiveText = inactive ? ` (${selected - inactive})` : "";
-        addTagBtn.title = `${selected}${inactiveText} of ${total}`;
+        const selected = popupTags.filter(t => t.classList.contains("selected")).length;
+        const disabled = popupTags.filter(t => t.classList.contains("disabled")).length;
+        const disabledText = disabled ? ` (${selected - disabled})` : "";
+        addTagBtnEl.title = `${selected}${disabledText} of ${total}`;
     }
 
-    addTagBtn.addEventListener("contextmenu", event => {
+    /** @param {MouseEvent} event */
+    function onContextMenuSelectAllTagsOrClear(event) {
         event.preventDefault();
-        void clicked(addTagBtn);
-        const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag:not(.disabled)")];
+        void clicked(addTagBtnEl);
+        const tagEls = [...tagsPopupWrapperEl.querySelectorAll(".tag:not(.selected)")];
         if (tagEls.length) {
             for (const tagEl of tagEls) {
-                tagsContainer.append(tagEl.cloneNode(true));
-                tags.push(tagEl.dataset.url);
-                tagEl.classList.add("disabled");
+                tagsListContainerEl.append(tagEl.cloneNode(true));
+                tags.push(tagEl.dataset.tag);
+                tagEl.classList.add("selected");
             }
         } else {
             tags = [];
-            const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag.disabled")];
+            const tagEls = [...tagsPopupWrapperEl.querySelectorAll(".tag.selected")];
             for (const tagEl of tagEls) {
+                tagEl.classList.remove("selected");
                 tagEl.classList.remove("disabled");
-                tagEl.classList.remove("inactive");
             }
-            tagsContainer.innerHTML = "";
+            tagsListContainerEl.innerHTML = "";
         }
         updateAddTagBtn();
         onUpdateCb?.();
-    });
+    }
+    addTagBtnEl.addEventListener("contextmenu", onContextMenuSelectAllTagsOrClear);
 
-    let tagsReversed = false;
-    addTagBtn.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
+
+    /** @param {PointerEvent} event */
+    function onPointerDownReverseSelectedTags(event) {
         const MIDDLE_BUTTON = 1;
         if (event.button !== MIDDLE_BUTTON) {
             return;
         }
         event.preventDefault();
 
-        tagsReversed = tagsElem.classList.toggle("reversed");
+        tagsReversed = tagListWrapperEl.classList.toggle("reversed");
         onUpdateCb?.();
-    });
+    }
+    addTagBtnEl.addEventListener("pointerdown", onPointerDownReverseSelectedTags);
 
     function renderTags(urls, onUpdate) {
         tags = [];
         tagsReversed = false;
-        tagsContainer.innerHTML = "";
+        tagsListContainerEl.innerHTML = "";
         if (onUpdate) {
             onUpdateCb = onUpdate;
         }
@@ -239,18 +257,18 @@ export function getTagsHelper(container, settings) {
             }
             hostCountMap[host] = (hostCountMap[host] || 0) + 1;
         }
-        const urlEntries = Object.entries(hostCountMap)
+        const hostCountEntries = Object.entries(hostCountMap)
             .sort(([k1, v1], [k2, v2]) => {
                 return v2 - v1;
             });
 
         let tagsHtml = "";
-        for (const [k, v] of urlEntries) {
+        for (const [k, v] of hostCountEntries) {
             const color = getHsl(hashString(k), 90, 5);
-            tagsHtml += `<span class="tag" title="${v}" data-url="${k}" data-color="${color}"></span>`;
+            tagsHtml += `<span class="tag" data-tag="${k}" title="${v}" data-color="${color}"></span>`;
         }
-        tagsPopupContainer.innerHTML = tagsHtml;
-        const tagsEls = [...tagsPopupContainer.querySelectorAll(`.tag[data-color]`)];
+        tagsPopupContainerEl.innerHTML = tagsHtml;
+        const tagsEls = [...tagsPopupContainerEl.querySelectorAll(`.tag[data-color]`)];
         tagsEls.forEach(tag => tag.style.backgroundColor = tag.dataset.color);
 
         updateAddTagBtn();
