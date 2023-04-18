@@ -29,8 +29,8 @@ const banner = `// ==UserScript==
 // @noframes
 // ==/UserScript==\n\n\n`;
 
-// await fs.stat("./dist").catch(() => fs.mkdir("./dist"));
-await fs.writeFile("./href-taker.user.js", banner + code, {});
+await fs.stat("./dist").catch(() => fs.mkdir("./dist"));
+await fs.writeFile("./dist/href-taker.user.js", banner + code, {});
 
 
 async function bumpSemVerIfHashChanged(hash) {
