@@ -10,9 +10,8 @@ const bundles = await bundle.generate({});
 const code = bundles.output[0].code;
 
 const hash = createHash("sha1").update(code).digest("hex").slice(0, 6);
-console.log(hash);
-
 const version = await bumpSemVerIfHashChanged(hash);
+console.log(version);
 
 const banner = `// ==UserScript==
 // @name        HrefTaker
@@ -49,4 +48,3 @@ async function bumpSemVerIfHashChanged(hash) {
   }
   return packageJson.version;
 }
-
