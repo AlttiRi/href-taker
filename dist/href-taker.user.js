@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.0-2023.4.18-a2f1b2
+// @version     0.9.1-2023.4.18-2bc495
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -544,6 +544,7 @@ function getPopup(settings) {
                     <span id="input-selector-prompt">Selector</span>
                     <input id="input-selector" type="text" name="input_selector" value="${input_selector}" ${disabled(input_selector_disabled)} spellcheck="false">
                 </label>
+                <hr>
             </div>
         </div>
     </div>
@@ -803,7 +804,8 @@ input[disabled] {
 }
 
 fieldset, hr {
-    border-color: aliceblue;
+    border: 1px solid aliceblue;
+    margin: 4px 0;
 }
 
 </style>`;

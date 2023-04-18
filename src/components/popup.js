@@ -174,6 +174,7 @@ export function getPopup(settings) {
                     <span id="input-selector-prompt">Selector</span>
                     <input id="input-selector" type="text" name="input_selector" value="${input_selector}" ${disabled(input_selector_disabled)} spellcheck="false">
                 </label>
+                <hr>
             </div>
         </div>
     </div>
@@ -433,7 +434,8 @@ input[disabled] {
 }
 
 fieldset, hr {
-    border-color: aliceblue;
+    border: 1px solid aliceblue;
+    margin: 4px 0;
 }
 
 </style>`;
