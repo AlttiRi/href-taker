@@ -1,13 +1,13 @@
-import {getMinimized} from "./compoments/minimized.js";
-import {getWrapper} from "./compoments/wrapper.js";
-import {getPopup} from "./compoments/popup.js";
-import {getTagsHelper} from "./compoments/tags-helper.js";
-import {getListHelper} from "./compoments/list-helper.js";
+import {getMinimized} from "./components/minimized.js";
+import {getWrapper} from "./components/wrapper.js";
+import {getPopup} from "./components/popup.js";
+import {getTagsHelper} from "./components/tags-helper.js";
+import {getListHelper} from "./components/list-helper.js";
 import {parseUrls, undoUrlsToText, urlsToText} from "./text-urls-parsing.js";
 import {makeMovable, makeResizable, storeStateInLS} from "./movable-resizable.js";
 import {debounce} from "./util.js";
 import {addCSS, global} from "./gm-util.js";
-import {clicked} from "./compoments/util.js";
+import {clicked} from "./components/util.js";
 
 
 /**
