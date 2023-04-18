@@ -1,18 +1,3 @@
-// ==UserScript==
-// @name        HrefTaker
-// @version     0.7.3-2023.4.18-baf035
-// @namespace   gh.alttiri
-// @description URL grabber popup
-// @license     GPL-3.0
-// @homepageURL https://github.com/AlttiRi/href-taker
-// @supportURL  https://github.com/AlttiRi/href-taker/issues
-// @match       *://*/*
-// @grant       GM_registerMenuCommand
-// @grant       GM_addElement
-// @noframes
-// ==/UserScript==
-
-
 const global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
 const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "alttiri.github.io"].some(h => location.hostname === h);
 
@@ -1154,8 +1139,10 @@ function getRenders(settings, updateSettings) {
         shadowWrapper.setAttribute("id", "href-taker-outer-shadow-wrapper");
         shadowWrapper.attachShadow({mode: "open"});
         shadowWrapper.shadowRoot.innerHTML = wrapperHtml;
-        {
+        if (insertSelector === "html") {
             insertPlace.append(shadowWrapper);
+        } else {
+            insertPlace.prepend(shadowWrapper);
         }
 
         shadowContainer = shadowWrapper.shadowRoot.querySelector("#shadow-content-wrapper");
@@ -1180,7 +1167,7 @@ function getRenders(settings, updateSettings) {
         updateSettings({minimized: false});
 
         const wasOpened = querySelector("#popup");
-        closePopup();
+        closePopup()
         closeMinimized();
         resetPosition = wasOpened || resetPosition;
 
@@ -1565,7 +1552,7 @@ function getRenders(settings, updateSettings) {
         initShadowContainer();
 
         const wasOpened = querySelector("#popup-minimized");
-        closePopup();
+        closePopup()
         closeMinimized();
         resetPosition = wasOpened || resetPosition;
 
@@ -1789,6 +1776,14 @@ function getRandomValue(seed = Date.now()) {
     x ^= x + Math.imul(x ^ x >>> 7, x | 61);
     return ((x ^ x >>> 14) >>> 0) / 4294967296;
 }
+function getRandom(seed = Date.now()) { // mulberry32 algo
+    return function() {
+        let x = seed += 0x6D2B79F5;
+        x = Math.imul(x ^ x >>> 15, x | 1);
+        x ^= x + Math.imul(x ^ x >>> 7, x | 61);
+        return ((x ^ x >>> 14) >>> 0) / 4294967296; // 4 * 1024 ** 3;
+    }
+}
 
 // --------------------------
 
@@ -1905,7 +1900,7 @@ function storeStateInLS({onMove, onStop, id: lsName, reset, restore}) {
         _onStop = function(state) {
             onStop(state);
             saveStateLS(state);
-        };
+        }
     } else {
         _onStop = saveStateLS;
     }
@@ -1916,3 +1911,4 @@ function storeStateInLS({onMove, onStop, id: lsName, reset, restore}) {
         state
     };
 }
+
