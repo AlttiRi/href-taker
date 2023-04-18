@@ -10,7 +10,8 @@ export function getListHelper(container, settings) {
     const mainHost = url => new URL(url).hostname.split(".").slice(-2).join(".");
 
     const clickedUrls = new Set();
-    contentElem.addEventListener("click", /** @param {MouseEvent} event */ event => {
+    /** @param {MouseEvent} event */
+    function onClickMarkUrlAsClicked(event) {
         if (!event.target.classList.contains("visible")) {
             return;
         }
@@ -22,9 +23,11 @@ export function getListHelper(container, settings) {
         for (const dupLink of dupLinks) {
             dupLink.closest(".url-item").classList.add("clicked");
         }
-    });
+    }
+    contentElem.addEventListener("click", onClickMarkUrlAsClicked);
 
-    contentElem.addEventListener("contextmenu", /** @param {MouseEvent} event */ event => {
+    /** @param {MouseEvent} event */
+    function onAltContextMenuUnmarkClickedUrl(event) {
         if (!event.altKey) {
             return;
         }
@@ -44,7 +47,8 @@ export function getListHelper(container, settings) {
         for (const dupLink of dupLinks) {
             dupLink.closest(".url-item").classList.remove("clicked");
         }
-    });
+    }
+    contentElem.addEventListener("contextmenu", onAltContextMenuUnmarkClickedUrl);
 
     function urlToHtml(url) {
         let {prefix = "", main} = url.match(/(?<prefix>^https?:\/\/(www\.)?)?(?<main>.+)/i).groups;

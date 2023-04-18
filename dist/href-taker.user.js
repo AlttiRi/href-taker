@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.8.3-2023.4.18-6639f7
+// @version     0.8.4-2023.4.18-a2f1b2
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1118,7 +1118,8 @@ function getListHelper(container, settings) {
     const mainHost = url => new URL(url).hostname.split(".").slice(-2).join(".");
 
     const clickedUrls = new Set();
-    contentElem.addEventListener("click", /** @param {MouseEvent} event */ event => {
+    /** @param {MouseEvent} event */
+    function onClickMarkUrlAsClicked(event) {
         if (!event.target.classList.contains("visible")) {
             return;
         }
@@ -1130,9 +1131,11 @@ function getListHelper(container, settings) {
         for (const dupLink of dupLinks) {
             dupLink.closest(".url-item").classList.add("clicked");
         }
-    });
+    }
+    contentElem.addEventListener("click", onClickMarkUrlAsClicked);
 
-    contentElem.addEventListener("contextmenu", /** @param {MouseEvent} event */ event => {
+    /** @param {MouseEvent} event */
+    function onAltContextMenuUnmarkClickedUrl(event) {
         if (!event.altKey) {
             return;
         }
@@ -1152,7 +1155,8 @@ function getListHelper(container, settings) {
         for (const dupLink of dupLinks) {
             dupLink.closest(".url-item").classList.remove("clicked");
         }
-    });
+    }
+    contentElem.addEventListener("contextmenu", onAltContextMenuUnmarkClickedUrl);
 
     function urlToHtml(url) {
         let {prefix = "", main} = url.match(/(?<prefix>^https?:\/\/(www\.)?)?(?<main>.+)/i).groups;
