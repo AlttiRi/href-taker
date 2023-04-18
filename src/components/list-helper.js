@@ -1,7 +1,7 @@
 import {hashString} from "../util.js";
 
 /**
- * @param container
+ * @param {HTMLElement} container
  * @param {ScriptSettings} settings
  */
 export function getListHelper(container, settings) {
