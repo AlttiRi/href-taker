@@ -10,7 +10,7 @@ export function getListHelper(container, settings) {
     const mainHost = url => new URL(url).hostname.split(".").slice(-2).join(".");
 
     const clickedUrls = new Set();
-    contentElem.addEventListener("click", event => {
+    contentElem.addEventListener("click", /** @param {MouseEvent} event */ event => {
         if (!event.target.classList.contains("visible")) {
             return;
         }

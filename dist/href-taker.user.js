@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.8.2-2023.4.18-21709f
+// @version     0.8.3-2023.4.18-6639f7
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1118,7 +1118,7 @@ function getListHelper(container, settings) {
     const mainHost = url => new URL(url).hostname.split(".").slice(-2).join(".");
 
     const clickedUrls = new Set();
-    contentElem.addEventListener("click", event => {
+    contentElem.addEventListener("click", /** @param {MouseEvent} event */ event => {
         if (!event.target.classList.contains("visible")) {
             return;
         }
