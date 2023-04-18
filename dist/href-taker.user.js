@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.1-2023.4.18-2bc495
+// @version     0.9.2-2023.4.18-dc6ff5
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -303,7 +303,7 @@ function getTags() {
 
         const tagsCss = cssFromStyle`
 <style>
-.tags.reversed .tags-list .tag {
+.tags-list-wrapper.reversed .tags-list .tag {
     text-decoration: line-through;
 }
 #tags-main {
