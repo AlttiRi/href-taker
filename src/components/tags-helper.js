@@ -23,6 +23,8 @@ export function getTagsHelper(container, settings) {
     tagsListContainerEl.addEventListener("contextmenu", onContextMenuToggleDisablingSelectedTag);
     tagsPopupContainerEl.addEventListener("contextmenu", onContextMenuAddPopupTagOrToggleDisabling);
 
+    tagsListContainerEl.addEventListener("pointerdown", onMMBPointerDownEnableOnlyTargetTag);
+
     addTagBtnEl.addEventListener("click", openTagsPopup);
     addTagBtnEl.addEventListener("contextmenu", onContextMenuSelectAllTagsOrClear);
     addTagBtnEl.addEventListener("pointerdown", onMMBPointerDownReverseSelectedTags);
@@ -34,6 +36,21 @@ export function getTagsHelper(container, settings) {
             return null;
         }
         return tagEl;
+    }
+
+    /** @param {PointerEvent} event */
+    function onMMBPointerDownEnableOnlyTargetTag(event) {
+        const MIDDLE_BUTTON = 1;
+        if (event.button !== MIDDLE_BUTTON) { return; }
+        const listTagEl = getTagFromEvent(event);
+        if (!listTagEl) { return; }
+        event.preventDefault();
+
+        disableAllSelectedTagElems();
+        enableTag(listTagEl);
+
+        updateAddTagBtnTitle();
+        onUpdateCb?.();
     }
 
     /** @param {MouseEvent} event */

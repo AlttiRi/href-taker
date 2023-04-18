@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.4-2023.4.18-3b93f9
+// @version     0.9.5-2023.4.18-0b5f5e
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -836,6 +836,8 @@ function getTagsHelper(container, settings) {
     tagsListContainerEl.addEventListener("contextmenu", onContextMenuToggleDisablingSelectedTag);
     tagsPopupContainerEl.addEventListener("contextmenu", onContextMenuAddPopupTagOrToggleDisabling);
 
+    tagsListContainerEl.addEventListener("pointerdown", onMMBPointerDownEnableOnlyTargetTag);
+
     addTagBtnEl.addEventListener("click", openTagsPopup);
     addTagBtnEl.addEventListener("contextmenu", onContextMenuSelectAllTagsOrClear);
     addTagBtnEl.addEventListener("pointerdown", onMMBPointerDownReverseSelectedTags);
@@ -847,6 +849,21 @@ function getTagsHelper(container, settings) {
             return null;
         }
         return tagEl;
+    }
+
+    /** @param {PointerEvent} event */
+    function onMMBPointerDownEnableOnlyTargetTag(event) {
+        const MIDDLE_BUTTON = 1;
+        if (event.button !== MIDDLE_BUTTON) { return; }
+        const listTagEl = getTagFromEvent(event);
+        if (!listTagEl) { return; }
+        event.preventDefault();
+
+        disableAllSelectedTagElems();
+        enableTag(listTagEl);
+
+        updateAddTagBtnTitle();
+        onUpdateCb?.();
     }
 
     /** @param {MouseEvent} event */
