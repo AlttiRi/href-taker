@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.7.3-2023.4.18-baf035
+// @version     0.8.0-2023.4.18-bf844d
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -14,13 +14,6 @@
 
 
 const global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
-const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "alttiri.github.io"].some(h => location.hostname === h);
-
-const {showPopup} = initHrefTaker();
-if (typeof GM_registerMenuCommand === "function") {
-    GM_registerMenuCommand("Show popup", () => showPopup());
-}
-
 function addCSS(cssText, target = document.head) {
     if (typeof GM_addElement === "function") {
         return GM_addElement(target, "style", {textContent: cssText});
@@ -31,63 +24,43 @@ function addCSS(cssText, target = document.head) {
     return styleElem;
 }
 
+const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "alttiri.github.io"].some(h => location.hostname === h);
 
-function initHrefTaker() {
-    const {settings, updateSettings} = loadSettings();
+/**
+ * @typedef {Object|null} ScriptSettings
+ * @property {string}  input_only
+ * @property {boolean} input_only_disabled
+ * @property {string}  input_ignore
+ * @property {boolean} input_ignore_disabled
+ * @property {boolean} include_text_url
+ * @property {boolean} only_text_url
+ * @property {boolean} console_log
+ * @property {boolean} console_vars
+ * @property {boolean} unique
+ * @property {boolean} sort
+ * @property {boolean} reverse
+ * @property {boolean} ignore_first_party
+ * @property {string}  input_selector
+ * @property {boolean} input_selector_disabled
+ * @property {boolean} https
+ * @property {boolean} auto_open
+ * @property {boolean} auto_list
+ * @property {boolean} minimized
+ * @property {boolean} brackets_trim
+ * @property {boolean} opened
+ * @property {boolean} reverse_input_only
+ * @property {boolean} case_sensitive
+ * @property {boolean} hide_prefix
+ * @property {boolean} show_tags
+ * @property {boolean} tags_collapsed
+ * @property {boolean} filters_collapsed
+ * @property {boolean} controls_collapsed
+ * @property {boolean} unselectable
+ */
 
-    // {showPopup, closePopup, showMinimized, closeMinimized, close}
-    const render = getRenders(settings, updateSettings);
-
-    if (settings.auto_open || settings.opened) {
-        if (settings.minimized === true) {
-            render.showMinimized();
-        } else {
-            render.showPopup();
-        }
-    }
-    const methods = {...render, settings, updateSettings};
-    if (settings.console_vars) {
-        Object.assign(global, methods);
-    }
-
-    return methods;
-}
-
-/** @return {{settings: Settings, updateSettings: function}} */
+/** @return {{settings: ScriptSettings, updateSettings: function}} */
 function loadSettings() {
-    /**
-     * @typedef {Object|null} Settings
-     * @property {string}  input_only
-     * @property {boolean} input_only_disabled
-     * @property {string}  input_ignore
-     * @property {boolean} input_ignore_disabled
-     * @property {boolean} include_text_url
-     * @property {boolean} only_text_url
-     * @property {boolean} console_log
-     * @property {boolean} console_vars
-     * @property {boolean} unique
-     * @property {boolean} sort
-     * @property {boolean} reverse
-     * @property {boolean} ignore_first_party
-     * @property {string}  input_selector
-     * @property {boolean} input_selector_disabled
-     * @property {boolean} https
-     * @property {boolean} auto_open
-     * @property {boolean} auto_list
-     * @property {boolean} minimized
-     * @property {boolean} brackets_trim
-     * @property {boolean} opened
-     * @property {boolean} reverse_input_only
-     * @property {boolean} case_sensitive
-     * @property {boolean} hide_prefix
-     * @property {boolean} show_tags
-     * @property {boolean} tags_collapsed
-     * @property {boolean} filters_collapsed
-     * @property {boolean} controls_collapsed
-     * @property {boolean} unselectable
-     */
-
-    /** @type {Settings} */
+    /** @type {ScriptSettings} */
     const defaultSettings = {
         input_only: "",
         input_only_disabled: false,
@@ -120,7 +93,7 @@ function loadSettings() {
     };
     const LocalStoreName = "ujs-href-taker";
 
-    /** @type Settings */
+    /** @type ScriptSettings */
     let savedSettings;
     try {
         savedSettings = JSON.parse(localStorage.getItem(LocalStoreName)) || {};
@@ -159,31 +132,120 @@ function loadSettings() {
     };
 }
 
-/** @param {Settings} settings */
-function getStaticContent(settings) {
-    /**
-     * Removes `<style>` and `</style>` tags are required for IDE syntax highlighting.
-     * @example
-     * const cssText = cssFromStyle`
-     * <style>
-     * #some-id {
-     *     display: flex;
-     *     justify-content: center;
-     * }
-     * </style>`;
-     * @param textParts
-     * @param values
-     * @return {*}
-     */
-    function cssFromStyle(textParts, ...values) {
-        values.push("");
-        const fullText = textParts.reduce((pre, cur, index) => {
-            return pre + cur + values[index];
-        }, "");
-        return fullText.replace(/^\s*<style>\n?/, "").replace(/\s*<\/style>\s*$/, "");
-    }
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
+function debounce(runnable, ms = 100) {
+    let timerId;
+    return function() {
+        if (timerId) {
+            clearTimeout(timerId);
+        }
+        timerId = setTimeout(() => {
+            runnable.apply(this, arguments);
+            timerId = null;
+        }, ms);
+    }
+}
+
+/**
+ * `hashCode` like
+ * @example
+ * hashString("Qwerty") === -1862984904
+ * hashString("A") === 65
+ * @param {string} str
+ * @return {number}
+ */
+function hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = Math.imul(Math.imul(31, hash) + str.charCodeAt(i), 1);
+    }
+    return hash;
+}
+
+
+// --------------------------
+
+
+
+function getHsl(seed, L = 40, dL = 20) {
+    const H = Math.trunc(360 * getRandomValue(seed));
+    const _L = Math.trunc((L + getRandomValue(seed + 1) * dL)) + "%";
+    return `hsl(${H}, 100%, ${_L})`;
+}
+
+function getRandomValue(seed = Date.now()) {
+    let x = seed + 0x6D2B79F5;
+    x = Math.imul(x ^ x >>> 15, x | 1);
+    x ^= x + Math.imul(x ^ x >>> 7, x | 61);
+    return ((x ^ x >>> 14) >>> 0) / 4294967296;
+}
+
+// --------------------------
+
+/**
+ * Removes `<style>` and `</style>` tags are required for IDE syntax highlighting.
+ * @example
+ * const cssText = cssFromStyle`
+ * <style>
+ * #some-id {
+ *     display: flex;
+ *     justify-content: center;
+ * }
+ * </style>`;
+ * @param textParts
+ * @param values
+ * @return {*}
+ */
+function cssFromStyle(textParts, ...values) {
+    values.push("");
+    const fullText = textParts.reduce((pre, cur, index) => {
+        return pre + cur + values[index];
+    }, "");
+    return fullText.replace(/^\s*<style>\n?/, "").replace(/\s*<\/style>\s*$/, "");
+}
+
+async function clicked(elem) {
+    elem.classList.add("clicked");
+    elem.blur();
+    await sleep(125);
+    elem.classList.remove("clicked");
+}
+
+function getMinimized() {
+    const minimizedHtml = `
+<div id="popup-minimized">
+    <div>
+        <span>HrefTaker</span>        
+        <button id="open-popup" title="Open popup">O</button>
+        <button id="close-popup" title="Close popup">X</button>
+    </div>
+</div>`;
+
+    const minimizedCss = cssFromStyle`
+<style>
+#popup-minimized {
+    position: fixed;
+    width: fit-content;
+    background-color: white;
+    padding: 3px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    border: 1px solid gray;
+    border-radius: 2px;
+}
+#popup-minimized span {
+    padding: 0 4px;
+}
+</style>`;
+
+    return {minimizedHtml, minimizedCss};
+}
+
+function getWrapper() {
     const wrapperHtml = `<div id="shadow-content-wrapper"></div>`;
+
     const wrapperCss = cssFromStyle`
 <style>
 #shadow-content-wrapper {
@@ -226,30 +288,11 @@ button.clicked, .button.clicked {
 }
 </style>`;
 
-    const minimizedHtml = `
-<div id="popup-minimized">
-    <div>
-        <span>HrefTaker</span>        
-        <button id="open-popup" title="Open popup">O</button>
-        <button id="close-popup" title="Close popup">X</button>
-    </div>
-</div>`;
-    const minimizedCss = cssFromStyle`
-<style>
-#popup-minimized {
-    position: fixed;
-    width: fit-content;
-    background-color: white;
-    padding: 3px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    border: 1px solid gray;
-    border-radius: 2px;
+    return {wrapperHtml, wrapperCss};
 }
-#popup-minimized span {
-    padding: 0 4px;
-}
-</style>`;
 
+/** @param {ScriptSettings} settings */
+function getPopup(settings) {
     const {
         input_only,
         input_only_disabled,
@@ -439,6 +482,7 @@ button.clicked, .button.clicked {
         </div>
     </div>
 </div>`;
+
     const popupCss = cssFromStyle`
 <style>
 #popup[tabindex="-1"] {
@@ -749,399 +793,660 @@ fieldset, hr {
 
 </style>`;
 
-    function getTagsHelper(container) {
-        const tagsContainer       = container.querySelector(`.tags-wrapper`);
-        const tagsPopupContainer  = container.querySelector(`.tags-prompt`);
+    return {popupHtml, popupCss};
+}
 
-        let onUpdateCb = null;
+/**
+ * @param container
+ * @param {ScriptSettings} settings
+ */
+function getTagsHelper(container, settings) {
+    const tagsContainer       = container.querySelector(`.tags-wrapper`);
+    const tagsPopupContainer  = container.querySelector(`.tags-prompt`);
 
-        let tags = [];
-        tagsPopupContainer.addEventListener("click", event => {
-            const tagEl = /** @type {HTMLElement} */ event.target;
-            if (!tagEl.classList.contains("tag")) {
-                return;
-            }
-            const disabled = tagEl.classList.contains("disabled");
-            if (disabled) {
-                const listTag = tagsContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
-                listTag.remove();
-                tags = tags.filter(url => url !== tagEl.dataset.url);
-            } else {
-                tagsContainer.append(tagEl.cloneNode(true));
-                tags.push(tagEl.dataset.url);
-            }
-            tagEl.classList.toggle("disabled");
-            updateAddTagBtnTitle();
-            onUpdateCb?.();
-        });
-        tagsContainer.addEventListener("click", event => {
-            const tagEl = /** @type {HTMLElement} */ event.target;
-            if (!tagEl.classList.contains("tag")) {
-                return;
-            }
-            const popupTag = tagsPopupContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
-            popupTag.classList.remove("disabled");
-            popupTag.classList.remove("inactive");
+    let onUpdateCb = null;
+
+    let tags = [];
+    tagsPopupContainer.addEventListener("click", event => {
+        const tagEl = /** @type {HTMLElement} */ event.target;
+        if (!tagEl.classList.contains("tag")) {
+            return;
+        }
+        const disabled = tagEl.classList.contains("disabled");
+        if (disabled) {
+            const listTag = tagsContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
+            listTag.remove();
             tags = tags.filter(url => url !== tagEl.dataset.url);
-            tagEl.remove();
-            updateAddTagBtn();
-            onUpdateCb?.();
-        });
+        } else {
+            tagsContainer.append(tagEl.cloneNode(true));
+            tags.push(tagEl.dataset.url);
+        }
+        tagEl.classList.toggle("disabled");
+        updateAddTagBtnTitle();
+        onUpdateCb?.();
+    });
+    tagsContainer.addEventListener("click", event => {
+        const tagEl = /** @type {HTMLElement} */ event.target;
+        if (!tagEl.classList.contains("tag")) {
+            return;
+        }
+        const popupTag = tagsPopupContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
+        popupTag.classList.remove("disabled");
+        popupTag.classList.remove("inactive");
+        tags = tags.filter(url => url !== tagEl.dataset.url);
+        tagEl.remove();
+        updateAddTagBtn();
+        onUpdateCb?.();
+    });
 
-        function disableAllSelectedTagElems() {
-            for (const tag of tags) {
-                const tagEl = tagsContainer.querySelector(`[data-url="${tag}"]`);
-                const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"]`);
-                tagEl.classList.add("disabled");
-                popupTagEl.classList.add("inactive");
-            }
-            tags = [];
+    function disableAllSelectedTagElems() {
+        for (const tag of tags) {
+            const tagEl = tagsContainer.querySelector(`[data-url="${tag}"]`);
+            const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"]`);
+            tagEl.classList.add("disabled");
+            popupTagEl.classList.add("inactive");
         }
-        function enableAllSelectedTagElems() {
-            const tagElems = [...tagsContainer.querySelectorAll(`[data-url].disabled`)];
-            for (const tagEl of tagElems) {
-                const tag = tagEl.dataset.url;
-                const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"].inactive`);
-                tagEl.classList.remove("disabled");
-                popupTagEl.classList.remove("inactive");
-                tags.push(tag);
-            }
-        }
-        function enableTag(tagEl) {
+        tags = [];
+    }
+    function enableAllSelectedTagElems() {
+        const tagElems = [...tagsContainer.querySelectorAll(`[data-url].disabled`)];
+        for (const tagEl of tagElems) {
             const tag = tagEl.dataset.url;
             const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"].inactive`);
             tagEl.classList.remove("disabled");
             popupTagEl.classList.remove("inactive");
             tags.push(tag);
         }
-        function disableTag(tagEl) {
-            const tag = tagEl.dataset.url;
-            const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"]`);
-            tagEl.classList.add("disabled");
-            popupTagEl.classList.add("inactive");
-            tags = tags.filter(t => t !== tag);
+    }
+    function enableTag(tagEl) {
+        const tag = tagEl.dataset.url;
+        const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"].inactive`);
+        tagEl.classList.remove("disabled");
+        popupTagEl.classList.remove("inactive");
+        tags.push(tag);
+    }
+    function disableTag(tagEl) {
+        const tag = tagEl.dataset.url;
+        const popupTagEl = tagsPopupContainer.querySelector(`[data-url="${tag}"]`);
+        tagEl.classList.add("disabled");
+        popupTagEl.classList.add("inactive");
+        tags = tags.filter(t => t !== tag);
+    }
+    tagsContainer.addEventListener("contextmenu", /** @param {MouseEvent} event */ event => {
+        const currentTagEl = /** @type {HTMLElement} */ event.target;
+        if (!currentTagEl.classList.contains("tag")) {
+            return;
         }
-        tagsContainer.addEventListener("contextmenu", /** @param {MouseEvent} event */ event => {
-            const currentTagEl = /** @type {HTMLElement} */ event.target;
-            if (!currentTagEl.classList.contains("tag")) {
-                return;
-            }
-            event.preventDefault();
-            if (event.shiftKey) {
-                const enabled = !currentTagEl.classList.contains("disabled");
-                if (enabled) {
-                    if (tags.length > 1) {
-                        disableAllSelectedTagElems();
-                        enableTag(currentTagEl);
-                    } else {
-                        enableAllSelectedTagElems();
-                    }
+        event.preventDefault();
+        if (event.shiftKey) {
+            const enabled = !currentTagEl.classList.contains("disabled");
+            if (enabled) {
+                if (tags.length > 1) {
+                    disableAllSelectedTagElems();
+                    enableTag(currentTagEl);
                 } else {
-                    const tagElems = [...tagsContainer.querySelectorAll(`[data-url]`)];
-                    if (tags.length + 1 === tagElems.length) {
-                        disableAllSelectedTagElems();
-                    } else {
-                        enableAllSelectedTagElems();
-                        disableTag(currentTagEl);
-                    }
+                    enableAllSelectedTagElems();
                 }
             } else {
-                const popupTag = tagsPopupContainer.querySelector(`[data-url="${currentTagEl.dataset.url}"]`);
-                const disabled = currentTagEl.classList.toggle("disabled");
-                if (disabled) {
-                    tags = tags.filter(tag => tag !== currentTagEl.dataset.url);
-                    popupTag.classList.add("inactive");
+                const tagElems = [...tagsContainer.querySelectorAll(`[data-url]`)];
+                if (tags.length + 1 === tagElems.length) {
+                    disableAllSelectedTagElems();
                 } else {
-                    tags.push(currentTagEl.dataset.url);
-                    popupTag.classList.remove("inactive");
+                    enableAllSelectedTagElems();
+                    disableTag(currentTagEl);
                 }
             }
-            updateAddTagBtnTitle();
-            onUpdateCb?.();
-        });
-        tagsPopupContainer.addEventListener("contextmenu", event => {
-            const tagEl = /** @type {HTMLElement} */ event.target;
-            if (!tagEl.classList.contains("tag")) {
-                return;
+        } else {
+            const popupTag = tagsPopupContainer.querySelector(`[data-url="${currentTagEl.dataset.url}"]`);
+            const disabled = currentTagEl.classList.toggle("disabled");
+            if (disabled) {
+                tags = tags.filter(tag => tag !== currentTagEl.dataset.url);
+                popupTag.classList.add("inactive");
+            } else {
+                tags.push(currentTagEl.dataset.url);
+                popupTag.classList.remove("inactive");
             }
-            event.preventDefault();
-            const inList = tagEl.classList.contains("disabled");
-            if (!inList) {
-                tagEl.classList.add("disabled");
-                tagsContainer.append(tagEl.cloneNode(true));
+        }
+        updateAddTagBtnTitle();
+        onUpdateCb?.();
+    });
+    tagsPopupContainer.addEventListener("contextmenu", event => {
+        const tagEl = /** @type {HTMLElement} */ event.target;
+        if (!tagEl.classList.contains("tag")) {
+            return;
+        }
+        event.preventDefault();
+        const inList = tagEl.classList.contains("disabled");
+        if (!inList) {
+            tagEl.classList.add("disabled");
+            tagsContainer.append(tagEl.cloneNode(true));
+            tagEl.classList.add("inactive");
+        } else {
+            const listTag = tagsContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
+            const disabled = listTag.classList.toggle("disabled");
+            if (disabled) {
+                tags = tags.filter(url => url !== listTag.dataset.url);
                 tagEl.classList.add("inactive");
             } else {
-                const listTag = tagsContainer.querySelector(`[data-url="${tagEl.dataset.url}"]`);
-                const disabled = listTag.classList.toggle("disabled");
-                if (disabled) {
-                    tags = tags.filter(url => url !== listTag.dataset.url);
-                    tagEl.classList.add("inactive");
-                } else {
-                    tags.push(listTag.dataset.url);
-                    tagEl.classList.remove("inactive");
-                }
+                tags.push(listTag.dataset.url);
+                tagEl.classList.remove("inactive");
             }
-            updateAddTagBtnTitle();
-            onUpdateCb?.();
-        });
+        }
+        updateAddTagBtnTitle();
+        onUpdateCb?.();
+    });
 
-        const tagsElem         = container.querySelector(".tags");
-        const addTagBtn        = container.querySelector(".tag-add");
-        const addTagBtnContent = container.querySelector(".tag-add span");
-        const tagsPopupWrapper = container.querySelector(".tags-prompt-wrapper");
-        addTagBtn.addEventListener("click", openTagsPopup);
-        function closeTagsPopup() {
-            addTagBtn.classList.remove("rotate");
-            tagsPopupWrapper.classList.add("hidden");
-            container.removeEventListener("click", closeTagsPopupOnClick);
+    const tagsElem         = container.querySelector(".tags");
+    const addTagBtn        = container.querySelector(".tag-add");
+    const addTagBtnContent = container.querySelector(".tag-add span");
+    const tagsPopupWrapper = container.querySelector(".tags-prompt-wrapper");
+    addTagBtn.addEventListener("click", openTagsPopup);
+    function closeTagsPopup() {
+        addTagBtn.classList.remove("rotate");
+        tagsPopupWrapper.classList.add("hidden");
+        container.removeEventListener("click", closeTagsPopupOnClick);
+        updateAddTagBtn();
+    }
+    function closeTagsPopupOnClick(event) {
+        const isTagPopup = event.target.closest(".tags-prompt-wrapper");
+        const isTag = event.target.classList.contains("tag") && !event.target.classList.contains("tag-add");
+        if (!isTagPopup && !isTag) {
+            closeTagsPopup();
+        }
+    }
+    async function openTagsPopup() {
+        if (tagsPopupWrapper.classList.contains("hidden")) {
+            addTagBtn.classList.add("rotate");
+            tagsPopupWrapper.classList.remove("hidden");
             updateAddTagBtn();
-        }
-        function closeTagsPopupOnClick(event) {
-            const isTagPopup = event.target.closest(".tags-prompt-wrapper");
-            const isTag = event.target.classList.contains("tag") && !event.target.classList.contains("tag-add");
-            if (!isTagPopup && !isTag) {
-                closeTagsPopup();
-            }
-        }
-        async function openTagsPopup() {
-            if (tagsPopupWrapper.classList.contains("hidden")) {
-                addTagBtn.classList.add("rotate");
-                tagsPopupWrapper.classList.remove("hidden");
-                updateAddTagBtn();
-                await sleep();
-                container.addEventListener("click", closeTagsPopupOnClick);
-            }
-        }
-
-        function updateAddTagBtn() {
-            const isClosed = tagsPopupWrapper.classList.contains("hidden");
-            const isAllTagsSelected = tagsPopupWrapper.querySelector(".tag:not(.disabled)") === null;
-            if (isClosed && isAllTagsSelected) {
-                addTagBtnContent.textContent = "–";
-            } else {
-                addTagBtnContent.textContent = "+";
-            }
-            updateAddTagBtnTitle();
-        }
-        function updateAddTagBtnTitle() {
-            const popupTags = [...tagsPopupWrapper.querySelectorAll(".tag")];
-            const total = popupTags.length;
-            const selected = popupTags.filter(t => t.classList.contains("disabled")).length;
-            const inactive = popupTags.filter(t => t.classList.contains("inactive")).length;
-            const inactiveText = inactive ? ` (${selected - inactive})` : "";
-            addTagBtn.title = `${selected}${inactiveText} of ${total}`;
-        }
-
-        addTagBtn.addEventListener("contextmenu", event => {
-            event.preventDefault();
-            void clicked(addTagBtn);
-            const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag:not(.disabled)")];
-            if (tagEls.length) {
-                for (const tagEl of tagEls) {
-                    tagsContainer.append(tagEl.cloneNode(true));
-                    tags.push(tagEl.dataset.url);
-                    tagEl.classList.add("disabled");
-                }
-            } else {
-                tags = [];
-                const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag.disabled")];
-                for (const tagEl of tagEls) {
-                    tagEl.classList.remove("disabled");
-                    tagEl.classList.remove("inactive");
-                }
-                tagsContainer.innerHTML = "";
-            }
-            updateAddTagBtn();
-            onUpdateCb?.();
-        });
-
-        let tagsReversed = false;
-        addTagBtn.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
-            const MIDDLE_BUTTON = 1;
-            if (event.button !== MIDDLE_BUTTON) {
-                return;
-            }
-            event.preventDefault();
-
-            tagsReversed = tagsElem.classList.toggle("reversed");
-            onUpdateCb?.();
-        });
-
-        function renderTags(urls, onUpdate) {
-            tags = [];
-            tagsReversed = false;
-            tagsContainer.innerHTML = "";
-            if (onUpdate) {
-                onUpdateCb = onUpdate;
-            }
-
-            const hostCountMap = {};
-            for (const url of urls) {
-                const host = url.match(/\w+\.\w+(?=\/)/)?.[0];
-                if (!host) {
-                    continue;
-                }
-                hostCountMap[host] = (hostCountMap[host] || 0) + 1;
-            }
-            const urlEntries = Object.entries(hostCountMap)
-                .sort(([k1, v1], [k2, v2]) => {
-                    return v2 - v1;
-                });
-
-            let tagsHtml = "";
-            for (const [k, v] of urlEntries) {
-                const color = getHsl(hashString(k), 90, 5);
-                tagsHtml += `<span class="tag" title="${v}" data-url="${k}" data-color="${color}"></span>`;
-            }
-            tagsPopupContainer.innerHTML = tagsHtml;
-            const tagsEls = [...tagsPopupContainer.querySelectorAll(`.tag[data-color]`)];
-            tagsEls.forEach(tag => tag.style.backgroundColor = tag.dataset.color);
-
-            updateAddTagBtn();
-        }
-
-        function filterTags(urls) {
-            let urlsFilteredByTags = urls;
-            if (tags.length) {
-                let matchOnly;
-                if (!settings.case_sensitive) {
-                    matchOnly = url => tags.some(tag => url.toLowerCase().includes(tag));
-                } else {
-                    matchOnly = url => tags.some(tag => url.includes(tag));
-                }
-                if (!tagsReversed) {
-                    urlsFilteredByTags = urls.filter(url =>  matchOnly(url));
-                } else {
-                    urlsFilteredByTags = urls.filter(url => !matchOnly(url));
-                }
-            }
-            return urlsFilteredByTags;
-        }
-
-        return {
-            renderTags,
-            filterTags,
+            await sleep();
+            container.addEventListener("click", closeTagsPopupOnClick);
         }
     }
 
-    function getListHelper(container) {
-        const headerElem  = container.querySelector(`#result-list-header`);
-        const contentElem = container.querySelector(`#result-list`);
-        const mainHost = url => new URL(url).hostname.split(".").slice(-2).join(".");
+    function updateAddTagBtn() {
+        const isClosed = tagsPopupWrapper.classList.contains("hidden");
+        const isAllTagsSelected = tagsPopupWrapper.querySelector(".tag:not(.disabled)") === null;
+        if (isClosed && isAllTagsSelected) {
+            addTagBtnContent.textContent = "–";
+        } else {
+            addTagBtnContent.textContent = "+";
+        }
+        updateAddTagBtnTitle();
+    }
+    function updateAddTagBtnTitle() {
+        const popupTags = [...tagsPopupWrapper.querySelectorAll(".tag")];
+        const total = popupTags.length;
+        const selected = popupTags.filter(t => t.classList.contains("disabled")).length;
+        const inactive = popupTags.filter(t => t.classList.contains("inactive")).length;
+        const inactiveText = inactive ? ` (${selected - inactive})` : "";
+        addTagBtn.title = `${selected}${inactiveText} of ${total}`;
+    }
 
-        const clickedUrls = new Set();
-        contentElem.addEventListener("click", event => {
-            if (!event.target.classList.contains("visible")) {
-                return;
+    addTagBtn.addEventListener("contextmenu", event => {
+        event.preventDefault();
+        void clicked(addTagBtn);
+        const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag:not(.disabled)")];
+        if (tagEls.length) {
+            for (const tagEl of tagEls) {
+                tagsContainer.append(tagEl.cloneNode(true));
+                tags.push(tagEl.dataset.url);
+                tagEl.classList.add("disabled");
             }
-            const urlItem = event.target.closest(".url-item");
-            urlItem.classList.add("clicked");
-            const url = urlItem.querySelector("a").href;
-            clickedUrls.add(url);
-            const dupLinks = [...contentElem.querySelectorAll(`.url-item:not(.clicked) a[href="${url}"]`)];
-            for (const dupLink of dupLinks) {
-                dupLink.closest(".url-item").classList.add("clicked");
+        } else {
+            tags = [];
+            const tagEls = [...tagsPopupWrapper.querySelectorAll(".tag.disabled")];
+            for (const tagEl of tagEls) {
+                tagEl.classList.remove("disabled");
+                tagEl.classList.remove("inactive");
             }
-        });
+            tagsContainer.innerHTML = "";
+        }
+        updateAddTagBtn();
+        onUpdateCb?.();
+    });
 
-        contentElem.addEventListener("contextmenu", /** @param {MouseEvent} event */ event => {
-            if (!event.altKey) {
-                return;
-            }
-            if (!event.target.classList.contains("visible")) {
-                return;
-            }
-            event.preventDefault();
-            const urlItem = event.target.closest(".url-item");
-            const wasClicked = urlItem.classList.contains("clicked");
-            if (!wasClicked) {
-                return;
-            }
-            urlItem.classList.remove("clicked");
-            const url = urlItem.querySelector("a").href;
-            clickedUrls.delete(url);
-            const dupLinks = [...contentElem.querySelectorAll(`.url-item.clicked a[href="${url}"]`)];
-            for (const dupLink of dupLinks) {
-                dupLink.closest(".url-item").classList.remove("clicked");
-            }
-        });
+    let tagsReversed = false;
+    addTagBtn.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
+        const MIDDLE_BUTTON = 1;
+        if (event.button !== MIDDLE_BUTTON) {
+            return;
+        }
+        event.preventDefault();
 
-        function urlToHtml(url) {
-            let {prefix = "", main} = url.match(/(?<prefix>^https?:\/\/(www\.)?)?(?<main>.+)/i).groups;
-            let end = "";
-            try {
-                if (main.endsWith("/") && new URL(url).pathname === "/") {
-                    main = main.slice(0, -1);
-                    end = "/";
-                }
-            } catch (e) {
-                console.error(url, e);
-            }
+        tagsReversed = tagsElem.classList.toggle("reversed");
+        onUpdateCb?.();
+    });
 
-            prefix && (prefix = `<span class="invisible" data-unselectable-text="${prefix}"><span class="selectable">${prefix}</span></span>`);
-            end    && (end    = `<span class="invisible" data-unselectable-text="${end}"><span class="selectable">${end}</span></span>`);
-            main = `<span class="visible" data-unselectable-text="${main}"><span class="selectable">${main}</span></span>`;
-            return `${prefix}${main}${end}`;
+    function renderTags(urls, onUpdate) {
+        tags = [];
+        tagsReversed = false;
+        tagsContainer.innerHTML = "";
+        if (onUpdate) {
+            onUpdateCb = onUpdate;
         }
 
-        return {
-            clearList(addPrompt = false) {
-                headerElem.textContent = "Result list";
-                if (addPrompt) {
-                    contentElem.innerHTML = `<div id="result-list-prompt">Click here to list URLs...</div>`;
-                } else {
-                    contentElem.innerHTML = "";
-                }
-            },
-            insertUrls(urls) {
-                this.clearList();
+        const hostCountMap = {};
+        for (const url of urls) {
+            const host = url.match(/\w+\.\w+(?=\/)/)?.[0];
+            if (!host) {
+                continue;
+            }
+            hostCountMap[host] = (hostCountMap[host] || 0) + 1;
+        }
+        const urlEntries = Object.entries(hostCountMap)
+            .sort(([k1, v1], [k2, v2]) => {
+                return v2 - v1;
+            });
 
-                const joinedUrls = [...new Set(urls)].sort().join(" ");
-                const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
-                headerElem.innerHTML = `Result list (${urls.length}) <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
+        let tagsHtml = "";
+        for (const [k, v] of urlEntries) {
+            const color = getHsl(hashString(k), 90, 5);
+            tagsHtml += `<span class="tag" title="${v}" data-url="${k}" data-color="${color}"></span>`;
+        }
+        tagsPopupContainer.innerHTML = tagsHtml;
+        const tagsEls = [...tagsPopupContainer.querySelectorAll(`.tag[data-color]`)];
+        tagsEls.forEach(tag => tag.style.backgroundColor = tag.dataset.color);
 
-                let resultHtml = "";
-                let prev = urls[0];
-                for (const url of urls) {
-                    let linkHtml = urlToHtml(url);
-                    if (settings.sort) {
-                        try {
-                            if (mainHost(prev) !== mainHost(url)) {
-                                resultHtml += `<span class="url-pad"></span>`;
-                            }
-                            prev = url;
-                        } catch (e) {
-                            console.error(url, e);
-                        }
-                    }
-                    const clicked = clickedUrls.has(url) ? " clicked" : "";
-                    const html = `<div class="url-item${clicked}"><a href="${url}" target="_blank" rel="noreferrer noopener">${linkHtml}</a></div>`;
-                    resultHtml += html;
-                }
-                contentElem.insertAdjacentHTML("beforeend", resultHtml);
-            },
-            headerElem,
-            contentElem,
-        };
+        updateAddTagBtn();
+    }
+
+    function filterTags(urls) {
+        let urlsFilteredByTags = urls;
+        if (tags.length) {
+            let matchOnly;
+            if (!settings.case_sensitive) {
+                matchOnly = url => tags.some(tag => url.toLowerCase().includes(tag));
+            } else {
+                matchOnly = url => tags.some(tag => url.includes(tag));
+            }
+            if (!tagsReversed) {
+                urlsFilteredByTags = urls.filter(url =>  matchOnly(url));
+            } else {
+                urlsFilteredByTags = urls.filter(url => !matchOnly(url));
+            }
+        }
+        return urlsFilteredByTags;
     }
 
     return {
-        wrapperHtml, wrapperCss,
-        minimizedHtml, minimizedCss,
-        popupHtml, popupCss,
-        getListHelper,
-        getTagsHelper,
+        renderTags,
+        filterTags,
+    }
+}
+
+/**
+ * @param container
+ * @param {ScriptSettings} settings
+ */
+function getListHelper(container, settings) {
+    const headerElem  = container.querySelector(`#result-list-header`);
+    const contentElem = container.querySelector(`#result-list`);
+    const mainHost = url => new URL(url).hostname.split(".").slice(-2).join(".");
+
+    const clickedUrls = new Set();
+    contentElem.addEventListener("click", event => {
+        if (!event.target.classList.contains("visible")) {
+            return;
+        }
+        const urlItem = event.target.closest(".url-item");
+        urlItem.classList.add("clicked");
+        const url = urlItem.querySelector("a").href;
+        clickedUrls.add(url);
+        const dupLinks = [...contentElem.querySelectorAll(`.url-item:not(.clicked) a[href="${url}"]`)];
+        for (const dupLink of dupLinks) {
+            dupLink.closest(".url-item").classList.add("clicked");
+        }
+    });
+
+    contentElem.addEventListener("contextmenu", /** @param {MouseEvent} event */ event => {
+        if (!event.altKey) {
+            return;
+        }
+        if (!event.target.classList.contains("visible")) {
+            return;
+        }
+        event.preventDefault();
+        const urlItem = event.target.closest(".url-item");
+        const wasClicked = urlItem.classList.contains("clicked");
+        if (!wasClicked) {
+            return;
+        }
+        urlItem.classList.remove("clicked");
+        const url = urlItem.querySelector("a").href;
+        clickedUrls.delete(url);
+        const dupLinks = [...contentElem.querySelectorAll(`.url-item.clicked a[href="${url}"]`)];
+        for (const dupLink of dupLinks) {
+            dupLink.closest(".url-item").classList.remove("clicked");
+        }
+    });
+
+    function urlToHtml(url) {
+        let {prefix = "", main} = url.match(/(?<prefix>^https?:\/\/(www\.)?)?(?<main>.+)/i).groups;
+        let end = "";
+        try {
+            if (main.endsWith("/") && new URL(url).pathname === "/") {
+                main = main.slice(0, -1);
+                end = "/";
+            }
+        } catch (e) {
+            console.error(url, e);
+        }
+
+        prefix && (prefix = `<span class="invisible" data-unselectable-text="${prefix}"><span class="selectable">${prefix}</span></span>`);
+        end    && (end    = `<span class="invisible" data-unselectable-text="${end}"><span class="selectable">${end}</span></span>`);
+        main = `<span class="visible" data-unselectable-text="${main}"><span class="selectable">${main}</span></span>`;
+        return `${prefix}${main}${end}`;
+    }
+
+    return {
+        clearList(addPrompt = false) {
+            headerElem.textContent = "Result list";
+            if (addPrompt) {
+                contentElem.innerHTML = `<div id="result-list-prompt">Click here to list URLs...</div>`;
+            } else {
+                contentElem.innerHTML = "";
+            }
+        },
+        insertUrls(urls) {
+            this.clearList();
+
+            const joinedUrls = [...new Set(urls)].sort().join(" ");
+            const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
+            headerElem.innerHTML = `Result list (${urls.length}) <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
+
+            let resultHtml = "";
+            let prev = urls[0];
+            for (const url of urls) {
+                let linkHtml = urlToHtml(url);
+                if (settings.sort) {
+                    try {
+                        if (mainHost(prev) !== mainHost(url)) {
+                            resultHtml += `<span class="url-pad"></span>`;
+                        }
+                        prev = url;
+                    } catch (e) {
+                        console.error(url, e);
+                    }
+                }
+                const clicked = clickedUrls.has(url) ? " clicked" : "";
+                const html = `<div class="url-item${clicked}"><a href="${url}" target="_blank" rel="noreferrer noopener">${linkHtml}</a></div>`;
+                resultHtml += html;
+            }
+            contentElem.insertAdjacentHTML("beforeend", resultHtml);
+        },
+        headerElem,
+        contentElem,
     };
 }
 
-function getRenders(settings, updateSettings) {
+/** @return {string[]} */
+function parseUrls(targetSelector = "body", {
+    includeTextUrls, onlyTextUrls, bracketsTrim,
+}) {
+    let elems;
+    try {
+        elems = [...document.querySelectorAll(targetSelector)];
+    } catch {
+        console.error("Invalid selector");
+        return [];
+    }
+
+    includeTextUrls = includeTextUrls || onlyTextUrls;
+
+    const urls = [];
+    for (const el of elems) {
+
+        let anchorUrls;
+        if (onlyTextUrls) {
+            anchorUrls = [];
+        } else {
+            if (el.tagName === "A") {
+                anchorUrls = [el.href];
+            } else {
+                anchorUrls = [...el.querySelectorAll("a")].map(a => a.href);
+            }
+        }
+
+        urls.push(anchorUrls);
+        if (includeTextUrls) {
+            const textUrls = parseUrlsFromText(el.innerText, bracketsTrim);
+            urls.push(textUrls.filter(url => !anchorUrls.includes(url)));
+        }
+    }
+    return urls.flat();
+}
+
+function urlsToText(targetSelector = "body", urlFilter) {
+    let count = 0;
+    [...document.querySelectorAll(targetSelector)]
+        .forEach(el => {
+            const anchors = [...el.querySelectorAll("a")]
+                .filter(a => urlFilter(a.href));
+
+            for (const a of anchors) {
+                if (a.dataset.urlToText !== undefined) {
+                    continue;
+                }
+
+                a.dataset.urlToText = "";
+                if (a.title) {
+                    a.dataset.originalTitle = a.title;
+                }
+
+                a.title = a.textContent;
+                a.textContent = a.href + " ";
+
+                count++;
+            }
+        });
+    return count;
+}
+
+function undoUrlsToText(targetSelector = "body") {
+    let count = 0;
+    [...document.querySelectorAll(targetSelector)]
+        .forEach(el => {
+            const anchors = [...el.querySelectorAll(`a[data-url-to-text]`)];
+            for (const a of anchors) {
+                a.textContent = a.title;
+                if (a.dataset.originalTitle) {
+                    a.title = a.dataset.originalTitle;
+                    a.removeAttribute("data-original-title");
+                } else {
+                    a.removeAttribute("title");
+                }
+                a.removeAttribute("data-url-to-text");
+                count++;
+            }
+        });
+    return count;
+}
+
+/**
+ * @param {string} url
+ * @return {string[]}
+ */
+function splitOnUnmatchedBrackets(url) {
+    const chars = [...url];
+    let rounds  = 0;
+    let squares = 0;
+    let i = 0;
+    for (const char of chars) {
+        i++;
+        if (char === "(") {
+            rounds++;
+        } else if (char === ")") {
+            rounds--;
+        } else if (char === "[") {
+            squares++;
+        } else if (char === "]") {
+            squares--;
+        }
+        if (rounds < 0 || squares < 0 ) {
+            const before = chars.slice(0, i - 1).join("");
+            const after  = chars.slice(i - 1).join("");
+            return [before, after];
+        }
+    }
+    return [url, null];
+}
+
+function parseUrlsFromText(text, bracketsTrim = true) {
+    const regex = /[^\s<>"():\/]+\.(?<host1>[^\s<>"()\/:]+(:\d+)?)\/[^\s<>"]+/g;
+    const urls = [...text.matchAll(regex)]
+        .map(match => match[0])
+        .map(text => {
+            return "https://" + text; // consider all link are https
+        });
+    if (bracketsTrim) { // Trim unmatched closed brackets — ")", or "]" with the followed content
+        return urls.flatMap(url => {
+            const [_url, after] = splitOnUnmatchedBrackets(url);
+            if (after && after.includes("://") && after.match(regex)) {
+                return [_url, ...parseUrlsFromText(after)];
+            }
+            return _url;
+        });
+    }
+    return urls;
+}
+
+function assignStyleState(element, state) {
+    for (const [k, v] of Object.entries(state)) {
+        element.style[k]  = v;
+    }
+}
+
+function makeMovable(element, {handle, onStop: _onStop, onMove, state} = {}) {
+    const _onMove = state => {
+        onMove?.(state);
+        assignStyleState(element, state);
+    };
+    if (state) {
+        _onMove(state);
+        _onStop?.(state);
+    }
+
+    handle = handle || element;
+    handle.style["user-select"] = "none";
+    handle.style["touch-action"] = "none";
+    element.style.position = "absolute";
+
+    handle.addEventListener("pointerdown", event => {
+        event = event.targetTouches?.[0] || event;
+        const offsetY = event.clientY - parseInt(getComputedStyle(element).top);
+        const offsetX = event.clientX - parseInt(getComputedStyle(element).left);
+
+        let state;
+        function onMove(event) {
+            !handle.hasPointerCapture(event.pointerId) && handle.setPointerCapture(event.pointerId);
+            event = event.targetTouches?.[0] || event;
+            state = {
+                top:  (event.clientY - offsetY) + "px",
+                left: (event.clientX - offsetX) + "px",
+            };
+            _onMove(state);
+        }
+        function onEnd() {
+            removeEventListener("pointermove", onMove);
+            state && _onStop?.(state);
+        }
+        addEventListener("pointermove", onMove, {passive: true});
+        addEventListener("pointerup", onEnd, {once: true});
+    }, {passive: true});
+}
+
+function makeResizable(element, props = {}) {
     const {
-        wrapperHtml, wrapperCss,
-        minimizedHtml, minimizedCss,
-        popupHtml, popupCss,
-        getListHelper,
-        getTagsHelper,
-    } = getStaticContent(settings);
+        minW, minH, size, onStop: _onStop, onMove, state
+    } = Object.assign({minW: 240, minH: 240, size: 16}, props);
+    const _onMove = state => {
+        onMove?.(state);
+        assignStyleState(element, state);
+    };
+    if (state) {
+        _onMove(state);
+        _onStop?.(state);
+    }
+
+    const lrCorner = document.createElement("div");
+    lrCorner.style.cssText =
+        `width: ${size}px; height: ${size}px; border-radius: ${(size / 2)}px;` +
+        `bottom: ${-(size / 2)}px; right: ${-(size / 2)}px; ` +
+        `position: absolute; background-color: transparent; cursor: se-resize; touch-action: none;`;
+    element.append(lrCorner);
+
+    lrCorner.addEventListener("pointerdown",event => {
+        event = event.targetTouches?.[0] || event;
+        lrCorner.setPointerCapture(event.pointerId);
+        const offsetX = event.clientX - element.offsetLeft - parseInt(getComputedStyle(element).width);
+        const offsetY = event.clientY - element.offsetTop  - parseInt(getComputedStyle(element).height);
+
+        let state;
+        function onMove(event) {
+            event = event.targetTouches?.[0] || event;
+            let x = event.clientX - element.offsetLeft - offsetX;
+            let y = event.clientY - element.offsetTop  - offsetY;
+            if (x < minW) { x = minW; }
+            if (y < minH) { y = minH; }
+            state = {
+                width:  x + "px",
+                height: y + "px",
+            };
+            _onMove(state);
+        }
+        function onEnd() {
+            lrCorner.removeEventListener("pointermove", onMove);
+            state && _onStop?.(state);
+        }
+        lrCorner.addEventListener("pointermove", onMove, {passive: true});
+        lrCorner.addEventListener("lostpointercapture", onEnd, {once: true});
+    }, {passive: true});
+}
+
+function storeStateInLS({onMove, onStop, id: lsName, reset, restore}) {
+    if (reset && lsName) {
+        localStorage.removeItem(lsName);
+    }
+    if (!restore || !lsName) {
+        return {onMove, onStop};
+    }
+    const stateJson = localStorage.getItem(lsName);
+    let state = null;
+    if (stateJson) {
+        state = JSON.parse(stateJson);
+    }
+
+    function saveStateLS(state) {
+        localStorage.setItem(lsName, JSON.stringify(state));
+    }
+
+    let _onStop;
+    if (onStop) {
+        _onStop = function(state) {
+            onStop(state);
+            saveStateLS(state);
+        };
+    } else {
+        _onStop = saveStateLS;
+    }
+
+    return {
+        onMove,
+        onStop: _onStop,
+        state
+    };
+}
+
+/**
+ * @param {ScriptSettings} settings
+ * @param {function(ScriptSettings)} updateSettings
+ */
+function getRenders(settings, updateSettings) {
+    const {wrapperHtml, wrapperCss}     = getWrapper();
+    const {minimizedHtml, minimizedCss} = getMinimized();
+    const {popupHtml, popupCss}         = getPopup(settings);
+
 
     let shadowContainer = null;
     const querySelector    = selector => shadowContainer.querySelector(selector);
@@ -1361,9 +1666,9 @@ function getRenders(settings, updateSettings) {
         // ------
 
         const listBtn = querySelector(`button[name="list_button"]`);
-        const listHelper = getListHelper(shadowContainer);
+        const listHelper = getListHelper(shadowContainer, settings);
 
-        const tagsHelper = getTagsHelper(shadowContainer);
+        const tagsHelper = getTagsHelper(shadowContainer, settings);
 
         function refreshUrlList() {
             if (isListRendered) {
@@ -1603,316 +1908,28 @@ function getRenders(settings, updateSettings) {
     };
 }
 
-/**
- * @param {string} url
- * @return {string[]}
- */
-function splitOnUnmatchedBrackets(url) {
-    const chars = [...url];
-    let rounds  = 0;
-    let squares = 0;
-    let i = 0;
-    for (const char of chars) {
-        i++;
-        if (char === "(") {
-            rounds++;
-        } else if (char === ")") {
-            rounds--;
-        } else if (char === "[") {
-            squares++;
-        } else if (char === "]") {
-            squares--;
-        }
-        if (rounds < 0 || squares < 0 ) {
-            const before = chars.slice(0, i - 1).join("");
-            const after  = chars.slice(i - 1).join("");
-            return [before, after];
-        }
-    }
-    return [url, null];
-}
-function parseUrlsFromText(text, bracketsTrim = true) {
-    const regex = /[^\s<>"():\/]+\.(?<host1>[^\s<>"()\/:]+(:\d+)?)\/[^\s<>"]+/g;
-    const urls = [...text.matchAll(regex)]
-        .map(match => match[0])
-        .map(text => {
-            return "https://" + text; // consider all link are https
-        });
-    if (bracketsTrim) { // Trim unmatched closed brackets — ")", or "]" with the followed content
-        return urls.flatMap(url => {
-            const [_url, after] = splitOnUnmatchedBrackets(url);
-            if (after && after.includes("://") && after.match(regex)) {
-                return [_url, ...parseUrlsFromText(after)];
-            }
-            return _url;
-        });
-    }
-    return urls;
+const {showPopup} = initHrefTaker();
+if (typeof GM_registerMenuCommand === "function") {
+    GM_registerMenuCommand("Show popup", () => showPopup());
 }
 
-/** * @return {string[]} */
-function parseUrls(targetSelector = "body", {
-    includeTextUrls, onlyTextUrls, bracketsTrim,
-}) {
-    let elems;
-    try {
-        elems = [...document.querySelectorAll(targetSelector)];
-    } catch {
-        console.error("Invalid selector");
-        return [];
-    }
+function initHrefTaker() {
+    const {settings, updateSettings} = loadSettings();
 
-    includeTextUrls = includeTextUrls || onlyTextUrls;
+    // {showPopup, closePopup, showMinimized, closeMinimized, close}
+    const render = getRenders(settings, updateSettings);
 
-    const urls = [];
-    for (const el of elems) {
-
-        let anchorUrls;
-        if (onlyTextUrls) {
-            anchorUrls = [];
+    if (settings.auto_open || settings.opened) {
+        if (settings.minimized === true) {
+            render.showMinimized();
         } else {
-            if (el.tagName === "A") {
-                anchorUrls = [el.href];
-            } else {
-                anchorUrls = [...el.querySelectorAll("a")].map(a => a.href);
-            }
-        }
-
-        urls.push(anchorUrls);
-        if (includeTextUrls) {
-            const textUrls = parseUrlsFromText(el.innerText, bracketsTrim);
-            urls.push(textUrls.filter(url => !anchorUrls.includes(url)));
+            render.showPopup();
         }
     }
-    return urls.flat();
-}
-
-function urlsToText(targetSelector = "body", urlFilter) {
-    let count = 0;
-    [...document.querySelectorAll(targetSelector)]
-        .forEach(el => {
-            const anchors = [...el.querySelectorAll("a")]
-                .filter(a => urlFilter(a.href));
-
-            for (const a of anchors) {
-                if (a.dataset.urlToText !== undefined) {
-                    continue;
-                }
-
-                a.dataset.urlToText = "";
-                if (a.title) {
-                    a.dataset.originalTitle = a.title;
-                }
-
-                a.title = a.textContent;
-                a.textContent = a.href + " ";
-
-                count++;
-            }
-        });
-    return count;
-}
-function undoUrlsToText(targetSelector = "body") {
-    let count = 0;
-    [...document.querySelectorAll(targetSelector)]
-        .forEach(el => {
-            const anchors = [...el.querySelectorAll(`a[data-url-to-text]`)];
-            for (const a of anchors) {
-                a.textContent = a.title;
-                if (a.dataset.originalTitle) {
-                    a.title = a.dataset.originalTitle;
-                    a.removeAttribute("data-original-title");
-                } else {
-                    a.removeAttribute("title");
-                }
-                a.removeAttribute("data-url-to-text");
-                count++;
-            }
-        });
-    return count;
-}
-
-// --------------------------
-
-function debounce(runnable, ms = 100) {
-    let timerId;
-    return function() {
-        if (timerId) {
-            clearTimeout(timerId);
-        }
-        timerId = setTimeout(() => {
-            runnable.apply(this, arguments);
-            timerId = null;
-        }, ms);
-    }
-}
-
-/**
- * `hashCode` like
- * @example
- * hashString("Qwerty") === -1862984904
- * hashString("A") === 65
- * @param {string} str
- * @return {number}
- */
-function hashString(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = Math.imul(Math.imul(31, hash) + str.charCodeAt(i), 1);
-    }
-    return hash;
-}
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function clicked(elem) {
-    elem.classList.add("clicked");
-    elem.blur();
-    await sleep(125);
-    elem.classList.remove("clicked");
-}
-
-// --------------------------
-
-
-
-function getHsl(seed, L = 40, dL = 20) {
-    const H = Math.trunc(360 * getRandomValue(seed));
-    const _L = Math.trunc((L + getRandomValue(seed + 1) * dL)) + "%";
-    return `hsl(${H}, 100%, ${_L})`;
-}
-function getRandomValue(seed = Date.now()) {
-    let x = seed + 0x6D2B79F5;
-    x = Math.imul(x ^ x >>> 15, x | 1);
-    x ^= x + Math.imul(x ^ x >>> 7, x | 61);
-    return ((x ^ x >>> 14) >>> 0) / 4294967296;
-}
-
-// --------------------------
-
-function assignStyleState(element, state) {
-    for (const [k, v] of Object.entries(state)) {
-        element.style[k]  = v;
-    }
-}
-
-function makeMovable(element, {handle, onStop: _onStop, onMove, state} = {}) {
-    const _onMove = state => {
-        onMove?.(state);
-        assignStyleState(element, state);
-    };
-    if (state) {
-        _onMove(state);
-        _onStop?.(state);
+    const methods = {...render, settings, updateSettings};
+    if (settings.console_vars) {
+        Object.assign(global, methods);
     }
 
-    handle = handle || element;
-    handle.style["user-select"] = "none";
-    handle.style["touch-action"] = "none";
-    element.style.position = "absolute";
-
-    handle.addEventListener("pointerdown", event => {
-        event = event.targetTouches?.[0] || event;
-        const offsetY = event.clientY - parseInt(getComputedStyle(element).top);
-        const offsetX = event.clientX - parseInt(getComputedStyle(element).left);
-
-        let state;
-        function onMove(event) {
-            !handle.hasPointerCapture(event.pointerId) && handle.setPointerCapture(event.pointerId);
-            event = event.targetTouches?.[0] || event;
-            state = {
-                top:  (event.clientY - offsetY) + "px",
-                left: (event.clientX - offsetX) + "px",
-            };
-            _onMove(state);
-        }
-        function onEnd() {
-            removeEventListener("pointermove", onMove);
-            state && _onStop?.(state);
-        }
-        addEventListener("pointermove", onMove, {passive: true});
-        addEventListener("pointerup", onEnd, {once: true});
-    }, {passive: true});
-}
-function makeResizable(element, props = {}) {
-    const {
-        minW, minH, size, onStop: _onStop, onMove, state
-    } = Object.assign({minW: 240, minH: 240, size: 16}, props);
-    const _onMove = state => {
-        onMove?.(state);
-        assignStyleState(element, state);
-    };
-    if (state) {
-        _onMove(state);
-        _onStop?.(state);
-    }
-
-    const lrCorner = document.createElement("div");
-    lrCorner.style.cssText =
-        `width: ${size}px; height: ${size}px; border-radius: ${(size / 2)}px;` +
-        `bottom: ${-(size / 2)}px; right: ${-(size / 2)}px; ` +
-        `position: absolute; background-color: transparent; cursor: se-resize; touch-action: none;`;
-    element.append(lrCorner);
-
-    lrCorner.addEventListener("pointerdown",event => {
-        event = event.targetTouches?.[0] || event;
-        lrCorner.setPointerCapture(event.pointerId);
-        const offsetX = event.clientX - element.offsetLeft - parseInt(getComputedStyle(element).width);
-        const offsetY = event.clientY - element.offsetTop  - parseInt(getComputedStyle(element).height);
-
-        let state;
-        function onMove(event) {
-            event = event.targetTouches?.[0] || event;
-            let x = event.clientX - element.offsetLeft - offsetX;
-            let y = event.clientY - element.offsetTop  - offsetY;
-            if (x < minW) { x = minW; }
-            if (y < minH) { y = minH; }
-            state = {
-                width:  x + "px",
-                height: y + "px",
-            };
-            _onMove(state);
-        }
-        function onEnd() {
-            lrCorner.removeEventListener("pointermove", onMove);
-            state && _onStop?.(state);
-        }
-        lrCorner.addEventListener("pointermove", onMove, {passive: true});
-        lrCorner.addEventListener("lostpointercapture", onEnd, {once: true});
-    }, {passive: true});
-}
-function storeStateInLS({onMove, onStop, id: lsName, reset, restore}) {
-    if (reset && lsName) {
-        localStorage.removeItem(lsName);
-    }
-    if (!restore || !lsName) {
-        return {onMove, onStop};
-    }
-    const stateJson = localStorage.getItem(lsName);
-    let state = null;
-    if (stateJson) {
-        state = JSON.parse(stateJson);
-    }
-
-    function saveStateLS(state) {
-        localStorage.setItem(lsName, JSON.stringify(state));
-    }
-
-    let _onStop;
-    if (onStop) {
-        _onStop = function(state) {
-            onStop(state);
-            saveStateLS(state);
-        };
-    } else {
-        _onStop = saveStateLS;
-    }
-
-    return {
-        onMove,
-        onStop: _onStop,
-        state
-    };
+    return methods;
 }
