@@ -37,7 +37,7 @@
             localStorage.setItem("ujs-href-taker", JSON.stringify({console_vars: true}));
         }
     </script>
-    <script defer src="./href-taker.user.js"></script>
+    <script defer src="./src/main.js" type="module"></script>
     <script defer>
         const getShadowRoot = () => document.querySelector("#href-taker-outer-shadow-wrapper")?.shadowRoot;
         globalThis.getShadowRoot = getShadowRoot();
