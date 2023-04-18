@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.3-2023.4.18-2f7a85
+// @version     0.9.4-2023.4.18-3b93f9
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -821,10 +821,24 @@ fieldset, hr {
 function getTagsHelper(container, settings) {
     const tagsListContainerEl  = container.querySelector(`.tags-list`);
     const tagsPopupContainerEl = container.querySelector(`.tags-popup`);
+    const tagListWrapperEl   = container.querySelector(".tags-list-wrapper");
+    const tagsPopupWrapperEl = container.querySelector(".tags-popup-wrapper");
+    const addTagBtnEl        = container.querySelector(".tag-add");
+    const addTagBtnContentEl = container.querySelector(".tag-add span");
 
     let tags = [];
     let tagsReversed = false;
     let onUpdateCb = null;
+
+    tagsPopupContainerEl.addEventListener("click", onClickSelectTagFromPopup);
+    tagsListContainerEl.addEventListener("click", onClickRemoveTagFromSelect);
+
+    tagsListContainerEl.addEventListener("contextmenu", onContextMenuToggleDisablingSelectedTag);
+    tagsPopupContainerEl.addEventListener("contextmenu", onContextMenuAddPopupTagOrToggleDisabling);
+
+    addTagBtnEl.addEventListener("click", openTagsPopup);
+    addTagBtnEl.addEventListener("contextmenu", onContextMenuSelectAllTagsOrClear);
+    addTagBtnEl.addEventListener("pointerdown", onMMBPointerDownReverseSelectedTags);
 
     /** @param {Event} event */
     function getTagFromEvent(event) {
@@ -835,7 +849,6 @@ function getTagsHelper(container, settings) {
         return tagEl;
     }
 
-    tagsPopupContainerEl.addEventListener("click", onClickSelectTagFromPopup);
     /** @param {MouseEvent} event */
     function onClickSelectTagFromPopup(event) {
         const popupTagEl = getTagFromEvent(event);
@@ -868,7 +881,6 @@ function getTagsHelper(container, settings) {
         updateAddTagBtn();
         onUpdateCb?.();
     }
-    tagsListContainerEl.addEventListener("click", onClickRemoveTagFromSelect);
 
     function disableAllSelectedTagElems() {
         for (const tag of tags) {
@@ -945,7 +957,6 @@ function getTagsHelper(container, settings) {
         updateAddTagBtnTitle();
         onUpdateCb?.();
     }
-    tagsListContainerEl.addEventListener("contextmenu", onContextMenuToggleDisablingSelectedTag);
 
     /** @param {MouseEvent} event */
     function onContextMenuAddPopupTagOrToggleDisabling(event) {
@@ -965,14 +976,8 @@ function getTagsHelper(container, settings) {
         updateAddTagBtnTitle();
         onUpdateCb?.();
     }
-    tagsPopupContainerEl.addEventListener("contextmenu", onContextMenuAddPopupTagOrToggleDisabling);
 
-    const tagListWrapperEl   = container.querySelector(".tags-list-wrapper");
-    const tagsPopupWrapperEl = container.querySelector(".tags-popup-wrapper");
-    const addTagBtnEl        = container.querySelector(".tag-add");
-    const addTagBtnContentEl = container.querySelector(".tag-add span");
 
-    addTagBtnEl.addEventListener("click", openTagsPopup);
     function closeTagsPopup() {
         addTagBtnEl.classList.remove("rotate");
         tagsPopupWrapperEl.classList.add("hidden");
@@ -1038,7 +1043,6 @@ function getTagsHelper(container, settings) {
         updateAddTagBtn();
         onUpdateCb?.();
     }
-    addTagBtnEl.addEventListener("contextmenu", onContextMenuSelectAllTagsOrClear);
 
 
     /** @param {PointerEvent} event */
@@ -1054,7 +1058,6 @@ function getTagsHelper(container, settings) {
         tagsReversed = !tagsReversed;
         onUpdateCb?.();
     }
-    addTagBtnEl.addEventListener("pointerdown", onMMBPointerDownReverseSelectedTags);
 
     function renderTags(urls, onUpdate) {
         tags = [];
