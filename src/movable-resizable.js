@@ -1,9 +1,21 @@
+/**
+ * @param {HTMLElement} element
+ * @param {{[string]: string}} state
+ */
 function assignStyleState(element, state) {
     for (const [k, v] of Object.entries(state)) {
         element.style[k]  = v;
     }
 }
 
+/**
+ * @param {HTMLElement} element
+ * @param {Object?} opts
+ * @param {HTMLElement?} opts.handle
+ * @param {function?} opts.onStop
+ * @param {function?} opts.onMove
+ * @param {{top: string, left: string}?} opts.state
+ */
 export function makeMovable(element, {handle, onStop: _onStop, onMove, state} = {}) {
     const _onMove = state => {
         onMove?.(state);
@@ -43,10 +55,19 @@ export function makeMovable(element, {handle, onStop: _onStop, onMove, state} = 
     }, {passive: true});
 }
 
-export function makeResizable(element, props = {}) {
-    const {
-        minW, minH, size, onStop: _onStop, onMove, state
-    } = Object.assign({minW: 240, minH: 240, size: 16}, props);
+/**
+ * @param {HTMLElement} element
+ * @param {Object?} opts
+ * @param {number?} opts.minW
+ * @param {number?} opts.minH
+ * @param {number?} opts.size
+ * @param {function?} opts.onStop
+ * @param {function?} opts.onMove
+ * @param {{width: string, height: string}?} opts.state
+ */
+export function makeResizable(element, {
+    minW = 240, minH = 240, size = 16, onStop: _onStop, onMove, state
+} = {}) {
     const _onMove = state => {
         onMove?.(state);
         assignStyleState(element, state);
@@ -91,7 +112,16 @@ export function makeResizable(element, props = {}) {
     }, {passive: true});
 }
 
-export function storeStateInLS({onMove, onStop, id: lsName, reset, restore}) {
+/**
+ * @param {Object} opts
+ * @param {string} opts.id
+ * @param {function?} opts.onMove
+ * @param {function?} opts.onStop
+ * @param {boolean?} opts.reset
+ * @param {boolean?} opts.restore
+ * @return {{state?: Object, onMove: function, onStop: function}}
+ */
+export function storeStateInLS({id: lsName, onMove, onStop, reset, restore}) {
     if (reset && lsName) {
         localStorage.removeItem(lsName);
     }
@@ -99,7 +129,7 @@ export function storeStateInLS({onMove, onStop, id: lsName, reset, restore}) {
         return {onMove, onStop};
     }
     const stateJson = localStorage.getItem(lsName);
-    let state = null;
+    let state;
     if (stateJson) {
         state = JSON.parse(stateJson);
     }
