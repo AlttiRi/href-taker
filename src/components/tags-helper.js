@@ -229,21 +229,25 @@ export function getTagsHelper(container, settings) {
 
 
     /** @param {PointerEvent} event */
-    function onPointerDownReverseSelectedTags(event) {
+    function onMMBPointerDownReverseSelectedTags(event) {
         const MIDDLE_BUTTON = 1;
         if (event.button !== MIDDLE_BUTTON) {
             return;
         }
         event.preventDefault();
 
-        tagsReversed = tagListWrapperEl.classList.toggle("reversed");
+        addTagBtnEl.classList.toggle("active");
+        tagListWrapperEl.classList.toggle("reversed");
+        tagsReversed = !tagsReversed;
         onUpdateCb?.();
     }
-    addTagBtnEl.addEventListener("pointerdown", onPointerDownReverseSelectedTags);
+    addTagBtnEl.addEventListener("pointerdown", onMMBPointerDownReverseSelectedTags);
 
     function renderTags(urls, onUpdate) {
         tags = [];
         tagsReversed = false;
+        tagListWrapperEl.classList.remove("reversed");
+        addTagBtnEl.classList.remove("active");
         tagsListContainerEl.innerHTML = "";
         if (onUpdate) {
             onUpdateCb = onUpdate;

@@ -44,6 +44,11 @@ button:active:focus, .button:active:focus {
 button.clicked, .button.clicked {
     background-color: rgba(0, 0, 0, 0.1);
 }
+
+button.active, .button.active {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
 </style>`;
 
     return {wrapperHtml, wrapperCss};

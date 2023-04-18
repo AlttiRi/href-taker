@@ -12,7 +12,7 @@ export function getTags() {
 
         const tagsCss = cssFromStyle`
 <style>
-.tags-list-wrapper.reversed .tags-list .tag {
+.tags-list-wrapper.reversed .tags-list .tag:not(.disabled) {
     text-decoration: line-through;
 }
 #tags-main {

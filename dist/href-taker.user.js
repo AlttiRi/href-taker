@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.2-2023.4.18-dc6ff5
+// @version     0.9.3-2023.4.18-2f7a85
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -286,6 +286,11 @@ button:active:focus, .button:active:focus {
 button.clicked, .button.clicked {
     background-color: rgba(0, 0, 0, 0.1);
 }
+
+button.active, .button.active {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
 </style>`;
 
     return {wrapperHtml, wrapperCss};
@@ -303,7 +308,7 @@ function getTags() {
 
         const tagsCss = cssFromStyle`
 <style>
-.tags-list-wrapper.reversed .tags-list .tag {
+.tags-list-wrapper.reversed .tags-list .tag:not(.disabled) {
     text-decoration: line-through;
 }
 #tags-main {
@@ -760,10 +765,6 @@ button {
     text-decoration: line-through;
 }
 
-button.active {
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
 input[disabled] {
     color: gray;
 }
@@ -1041,21 +1042,25 @@ function getTagsHelper(container, settings) {
 
 
     /** @param {PointerEvent} event */
-    function onPointerDownReverseSelectedTags(event) {
+    function onMMBPointerDownReverseSelectedTags(event) {
         const MIDDLE_BUTTON = 1;
         if (event.button !== MIDDLE_BUTTON) {
             return;
         }
         event.preventDefault();
 
-        tagsReversed = tagListWrapperEl.classList.toggle("reversed");
+        addTagBtnEl.classList.toggle("active");
+        tagListWrapperEl.classList.toggle("reversed");
+        tagsReversed = !tagsReversed;
         onUpdateCb?.();
     }
-    addTagBtnEl.addEventListener("pointerdown", onPointerDownReverseSelectedTags);
+    addTagBtnEl.addEventListener("pointerdown", onMMBPointerDownReverseSelectedTags);
 
     function renderTags(urls, onUpdate) {
         tags = [];
         tagsReversed = false;
+        tagListWrapperEl.classList.remove("reversed");
+        addTagBtnEl.classList.remove("active");
         tagsListContainerEl.innerHTML = "";
         if (onUpdate) {
             onUpdateCb = onUpdate;

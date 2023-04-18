@@ -390,10 +390,6 @@ button {
     text-decoration: line-through;
 }
 
-button.active {
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
 input[disabled] {
     color: gray;
 }
