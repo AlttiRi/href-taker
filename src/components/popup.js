@@ -32,6 +32,7 @@ export function getPopup(settings) {
         // filters_collapsed,
         // controls_collapsed,
         no_search_on_blur,
+        unsearchable
     } = settings;
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
@@ -164,9 +165,15 @@ export function getPopup(settings) {
                     </label>
                     <label title="Makes the text in the result URLs list unselectable and unsearchable (with Ctrl + F), \
 when the popup is not focused. 
-With large URLs count it can cause some lags on the popup focus/blur events due to the list redrawing.">
+With large URLs count it can cause some lags on the popup focus/blur events due to the list redrawing." data-name="no_search_on_blur">
                         <input type="checkbox" name="no_search_on_blur" ${checked(no_search_on_blur)}>
                         Ephemeral
+                    </label>
+                    <label title="Does the same as Ephemeral option, but constantly. 
+You always can toggle the Unsearchable mode by RMB click on the list title (if Ephemeral option is not enabked), 
+this option only defines the default state.">
+                        <input type="checkbox" name="unsearchable" ${checked(unsearchable)}>
+                        Unsearchable
                     </label>
                 </div>
             </div>
@@ -290,6 +297,19 @@ hr.main {
 }
 #popup[data-no-search-on-blur]:not(:focus) .selectable {
     display: none;
+}
+
+#popup[data-unsearchable] #result-list-header {
+    color: grey;
+}
+#popup[data-unsearchable] .selectable {
+    display: none;
+}
+#popup[data-unsearchable] [data-unselectable-text]:after {
+    content: attr(data-unselectable-text);
+}
+#popup[data-unsearchable] [data-name="no_search_on_blur"] {
+    opacity: 0.55;
 }
 
 .hidden {

@@ -82,7 +82,7 @@ export function getListHelper(container, settings) {
 
             const joinedUrls = [...new Set(urls)].sort().join(" ");
             const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
-            headerElem.innerHTML = `Result list (${urls.length}) <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
+            headerElem.innerHTML = `<span class="header-content">Result list (${urls.length})</span> <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
 
             let resultHtml = "";
             let prev = urls[0];

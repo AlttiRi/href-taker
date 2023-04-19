@@ -159,7 +159,8 @@ export function getRenders(settings, updateSettings) {
         let isListRendered = false;
         function updateHtml(changedSettingsKeys) {
             setSettingsDataAttributes();
-            if (changedSettingsKeys?.[0] === "no_search_on_blur" && changedSettingsKeys.length === 1) {
+            const passiveKeys = ["no_search_on_blur", "unsearchable"];
+            if (passiveKeys.includes(changedSettingsKeys?.[0]) && changedSettingsKeys.length === 1) {
                 return;
             }
             if (isListRendered) {
@@ -240,8 +241,13 @@ export function getRenders(settings, updateSettings) {
 
         const listBtn = querySelector(`button[name="list_button"]`);
         const listHelper = getListHelper(shadowContainer, settings);
-
         const tagsHelper = getTagsHelper(shadowContainer, settings);
+
+        listHelper.headerElem.addEventListener("click", onClickToggleUnsearchable);
+        /** @param {MouseEvent} event */
+        function onClickToggleUnsearchable(event) {
+            popupElem.toggleAttribute("data-unsearchable");
+        }
 
         function refreshUrlList() {
             if (isListRendered) {

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.7-2023.4.19-7dd2
+// @version     0.9.8-2023.4.19-0ad2
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -56,6 +56,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} filters_collapsed
  * @property {boolean} controls_collapsed
  * @property {boolean} no_search_on_blur
+ * @property {boolean} unsearchable
  */
 
 /** @return {{settings: ScriptSettings, updateSettings: function}} */
@@ -90,6 +91,7 @@ function loadSettings() {
         filters_collapsed: false,
         controls_collapsed: false,
         no_search_on_blur: false,
+        unsearchable: false,
     };
     const LocalStoreName = "ujs-href-taker";
 
@@ -407,6 +409,7 @@ function getPopup(settings) {
         // filters_collapsed,
         // controls_collapsed,
         no_search_on_blur,
+        unsearchable
     } = settings;
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
@@ -539,9 +542,15 @@ function getPopup(settings) {
                     </label>
                     <label title="Makes the text in the result URLs list unselectable and unsearchable (with Ctrl + F), \
 when the popup is not focused. 
-With large URLs count it can cause some lags on the popup focus/blur events due to the list redrawing.">
+With large URLs count it can cause some lags on the popup focus/blur events due to the list redrawing." data-name="no_search_on_blur">
                         <input type="checkbox" name="no_search_on_blur" ${checked(no_search_on_blur)}>
                         Ephemeral
+                    </label>
+                    <label title="Does the same as Ephemeral option, but constantly. 
+You always can toggle the Unsearchable mode by RMB click on the list title (if Ephemeral option is not enabked), 
+this option only defines the default state.">
+                        <input type="checkbox" name="unsearchable" ${checked(unsearchable)}>
+                        Unsearchable
                     </label>
                 </div>
             </div>
@@ -665,6 +674,19 @@ hr.main {
 }
 #popup[data-no-search-on-blur]:not(:focus) .selectable {
     display: none;
+}
+
+#popup[data-unsearchable] #result-list-header {
+    color: grey;
+}
+#popup[data-unsearchable] .selectable {
+    display: none;
+}
+#popup[data-unsearchable] [data-unselectable-text]:after {
+    content: attr(data-unselectable-text);
+}
+#popup[data-unsearchable] [data-name="no_search_on_blur"] {
+    opacity: 0.55;
 }
 
 .hidden {
@@ -1219,7 +1241,7 @@ function getListHelper(container, settings) {
 
             const joinedUrls = [...new Set(urls)].sort().join(" ");
             const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
-            headerElem.innerHTML = `Result list (${urls.length}) <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
+            headerElem.innerHTML = `<span class="header-content">Result list (${urls.length})</span> <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
 
             let resultHtml = "";
             let prev = urls[0];
@@ -1681,7 +1703,8 @@ function getRenders(settings, updateSettings) {
         let isListRendered = false;
         function updateHtml(changedSettingsKeys) {
             setSettingsDataAttributes();
-            if (changedSettingsKeys?.[0] === "no_search_on_blur" && changedSettingsKeys.length === 1) {
+            const passiveKeys = ["no_search_on_blur", "unsearchable"];
+            if (passiveKeys.includes(changedSettingsKeys?.[0]) && changedSettingsKeys.length === 1) {
                 return;
             }
             if (isListRendered) {
@@ -1762,8 +1785,13 @@ function getRenders(settings, updateSettings) {
 
         const listBtn = querySelector(`button[name="list_button"]`);
         const listHelper = getListHelper(shadowContainer, settings);
-
         const tagsHelper = getTagsHelper(shadowContainer, settings);
+
+        listHelper.headerElem.addEventListener("click", onClickToggleUnsearchable);
+        /** @param {MouseEvent} event */
+        function onClickToggleUnsearchable(event) {
+            popupElem.toggleAttribute("data-unsearchable");
+        }
         function renderUrlList() {
             reparseUrlList();
             listHelper.contentElem.removeEventListener("click", renderUrlList);
