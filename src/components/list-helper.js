@@ -82,7 +82,8 @@ export function getListHelper(container, settings) {
 
             const joinedUrls = [...new Set(urls)].sort().join(" ");
             const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
-            headerElem.innerHTML = `<span class="header-content">Result list (${urls.length})</span> <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
+            const title = `title="RMB click to temporary toggle Unsearchable option"`;
+            headerElem.innerHTML = `<span class="header-content" ${title}>Result list (${urls.length})</span> <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
 
             let resultHtml = "";
             let prev = urls[0];

@@ -243,9 +243,11 @@ export function getRenders(settings, updateSettings) {
         const listHelper = getListHelper(shadowContainer, settings);
         const tagsHelper = getTagsHelper(shadowContainer, settings);
 
-        listHelper.headerElem.addEventListener("click", onClickToggleUnsearchable);
+        listHelper.headerElem.addEventListener("contextmenu", onClickToggleUnsearchable);
         /** @param {MouseEvent} event */
         function onClickToggleUnsearchable(event) {
+            if (!event.target.classList.contains("header-content")) { return; }
+            event.preventDefault();
             popupElem.toggleAttribute("data-unsearchable");
         }
 

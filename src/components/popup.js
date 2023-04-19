@@ -300,7 +300,7 @@ hr.main {
 }
 
 #popup[data-unsearchable] #result-list-header {
-    color: grey;
+    color: #666;
 }
 #popup[data-unsearchable] .selectable {
     display: none;
