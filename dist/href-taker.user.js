@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.5-2023.4.18-0b5f5e
+// @version     0.9.6-2023.4.19-8210
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -55,7 +55,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} tags_collapsed
  * @property {boolean} filters_collapsed
  * @property {boolean} controls_collapsed
- * @property {boolean} unselectable
+ * @property {boolean} no_search_on_blur
  */
 
 /** @return {{settings: ScriptSettings, updateSettings: function}} */
@@ -89,7 +89,7 @@ function loadSettings() {
         tags_collapsed: false,
         filters_collapsed: false,
         controls_collapsed: false,
-        unselectable: true,
+        no_search_on_blur: false,
     };
     const LocalStoreName = "ujs-href-taker";
 
@@ -406,7 +406,7 @@ function getPopup(settings) {
         // tags_collapsed,
         // filters_collapsed,
         // controls_collapsed,
-        unselectable,
+        no_search_on_blur,
     } = settings;
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
@@ -537,8 +537,10 @@ function getPopup(settings) {
                         <input type="checkbox" name="console_vars" ${checked(console_vars)}>
                         Console vars
                     </label>
-                    <label title="Unselectable and unsearchable (with Ctrl + F) text in the result URLs list">
-                        <input type="checkbox" name="unselectable" ${checked(unselectable)}>
+                    <label title="Makes the text in the result URLs list unselectable and unsearchable (with Ctrl + F), \
+when the popup is not focused. 
+It may produce some lags with large URLs count on the popup focus/blur events.">
+                        <input type="checkbox" name="no_search_on_blur" ${checked(no_search_on_blur)}>
                         Ephemeral
                     </label>
                 </div>
@@ -658,10 +660,10 @@ hr.main {
     line-height: 0;
     display: inline-block;
 }
-#popup[data-unselectable]:not(:focus) [data-unselectable-text]:after {
+#popup[data-no-search-on-blur]:not(:focus) [data-unselectable-text]:after {
     content: attr(data-unselectable-text);
 }
-#popup[data-unselectable]:not(:focus) .selectable {
+#popup[data-no-search-on-blur]:not(:focus) .selectable {
     display: none;
 }
 
@@ -1679,8 +1681,7 @@ function getRenders(settings, updateSettings) {
         let isListRendered = false;
         function updateHtml(changedSettingsKeys) {
             setSettingsDataAttributes();
-            if (changedSettingsKeys?.[0] === "unselectable" && changedSettingsKeys.length === 1) {
-                refreshUrlList();
+            if (changedSettingsKeys?.[0] === "no_search_on_blur" && changedSettingsKeys.length === 1) {
                 return;
             }
             if (isListRendered) {
@@ -1763,12 +1764,6 @@ function getRenders(settings, updateSettings) {
         const listHelper = getListHelper(shadowContainer, settings);
 
         const tagsHelper = getTagsHelper(shadowContainer, settings);
-
-        function refreshUrlList() {
-            if (isListRendered) {
-                listHelper.insertUrls(tagsHelper.filterTags(urls));
-            }
-        }
         function renderUrlList() {
             reparseUrlList();
             listHelper.contentElem.removeEventListener("click", renderUrlList);

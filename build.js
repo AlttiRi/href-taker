@@ -9,7 +9,7 @@ const bundle = await rollup({
 const bundles = await bundle.generate({});
 const code = bundles.output[0].code;
 
-const hash = createHash("sha1").update(code).digest("hex").slice(0, 6);
+const hash = createHash("sha1").update(code).digest("hex").slice(0, 4);
 const version = await bumpSemVerIfHashChanged(hash);
 console.log(version);
 

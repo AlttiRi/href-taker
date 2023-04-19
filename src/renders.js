@@ -159,8 +159,7 @@ export function getRenders(settings, updateSettings) {
         let isListRendered = false;
         function updateHtml(changedSettingsKeys) {
             setSettingsDataAttributes();
-            if (changedSettingsKeys?.[0] === "unselectable" && changedSettingsKeys.length === 1) {
-                refreshUrlList();
+            if (changedSettingsKeys?.[0] === "no_search_on_blur" && changedSettingsKeys.length === 1) {
                 return;
             }
             if (isListRendered) {
