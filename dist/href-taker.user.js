@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.6-2023.4.19-8210
+// @version     0.9.7-2023.4.19-7dd2
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -539,7 +539,7 @@ function getPopup(settings) {
                     </label>
                     <label title="Makes the text in the result URLs list unselectable and unsearchable (with Ctrl + F), \
 when the popup is not focused. 
-It may produce some lags with large URLs count on the popup focus/blur events.">
+With large URLs count it can cause some lags on the popup focus/blur events due to the list redrawing.">
                         <input type="checkbox" name="no_search_on_blur" ${checked(no_search_on_blur)}>
                         Ephemeral
                     </label>
