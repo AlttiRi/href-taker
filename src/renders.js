@@ -253,19 +253,18 @@ export function getRenders(settings, updateSettings) {
 
         function refreshUrlList() {
             if (isListRendered) {
-                listHelper.insertUrls(tagsHelper.filterTags(urls));
+                listHelper.insertUrls(tagsHelper.getFilteredUrls());
             }
         }
         function renderUrlList() {
             reparseUrlList();
             listHelper.contentElem.removeEventListener("click", renderUrlList);
-            const urlsForTags = settings.case_sensitive ? urls : urls.map(url => url.toLowerCase());
-            tagsHelper.renderTags(urlsForTags, onTagsChanges);
+            tagsHelper.renderTags(urls, onTagsChanges);
             listHelper.insertUrls(urls);
             isListRendered = true;
         }
         function onTagsChanges() {
-            listHelper.insertUrls(tagsHelper.filterTags(urls));
+            listHelper.insertUrls(tagsHelper.getFilteredUrls());
         }
 
         listBtn.addEventListener("click", renderUrlList);
@@ -281,18 +280,18 @@ export function getRenders(settings, updateSettings) {
 
         const copyButton = querySelector(`button[name="copy_button"]`);
         copyButton.addEventListener("click", event => {
-            void navigator.clipboard.writeText(tagsHelper.filterTags(urls).join(" "));
+            void navigator.clipboard.writeText(tagsHelper.getFilteredUrls().join(" "));
         });
         copyButton.addEventListener("contextmenu", event => {
             event.preventDefault();
-            void navigator.clipboard.writeText(tagsHelper.filterTags(urls).join("\n"));
+            void navigator.clipboard.writeText(tagsHelper.getFilteredUrls().join("\n"));
             void clicked(copyButton);
         });
         copyButton.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
             const MIDDLE_BUTTON = 1;
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
-                void navigator.clipboard.writeText(getCodeArrays(tagsHelper.filterTags(urls)));
+                void navigator.clipboard.writeText(getCodeArrays(tagsHelper.getFilteredUrls()));
                 void clicked(copyButton);
             }
         });
@@ -433,7 +432,7 @@ export function getRenders(settings, updateSettings) {
         }
         if (settings.console_vars) {
             Object.assign(global, {renderUrlList});
-            Object.assign(global, {filterTags: tagsHelper.filterTags});
+            Object.assign(global, {getFilteredUrls: tagsHelper.getFilteredUrls});
         }
 
         // ------

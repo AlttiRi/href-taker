@@ -2,6 +2,12 @@ import {getHsl, hashString, sleep} from "../util.js";
 import {clicked} from "./util.js";
 
 /**
+ * @typedef {Object} UrlInfo
+ * @property {string} url
+ * @property {number} number
+ */
+
+/**
  * @param container
  * @param {ScriptSettings} settings
  */
@@ -14,9 +20,10 @@ export function getTagsHelper(container, settings) {
     const addTagBtnContentEl = container.querySelector(".tag-add span");
 
     let tags = [];
+    /** @type {Object<string, UrlInfo[]>} */
+    let tagInfoMap = {};
     let tagsReversed = false;
     let onUpdateCb = null;
-
     tagsPopupContainerEl.addEventListener("click", onClickSelectTagFromPopup);
     tagsListContainerEl.addEventListener("click", onClickRemoveTagFromSelect);
 
@@ -264,7 +271,9 @@ export function getTagsHelper(container, settings) {
     }
 
     function renderTags(urls, onUpdate) {
+        // urls = settings.case_sensitive ? urls : urls.map(url => url.toLowerCase());
         tags = [];
+        tagInfoMap = {};
         tagsReversed = false;
         tagListWrapperEl.classList.remove("reversed");
         addTagBtnEl.classList.remove("active");
@@ -273,29 +282,60 @@ export function getTagsHelper(container, settings) {
             onUpdateCb = onUpdate;
         }
 
-        const hostCountMap = {};
+        const other = "other";
+        let i = 0;
         for (const url of urls) {
-            const host = url.match(/\w+\.\w+(?=\/)/)?.[0];
+            let host = url.match(/\w+\.[a-z]+(?=\/)/i)?.[0];
             if (!host) {
-                continue;
+                host = other;
             }
-            hostCountMap[host] = (hostCountMap[host] || 0) + 1;
+            if (!settings.case_sensitive) {
+                host = host.toLowerCase();
+            }
+            const tagUrls = tagInfoMap[host] || (tagInfoMap[host] = []);
+            tagUrls.push({url, number: i++});
         }
-        const hostCountEntries = Object.entries(hostCountMap)
+        const hostToUrlInfosEntries = Object.entries(tagInfoMap)
+            .filter(([k, v]) => k !== other)
             .sort(([k1, v1], [k2, v2]) => {
-                return v2 - v1;
+                return v2.length - v1.length;
             });
 
         let tagsHtml = "";
-        for (const [k, v] of hostCountEntries) {
+        for (const [k, v] of hostToUrlInfosEntries) {
             const color = getHsl(hashString(k), 90, 5);
-            tagsHtml += `<span class="tag" data-tag="${k}" title="${v}" data-color="${color}"></span>`;
+            tagsHtml += `<span class="tag" data-tag="${k}" title="${v.length}" data-color="${color}"></span>`;
         }
+        if (tagInfoMap[other]) {
+            tagsHtml += `<span class="tag" data-tag="${other}" title="${tagInfoMap[other].length}" data-color="#eee"></span>`;
+        }
+
         tagsPopupContainerEl.innerHTML = tagsHtml;
         const tagsEls = [...tagsPopupContainerEl.querySelectorAll(`.tag[data-color]`)];
         tagsEls.forEach(tag => tag.style.backgroundColor = tag.dataset.color);
 
         updateAddTagBtn();
+    }
+
+    function getFilteredUrls() {
+        if (!tags.length) {
+            return Object.values(tagInfoMap).flatMap(urlInfos => {
+                return urlInfos;
+            }).sort((urlInfo1, urlInfo2) => {
+                return urlInfo1.number - urlInfo2.number;
+            }).map(urlInfo => urlInfo.url);
+        }
+        return Object.entries(tagInfoMap).filter(([tag, urlInfos]) => {
+            if (tagsReversed) {
+                return !tags.includes(tag);
+            } else {
+                return  tags.includes(tag);
+            }
+        }).flatMap(([tag, urlInfos]) => {
+            return urlInfos;
+        }).sort((urlInfo1, urlInfo2) => {
+            return urlInfo1.number - urlInfo2.number;
+        }).map(urlInfo => urlInfo.url);
     }
 
     function filterTags(urls) {
@@ -319,5 +359,6 @@ export function getTagsHelper(container, settings) {
     return {
         renderTags,
         filterTags,
+        getFilteredUrls,
     }
 }
