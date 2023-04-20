@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.18-2023.4.20-2937
+// @version     0.9.19-2023.4.20-4c33
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -58,6 +58,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} controls_collapsed
  * @property {boolean} no_search_on_blur
  * @property {boolean} unsearchable
+ * @property {string} insert_place
  */
 
 /** @return {{settings: ScriptSettings, updateSettings: function}} */
@@ -94,6 +95,7 @@ function loadSettings() {
         controls_collapsed: false,
         no_search_on_blur: false,
         unsearchable: false,
+        insert_place: "html",
     };
     const LocalStoreName = "ujs-href-taker";
 
@@ -1642,15 +1644,17 @@ function getRenders(settings, updateSettings) {
     const querySelector    = selector => shadowContainer.querySelector(selector);
     const querySelectorAll = selector => shadowContainer.querySelectorAll(selector);
 
-    const insertSelector = "html"; // "body", "html"
+    const insertSelector = settings.insert_place;
     function renderShadowContainer() {
         const insertPlace   = document.querySelector(insertSelector);
         const shadowWrapper = document.createElement("div");
         shadowWrapper.setAttribute("id", "href-taker-outer-shadow-wrapper");
         shadowWrapper.attachShadow({mode: "open"});
         shadowWrapper.shadowRoot.innerHTML = wrapperHtml;
-        {
+        if (insertSelector === "html") {
             insertPlace.append(shadowWrapper);
+        } else { // "body", ...
+            insertPlace.prepend(shadowWrapper);
         }
 
         shadowContainer = shadowWrapper.shadowRoot.querySelector("#shadow-content-wrapper");

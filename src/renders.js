@@ -24,7 +24,7 @@ export function getRenders(settings, updateSettings) {
     const querySelector    = selector => shadowContainer.querySelector(selector);
     const querySelectorAll = selector => shadowContainer.querySelectorAll(selector);
 
-    const insertSelector = "html"; // "body", "html"
+    const insertSelector = settings.insert_place;
     function renderShadowContainer() {
         const insertPlace   = document.querySelector(insertSelector);
         const shadowWrapper = document.createElement("div");
@@ -33,7 +33,7 @@ export function getRenders(settings, updateSettings) {
         shadowWrapper.shadowRoot.innerHTML = wrapperHtml;
         if (insertSelector === "html") {
             insertPlace.append(shadowWrapper);
-        } else {
+        } else { // "body", ...
             insertPlace.prepend(shadowWrapper);
         }
 

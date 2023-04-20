@@ -32,6 +32,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} controls_collapsed
  * @property {boolean} no_search_on_blur
  * @property {boolean} unsearchable
+ * @property {string} insert_place
  */
 
 /** @return {{settings: ScriptSettings, updateSettings: function}} */
@@ -68,6 +69,7 @@ export function loadSettings() {
         controls_collapsed: false,
         no_search_on_blur: false,
         unsearchable: false,
+        insert_place: "html",
     };
     const LocalStoreName = "ujs-href-taker";
 
