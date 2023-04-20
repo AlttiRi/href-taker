@@ -277,12 +277,21 @@ export function getTagsHelper(container, settings) {
         tagsReversed = false;
         tagListWrapperEl.classList.remove("reversed");
         addTagBtnEl.classList.remove("active");
+        addTagBtnEl.title = "";
+        addTagBtnContentEl.textContent = "+";
         tagsListContainerEl.innerHTML = "";
         tagsPopupContainerEl.innerHTML = "";
     }
 
+    /**
+     * @param {string[]} urls
+     * @param {function?} onUpdate
+     */
     function renderTags(urls, onUpdate) {
         clearTags();
+        if (!urls.length) {
+            return;
+        }
         if (onUpdate) {
             onUpdateCb = onUpdate;
         }
@@ -343,9 +352,14 @@ export function getTagsHelper(container, settings) {
         }).map(urlInfo => urlInfo.url);
     }
 
+    function getTags() {
+        return selectedTags;
+    }
+
     return {
         renderTags,
         getFilteredUrls,
         clearTags,
+        getTags,
     }
 }

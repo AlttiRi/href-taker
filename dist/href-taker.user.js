@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.12-2023.4.20-d75d
+// @version     0.9.13-2023.4.20-6ea2
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1114,12 +1114,21 @@ function getTagsHelper(container, settings) {
         tagsReversed = false;
         tagListWrapperEl.classList.remove("reversed");
         addTagBtnEl.classList.remove("active");
+        addTagBtnEl.title = "";
+        addTagBtnContentEl.textContent = "+";
         tagsListContainerEl.innerHTML = "";
         tagsPopupContainerEl.innerHTML = "";
     }
 
+    /**
+     * @param {string[]} urls
+     * @param {function?} onUpdate
+     */
     function renderTags(urls, onUpdate) {
         clearTags();
+        if (!urls.length) {
+            return;
+        }
         if (onUpdate) {
             onUpdateCb = onUpdate;
         }
@@ -1180,10 +1189,15 @@ function getTagsHelper(container, settings) {
         }).map(urlInfo => urlInfo.url);
     }
 
+    function getTags() {
+        return selectedTags;
+    }
+
     return {
         renderTags,
         getFilteredUrls,
         clearTags,
+        getTags,
     }
 }
 
@@ -1823,15 +1837,23 @@ function getRenders(settings, updateSettings) {
             event.preventDefault();
             popupElem.toggleAttribute("data-unsearchable");
         }
+
+        function getTagFilteredUrls() {
+            if (!settings.show_tags || !tagsHelper.getTags().size) {
+                return urls;
+            }
+            return tagsHelper.getFilteredUrls();
+        }
+
         function renderUrlList() {
             reparseUrlList();
             listHelper.contentElem.removeEventListener("click", renderUrlList);
-            tagsHelper.renderTags(urls, onTagsChanges);
+            tagsHelper.renderTags(settings.show_tags ? urls : [], onTagsChanges);
             listHelper.insertUrls(urls);
             isListRendered = true;
         }
         function onTagsChanges() {
-            listHelper.insertUrls(tagsHelper.getFilteredUrls());
+            listHelper.insertUrls(getTagFilteredUrls());
         }
 
         listBtn.addEventListener("click", renderUrlList);
@@ -1848,18 +1870,18 @@ function getRenders(settings, updateSettings) {
 
         const copyButton = querySelector(`button[name="copy_button"]`);
         copyButton.addEventListener("click", event => {
-            void navigator.clipboard.writeText(tagsHelper.getFilteredUrls().join(" "));
+            void navigator.clipboard.writeText(getTagFilteredUrls().join(" "));
         });
         copyButton.addEventListener("contextmenu", event => {
             event.preventDefault();
-            void navigator.clipboard.writeText(tagsHelper.getFilteredUrls().join("\n"));
+            void navigator.clipboard.writeText(getTagFilteredUrls().join("\n"));
             void clicked(copyButton);
         });
         copyButton.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
             const MIDDLE_BUTTON = 1;
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
-                void navigator.clipboard.writeText(getCodeArrays(tagsHelper.getFilteredUrls()));
+                void navigator.clipboard.writeText(getCodeArrays(getTagFilteredUrls()));
                 void clicked(copyButton);
             }
         });
@@ -2000,7 +2022,7 @@ function getRenders(settings, updateSettings) {
         }
         if (settings.console_vars) {
             Object.assign(global, {renderUrlList});
-            Object.assign(global, {getFilteredUrls: tagsHelper.getFilteredUrls});
+            Object.assign(global, {getFilteredUrls: getTagFilteredUrls});
         }
 
         // ------
