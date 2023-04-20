@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.14-2023.4.20-54e1
+// @version     0.9.15-2023.4.20-28ef
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -862,6 +862,8 @@ function getTagsHelper(container, settings) {
     let tagInfoMap = {};
     let tagsReversed = false;
     let onUpdateCb = null;
+    let urlsCount = 0;
+
     tagsPopupContainerEl.addEventListener("click", onClickSelectTagFromPopup);
     tagsListContainerEl.addEventListener("click", onClickRemoveTagFromSelect);
 
@@ -1067,7 +1069,8 @@ function getTagsHelper(container, settings) {
         const disabled = popupTags.filter(t => t.classList.contains("disabled")).length;
         const enabled = selected - disabled;
         const selectedText = enabled !== selected ? ` (${selected})` : "";
-        addTagBtnEl.title = `${enabled}${selectedText} of ${total}`;
+        const tagsInfoText = `${enabled}${selectedText} of ${total} tags`;
+        addTagBtnEl.title = tagsInfoText + `\nof ${urlsCount} total urls`;
     }
 
     /** @param {MouseEvent} event */
@@ -1110,6 +1113,7 @@ function getTagsHelper(container, settings) {
     }
 
     function clearTags() {
+        urlsCount = 0;
         selectedTags = new Set();
         tagInfoMap = {};
         tagsReversed = false;
@@ -1133,6 +1137,7 @@ function getTagsHelper(container, settings) {
         if (onUpdate) {
             onUpdateCb = onUpdate;
         }
+        urlsCount = urls.length;
 
         const other = "other";
         let i = 0;

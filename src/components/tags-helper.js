@@ -25,6 +25,8 @@ export function getTagsHelper(container, settings) {
     let tagInfoMap = {};
     let tagsReversed = false;
     let onUpdateCb = null;
+    let urlsCount = 0;
+
     tagsPopupContainerEl.addEventListener("click", onClickSelectTagFromPopup);
     tagsListContainerEl.addEventListener("click", onClickRemoveTagFromSelect);
 
@@ -230,7 +232,8 @@ export function getTagsHelper(container, settings) {
         const disabled = popupTags.filter(t => t.classList.contains("disabled")).length;
         const enabled = selected - disabled;
         const selectedText = enabled !== selected ? ` (${selected})` : "";
-        addTagBtnEl.title = `${enabled}${selectedText} of ${total}`;
+        const tagsInfoText = `${enabled}${selectedText} of ${total} tags`;
+        addTagBtnEl.title = tagsInfoText + `\nof ${urlsCount} total urls`;
     }
 
     /** @param {MouseEvent} event */
@@ -273,6 +276,7 @@ export function getTagsHelper(container, settings) {
     }
 
     function clearTags() {
+        urlsCount = 0;
         selectedTags = new Set();
         tagInfoMap = {};
         tagsReversed = false;
@@ -296,6 +300,7 @@ export function getTagsHelper(container, settings) {
         if (onUpdate) {
             onUpdateCb = onUpdate;
         }
+        urlsCount = urls.length;
 
         const other = "other";
         let i = 0;
