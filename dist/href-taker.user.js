@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.15-2023.4.20-28ef
+// @version     0.9.16-2023.4.20-ca70
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -52,6 +52,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} case_sensitive
  * @property {boolean} hide_prefix
  * @property {boolean} show_tags
+ * @property {boolean} auto_tags
  * @property {boolean} tags_collapsed
  * @property {boolean} filters_collapsed
  * @property {boolean} controls_collapsed
@@ -87,6 +88,7 @@ function loadSettings() {
         case_sensitive: false,
         hide_prefix: true,
         show_tags: false,
+        auto_tags: false,
         tags_collapsed: false,
         filters_collapsed: false,
         controls_collapsed: false,
@@ -405,6 +407,7 @@ function getPopup(settings) {
         case_sensitive,
         hide_prefix,
         show_tags,
+        auto_tags,
         // tags_collapsed,
         // filters_collapsed,
         // controls_collapsed,
@@ -531,6 +534,10 @@ function getPopup(settings) {
                     <label title="Show Tags">
                         <input type="checkbox" name="show_tags" ${checked(show_tags)}>
                         Tags
+                    </label>
+                    <label title="Show all tags automatically" data-name="auto_tags">
+                        <input type="checkbox" name="auto_tags" ${checked(auto_tags)}>
+                        Auto tags
                     </label>
                     <label title="Log the result list to console">
                         <input type="checkbox" name="console_log" ${checked(console_log)}>
@@ -686,6 +693,10 @@ hr.main {
     content: attr(data-unselectable-text);
 }
 #popup[data-unsearchable] [data-name="no_search_on_blur"] {
+    opacity: 0.55;
+}
+
+#popup:not([data-show-tags]) [data-name="auto_tags"] {
     opacity: 0.55;
 }
 
@@ -1097,6 +1108,14 @@ function getTagsHelper(container, settings) {
         onUpdateCb?.();
     }
 
+    function selectAllTags() {
+        const tagEls = [...tagsPopupWrapperEl.querySelectorAll(".tag:not(.selected)")];
+        for (const tagEl of tagEls) {
+            tagsListContainerEl.append(tagEl.cloneNode(true));
+            selectedTags.add(tagEl.dataset.tag);
+            tagEl.classList.add("selected");
+        }
+    }
 
     /** @param {PointerEvent} event */
     function onMMBPointerDownReverseSelectedTags(event) {
@@ -1170,6 +1189,10 @@ function getTagsHelper(container, settings) {
         tagsPopupContainerEl.innerHTML = tagsHtml;
         const tagsEls = [...tagsPopupContainerEl.querySelectorAll(`.tag[data-color]`)];
         tagsEls.forEach(tag => tag.style.backgroundColor = tag.dataset.color);
+
+        if (settings.auto_tags) {
+            selectAllTags();
+        }
 
         updateAddTagBtn();
     }
