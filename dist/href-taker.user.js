@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.13-2023.4.20-6ea2
+// @version     0.9.14-2023.4.20-54e1
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1065,8 +1065,9 @@ function getTagsHelper(container, settings) {
         const total = popupTags.length;
         const selected = popupTags.filter(t => t.classList.contains("selected")).length;
         const disabled = popupTags.filter(t => t.classList.contains("disabled")).length;
-        const disabledText = disabled ? ` (${selected - disabled})` : "";
-        addTagBtnEl.title = `${selected}${disabledText} of ${total}`;
+        const enabled = selected - disabled;
+        const selectedText = enabled !== selected ? ` (${selected})` : "";
+        addTagBtnEl.title = `${enabled}${selectedText} of ${total}`;
     }
 
     /** @param {MouseEvent} event */

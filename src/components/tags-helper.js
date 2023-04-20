@@ -228,8 +228,9 @@ export function getTagsHelper(container, settings) {
         const total = popupTags.length;
         const selected = popupTags.filter(t => t.classList.contains("selected")).length;
         const disabled = popupTags.filter(t => t.classList.contains("disabled")).length;
-        const disabledText = disabled ? ` (${selected - disabled})` : "";
-        addTagBtnEl.title = `${selected}${disabledText} of ${total}`;
+        const enabled = selected - disabled;
+        const selectedText = enabled !== selected ? ` (${selected})` : "";
+        addTagBtnEl.title = `${enabled}${selectedText} of ${total}`;
     }
 
     /** @param {MouseEvent} event */
