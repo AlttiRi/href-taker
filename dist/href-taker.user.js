@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.19-2023.4.20-4c33
+// @version     0.9.21-2023.4.20-3062
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -748,8 +748,8 @@ a {
     width: inherit;
 }
 #result-list-wrapper {
-    width: calc(720px - 24px);
     padding-top: 4px;
+    padding-right: 2px;
     /*padding: 4px 4px 8px 12px;*/
     flex-grow: 1;
     overflow-y: hidden;
@@ -1706,7 +1706,6 @@ function getRenders(settings, updateSettings) {
         }
 
         const headerElem     = querySelector("#popup-header");
-        const resultListElem = querySelector("#result-list-wrapper");
         makeMovable(popupElem, {
             handle: headerElem,
             ...storeStateInLS({
@@ -1721,9 +1720,6 @@ function getRenders(settings, updateSettings) {
                 reset: resetPosition,
                 restore: true,
                 id: "ujs-href-taker-popup-size",
-                onMove(state) {
-                    resultListElem.style.width = (parseInt(state.width) - 8) + "px";
-                },
             })
         });
 
@@ -2063,11 +2059,11 @@ function getRenders(settings, updateSettings) {
         return {renderUrlList};
     }
     function closePopup() {
-        shadowContainer?.querySelector("#popup")?.remove();
+        querySelector("#popup")?.remove();
     }
 
     function closeMinimized() {
-        shadowContainer?.querySelector("#popup-minimized")?.remove();
+        querySelector("#popup-minimized")?.remove();
     }
     function renderMinimized(resetPosition = false) {
         initShadowContainer();

@@ -439,11 +439,11 @@ export function getRenders(settings, updateSettings) {
         return {renderUrlList};
     }
     function closePopup() {
-        shadowContainer?.querySelector("#popup")?.remove();
+        querySelector("#popup")?.remove();
     }
 
     function closeMinimized() {
-        shadowContainer?.querySelector("#popup-minimized")?.remove();
+        querySelector("#popup-minimized")?.remove();
     }
     function renderMinimized(resetPosition = false) {
         initShadowContainer();
