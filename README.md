@@ -19,7 +19,7 @@ _It keeps the state in `LocalStorage`._
 
 To install open this URL: [https://github.com/AlttiRi/href-taker/raw/master/dist/href-taker.user.js](https://github.com/AlttiRi/href-taker/raw/master/dist/href-taker.user.js)
 
-_An installed userscript manager extension is required for it._
+_An installed userscript manager extension is required for it ([VM](https://violentmonkey.github.io/#installation)/[TM](https://www.tampermonkey.net/))._
 
 ---
 
