@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.0-2023.4.20-fb90
+// @version     0.10.1-2023.4.20-e5cc
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -2168,8 +2168,7 @@ function initMinimized({settings, updateSettings, wrapper, popup, minim}) {
  * @param {function(ScriptSettings)} updateSettings
  */
 function getRenders(settings, updateSettings) {
-    /**
-     * @type {Wrapper} */
+    /** @type {Wrapper} */
     const wrapper = {};
     /** @type {Popup} */
     const popup = {};

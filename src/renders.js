@@ -25,8 +25,7 @@ import {initMinimized} from "./components/minimized-helper.js";
  * @param {function(ScriptSettings)} updateSettings
  */
 export function getRenders(settings, updateSettings) {
-    /**
-     * @type {Wrapper} */
+    /** @type {Wrapper} */
     const wrapper = {};
     /** @type {Popup} */
     const popup = {};
