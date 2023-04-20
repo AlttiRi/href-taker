@@ -19,7 +19,8 @@ export function getTagsHelper(container, settings) {
     const addTagBtnEl        = container.querySelector(".tag-add");
     const addTagBtnContentEl = container.querySelector(".tag-add span");
 
-    let tags = [];
+    /** @type {Set<string>} */
+    let selectedTags = new Set();
     /** @type {Object<string, UrlInfo[]>} */
     let tagInfoMap = {};
     let tagsReversed = false;
@@ -69,10 +70,10 @@ export function getTagsHelper(container, settings) {
         if (selected) {
             const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${popupTagEl.dataset.tag}"]`);
             listTagEl.remove();
-            tags = tags.filter(tag => tag !== popupTagEl.dataset.tag);
+            selectedTags.delete(popupTagEl.dataset.tag);
         } else {
             tagsListContainerEl.append(popupTagEl.cloneNode(true));
-            tags.push(popupTagEl.dataset.tag);
+            selectedTags.add(popupTagEl.dataset.tag);
         }
         popupTagEl.classList.toggle("selected");
         updateAddTagBtnTitle();
@@ -87,20 +88,20 @@ export function getTagsHelper(container, settings) {
         const popupTag = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
         popupTag.classList.remove("selected");
         popupTag.classList.remove("disabled");
-        tags = tags.filter(tag => tag !== listTagEl.dataset.tag);
+        selectedTags.delete(listTagEl.dataset.tag);
         listTagEl.remove();
         updateAddTagBtn();
         onUpdateCb?.();
     }
 
     function disableAllSelectedTagElems() {
-        for (const tag of tags) {
+        for (const tag of selectedTags) {
             const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${tag}"]`);
             const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"]`);
             listTagEl.classList.add("disabled");
             popupTagEl.classList.add("disabled");
         }
-        tags = [];
+        selectedTags = new Set();
     }
     function enableAllSelectedTagElems() {
         const listTagEls = [...tagsListContainerEl.querySelectorAll(`[data-tag].disabled`)];
@@ -109,7 +110,7 @@ export function getTagsHelper(container, settings) {
             const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"].disabled`);
             listTagEl.classList.remove("disabled");
             popupTagEl.classList.remove("disabled");
-            tags.push(tag);
+            selectedTags.add(tag);
         }
     }
     function enableTag(listTagEl) {
@@ -117,22 +118,22 @@ export function getTagsHelper(container, settings) {
         const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"].disabled`);
         listTagEl.classList.remove("disabled");
         popupTagEl.classList.remove("disabled");
-        tags.push(tag);
+        selectedTags.add(tag);
     }
     function disableTag(listTagEl) {
         const tag = listTagEl.dataset.tag;
         const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"]`);
         listTagEl.classList.add("disabled");
         popupTagEl.classList.add("disabled");
-        tags = tags.filter(t => t !== tag);
+        selectedTags.delete(tag);
     }
     function disableSelectedTag(listTagEl, popupTagEl) {
         const disabled = listTagEl.classList.toggle("disabled");
         if (disabled) {
-            tags = tags.filter(tag => tag !== listTagEl.dataset.tag);
+            selectedTags.delete(listTagEl.dataset.tag);
             popupTagEl.classList.add("disabled");
         } else {
-            tags.push(listTagEl.dataset.tag);
+            selectedTags.add(listTagEl.dataset.tag);
             popupTagEl.classList.remove("disabled");
         }
     }
@@ -146,7 +147,7 @@ export function getTagsHelper(container, settings) {
         if (event.shiftKey) {
             const enabled = !listTagEl.classList.contains("disabled");
             if (enabled) {
-                if (tags.length > 1) {
+                if (selectedTags.size > 1) {
                     disableAllSelectedTagElems();
                     enableTag(listTagEl);
                 } else {
@@ -154,7 +155,7 @@ export function getTagsHelper(container, settings) {
                 }
             } else {
                 const listTagEls = [...tagsListContainerEl.querySelectorAll(`[data-tag]`)];
-                if (tags.length + 1 === listTagEls.length) {
+                if (selectedTags.size + 1 === listTagEls.length) {
                     disableAllSelectedTagElems();
                 } else {
                     enableAllSelectedTagElems();
@@ -239,11 +240,11 @@ export function getTagsHelper(container, settings) {
         if (tagEls.length) {
             for (const tagEl of tagEls) {
                 tagsListContainerEl.append(tagEl.cloneNode(true));
-                tags.push(tagEl.dataset.tag);
+                selectedTags.add(tagEl.dataset.tag);
                 tagEl.classList.add("selected");
             }
         } else {
-            tags = [];
+            selectedTags = new Set();
             const tagEls = [...tagsPopupWrapperEl.querySelectorAll(".tag.selected")];
             for (const tagEl of tagEls) {
                 tagEl.classList.remove("selected");
@@ -271,7 +272,7 @@ export function getTagsHelper(container, settings) {
     }
 
     function clearTags() {
-        tags = [];
+        selectedTags = new Set();
         tagInfoMap = {};
         tagsReversed = false;
         tagListWrapperEl.classList.remove("reversed");
@@ -281,7 +282,6 @@ export function getTagsHelper(container, settings) {
     }
 
     function renderTags(urls, onUpdate) {
-        // urls = settings.case_sensitive ? urls : urls.map(url => url.toLowerCase());
         clearTags();
         if (onUpdate) {
             onUpdateCb = onUpdate;
@@ -323,7 +323,7 @@ export function getTagsHelper(container, settings) {
     }
 
     function getFilteredUrls() {
-        if (!tags.length) {
+        if (!selectedTags.size) {
             return Object.values(tagInfoMap).flatMap(urlInfos => {
                 return urlInfos;
             }).sort((urlInfo1, urlInfo2) => {
@@ -332,9 +332,9 @@ export function getTagsHelper(container, settings) {
         }
         return Object.entries(tagInfoMap).filter(([tag, urlInfos]) => {
             if (tagsReversed) {
-                return !tags.includes(tag);
+                return !selectedTags.has(tag);
             } else {
-                return  tags.includes(tag);
+                return  selectedTags.has(tag);
             }
         }).flatMap(([tag, urlInfos]) => {
             return urlInfos;
@@ -343,27 +343,8 @@ export function getTagsHelper(container, settings) {
         }).map(urlInfo => urlInfo.url);
     }
 
-    function filterTags(urls) {
-        let urlsFilteredByTags = urls;
-        if (tags.length) {
-            let matchOnly;
-            if (!settings.case_sensitive) {
-                matchOnly = url => tags.some(tag => url.toLowerCase().includes(tag));
-            } else {
-                matchOnly = url => tags.some(tag => url.includes(tag));
-            }
-            if (!tagsReversed) {
-                urlsFilteredByTags = urls.filter(url =>  matchOnly(url));
-            } else {
-                urlsFilteredByTags = urls.filter(url => !matchOnly(url));
-            }
-        }
-        return urlsFilteredByTags;
-    }
-
     return {
         renderTags,
-        filterTags,
         getFilteredUrls,
         clearTags,
     }
