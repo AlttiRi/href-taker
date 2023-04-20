@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.16-2023.4.20-ca70
+// @version     0.9.17-2023.4.20-fc44
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -87,9 +87,9 @@ function loadSettings() {
         reverse_input_only: false,
         case_sensitive: false,
         hide_prefix: true,
-        show_tags: false,
+        show_tags: true,
         auto_tags: false,
-        tags_collapsed: false,
+        tags_collapsed: true,
         filters_collapsed: false,
         controls_collapsed: false,
         no_search_on_blur: false,
