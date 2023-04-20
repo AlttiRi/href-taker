@@ -28,6 +28,7 @@ export function getPopup(settings) {
         case_sensitive,
         hide_prefix,
         show_tags,
+        auto_tags,
         // tags_collapsed,
         // filters_collapsed,
         // controls_collapsed,
@@ -154,6 +155,10 @@ export function getPopup(settings) {
                     <label title="Show Tags">
                         <input type="checkbox" name="show_tags" ${checked(show_tags)}>
                         Tags
+                    </label>
+                    <label title="Show all tags automatically" data-name="auto_tags">
+                        <input type="checkbox" name="auto_tags" ${checked(auto_tags)}>
+                        Auto tags
                     </label>
                     <label title="Log the result list to console">
                         <input type="checkbox" name="console_log" ${checked(console_log)}>
@@ -309,6 +314,10 @@ hr.main {
     content: attr(data-unselectable-text);
 }
 #popup[data-unsearchable] [data-name="no_search_on_blur"] {
+    opacity: 0.55;
+}
+
+#popup:not([data-show-tags]) [data-name="auto_tags"] {
     opacity: 0.55;
 }
 

@@ -260,6 +260,14 @@ export function getTagsHelper(container, settings) {
         onUpdateCb?.();
     }
 
+    function selectAllTags() {
+        const tagEls = [...tagsPopupWrapperEl.querySelectorAll(".tag:not(.selected)")];
+        for (const tagEl of tagEls) {
+            tagsListContainerEl.append(tagEl.cloneNode(true));
+            selectedTags.add(tagEl.dataset.tag);
+            tagEl.classList.add("selected");
+        }
+    }
 
     /** @param {PointerEvent} event */
     function onMMBPointerDownReverseSelectedTags(event) {
@@ -333,6 +341,10 @@ export function getTagsHelper(container, settings) {
         tagsPopupContainerEl.innerHTML = tagsHtml;
         const tagsEls = [...tagsPopupContainerEl.querySelectorAll(`.tag[data-color]`)];
         tagsEls.forEach(tag => tag.style.backgroundColor = tag.dataset.color);
+
+        if (settings.auto_tags) {
+            selectAllTags();
+        }
 
         updateAddTagBtn();
     }

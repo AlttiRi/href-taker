@@ -26,6 +26,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} case_sensitive
  * @property {boolean} hide_prefix
  * @property {boolean} show_tags
+ * @property {boolean} auto_tags
  * @property {boolean} tags_collapsed
  * @property {boolean} filters_collapsed
  * @property {boolean} controls_collapsed
@@ -61,6 +62,7 @@ export function loadSettings() {
         case_sensitive: false,
         hide_prefix: true,
         show_tags: false,
+        auto_tags: false,
         tags_collapsed: false,
         filters_collapsed: false,
         controls_collapsed: false,
