@@ -233,7 +233,7 @@ export function getTagsHelper(container, settings) {
         const enabled = selected - disabled;
         const selectedText = enabled !== selected ? ` (${selected})` : "";
         const tagsInfoText = `${enabled}${selectedText} of ${total} tags`;
-        addTagBtnEl.title = tagsInfoText + `\nof ${urlsCount} total urls`;
+        addTagBtnEl.title = tagsInfoText + ` of ${urlsCount} total urls`;
     }
 
     /** @param {MouseEvent} event */

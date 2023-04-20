@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.17-2023.4.20-fc44
+// @version     0.9.18-2023.4.20-2937
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1081,7 +1081,7 @@ function getTagsHelper(container, settings) {
         const enabled = selected - disabled;
         const selectedText = enabled !== selected ? ` (${selected})` : "";
         const tagsInfoText = `${enabled}${selectedText} of ${total} tags`;
-        addTagBtnEl.title = tagsInfoText + `\nof ${urlsCount} total urls`;
+        addTagBtnEl.title = tagsInfoText + ` of ${urlsCount} total urls`;
     }
 
     /** @param {MouseEvent} event */
