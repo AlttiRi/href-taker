@@ -272,6 +272,7 @@ export function getRenders(settings, updateSettings) {
         listBtn.addEventListener("contextmenu", event => {
             event.preventDefault();
             listHelper.clearList(true);
+            tagsHelper.clearTags();
             listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
             void clicked(listBtn);
         });

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.10-2023.4.19-fb9d
+// @version     0.9.11-2023.4.20-3fa8
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1107,14 +1107,19 @@ function getTagsHelper(container, settings) {
         onUpdateCb?.();
     }
 
-    function renderTags(urls, onUpdate) {
-        // urls = settings.case_sensitive ? urls : urls.map(url => url.toLowerCase());
+    function clearTags() {
         tags = [];
         tagInfoMap = {};
         tagsReversed = false;
         tagListWrapperEl.classList.remove("reversed");
         addTagBtnEl.classList.remove("active");
         tagsListContainerEl.innerHTML = "";
+        tagsPopupContainerEl.innerHTML = "";
+    }
+
+    function renderTags(urls, onUpdate) {
+        // urls = settings.case_sensitive ? urls : urls.map(url => url.toLowerCase());
+        clearTags();
         if (onUpdate) {
             onUpdateCb = onUpdate;
         }
@@ -1197,6 +1202,7 @@ function getTagsHelper(container, settings) {
         renderTags,
         filterTags,
         getFilteredUrls,
+        clearTags,
     }
 }
 
@@ -1852,6 +1858,7 @@ function getRenders(settings, updateSettings) {
         listBtn.addEventListener("contextmenu", event => {
             event.preventDefault();
             listHelper.clearList(true);
+            tagsHelper.clearTags();
             listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
             void clicked(listBtn);
         });

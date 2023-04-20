@@ -270,14 +270,19 @@ export function getTagsHelper(container, settings) {
         onUpdateCb?.();
     }
 
-    function renderTags(urls, onUpdate) {
-        // urls = settings.case_sensitive ? urls : urls.map(url => url.toLowerCase());
+    function clearTags() {
         tags = [];
         tagInfoMap = {};
         tagsReversed = false;
         tagListWrapperEl.classList.remove("reversed");
         addTagBtnEl.classList.remove("active");
         tagsListContainerEl.innerHTML = "";
+        tagsPopupContainerEl.innerHTML = "";
+    }
+
+    function renderTags(urls, onUpdate) {
+        // urls = settings.case_sensitive ? urls : urls.map(url => url.toLowerCase());
+        clearTags();
         if (onUpdate) {
             onUpdateCb = onUpdate;
         }
@@ -360,5 +365,6 @@ export function getTagsHelper(container, settings) {
         renderTags,
         filterTags,
         getFilteredUrls,
+        clearTags,
     }
 }
