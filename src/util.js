@@ -32,6 +32,29 @@ export function hashString(str) {
 }
 
 
+/**
+ * @param {string[]} items
+ * @param {number} size
+ * */
+export function getCodeArrays(items, size = 100) {
+    const jsonArray = a => `${a.length ? "[\"" + a.join(`", "`) + "\"]" : "[]"}`;
+    if (items.length <= size) {
+        return `/* ${items.length.toString().padStart(3)} */ ${jsonArray(items)},`;
+    }
+    const len = s => s.toString().length;
+    const count = Math.trunc(items.length / size);
+    const comment = items.length.toString().padStart(1 + len(items.length)) + " ".repeat(3 + len(count));
+    const parts = [`/* ${comment} */`];
+    for (let i = 0; i <= count; i++) {
+        const part = items.slice(size * i, size + size * i);
+        const page = `(${i + 1})`.padStart(2 + len(count));
+        const pageCount = part.length.toString().padStart(1 + len(items.length));
+        parts.push(`/* ${pageCount} ${page} */ ${jsonArray(part)},`);
+    }
+    return parts.join("\n");
+}
+
+
 // --------------------------
 
 

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.22-2023.4.20-4d89
+// @version     0.9.23-2023.4.20-fb90
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -172,6 +172,29 @@ function hashString(str) {
 }
 
 
+/**
+ * @param {string[]} items
+ * @param {number} size
+ * */
+function getCodeArrays(items, size = 100) {
+    const jsonArray = a => `${a.length ? "[\"" + a.join(`", "`) + "\"]" : "[]"}`;
+    if (items.length <= size) {
+        return `/* ${items.length.toString().padStart(3)} */ ${jsonArray(items)},`;
+    }
+    const len = s => s.toString().length;
+    const count = Math.trunc(items.length / size);
+    const comment = items.length.toString().padStart(1 + len(items.length)) + " ".repeat(3 + len(count));
+    const parts = [`/* ${comment} */`];
+    for (let i = 0; i <= count; i++) {
+        const part = items.slice(size * i, size + size * i);
+        const page = `(${i + 1})`.padStart(2 + len(count));
+        const pageCount = part.length.toString().padStart(1 + len(items.length));
+        parts.push(`/* ${pageCount} ${page} */ ${jsonArray(part)},`);
+    }
+    return parts.join("\n");
+}
+
+
 // --------------------------
 
 
@@ -218,35 +241,6 @@ async function clicked(elem) {
     elem.blur();
     await sleep(125);
     elem.classList.remove("clicked");
-}
-
-function getMinimized() {
-    const minimizedHtml = `
-<div id="popup-minimized">
-    <div>
-        <span>HrefTaker</span>        
-        <button id="open-popup" title="Open popup">O</button>
-        <button id="close-popup" title="Close popup">X</button>
-    </div>
-</div>`;
-
-    const minimizedCss = cssFromStyle`
-<style>
-#popup-minimized {
-    position: fixed;
-    width: fit-content;
-    background-color: white;
-    padding: 3px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    border: 1px solid gray;
-    border-radius: 2px;
-}
-#popup-minimized span {
-    padding: 0 4px;
-}
-</style>`;
-
-    return {minimizedHtml, minimizedCss};
 }
 
 function getWrapper() {
@@ -300,6 +294,839 @@ button.active, .button.active {
 </style>`;
 
     return {wrapperHtml, wrapperCss};
+}
+
+/**
+ * @param {Object} opt
+ * @param {ScriptSettings} opt.settings
+ * @param {function(ScriptSettings)} opt.updateSettings
+ * @param {Wrapper} opt.wrapper
+ */
+function initWrapper({settings, updateSettings, wrapper}) {
+    const {wrapperHtml, wrapperCss} = getWrapper();
+
+    let shadowContainer = null;
+    const querySelector    = selector => shadowContainer.querySelector(selector);
+    const querySelectorAll = selector => [...shadowContainer.querySelectorAll(selector)];
+
+    const insertSelector = settings.insert_place;
+    function renderShadowContainer() {
+        const insertPlace   = document.querySelector(insertSelector);
+        const shadowWrapper = document.createElement("div");
+        shadowWrapper.setAttribute("id", "href-taker-outer-shadow-wrapper");
+        shadowWrapper.attachShadow({mode: "open"});
+        shadowWrapper.shadowRoot.innerHTML = wrapperHtml;
+        if (insertSelector === "html") {
+            insertPlace.append(shadowWrapper);
+        } else { // "body", ...
+            insertPlace.prepend(shadowWrapper);
+        }
+
+        shadowContainer = shadowWrapper.shadowRoot.querySelector("#shadow-content-wrapper");
+        addCSS(wrapperCss, shadowContainer);
+        updateSettings({opened: true});
+    }
+    function closeShadowContainer() {
+        document.querySelector(`${insertSelector} > #href-taker-outer-shadow-wrapper`)?.remove();
+        shadowContainer = null;
+        updateSettings({opened: false});
+    }
+    function initShadowContainer() {
+        if (!shadowContainer) {
+            renderShadowContainer();
+        }
+        return shadowContainer;
+    }
+
+    function isShadowContainerInited() {
+        return Boolean(shadowContainer);
+    }
+
+    Object.assign(wrapper, {
+        querySelector, querySelectorAll,
+        initShadowContainer,
+        closeShadowContainer,
+        isShadowContainerInited,
+    });
+}
+
+/**
+ * @param {HTMLElement} element
+ * @param {{[string]: string}} state
+ */
+function assignStyleState(element, state) {
+    for (const [k, v] of Object.entries(state)) {
+        element.style[k]  = v;
+    }
+}
+
+/**
+ * @param {HTMLElement} element
+ * @param {Object?} opts
+ * @param {HTMLElement?} opts.handle
+ * @param {function?} opts.onStop
+ * @param {function?} opts.onMove
+ * @param {{top: string, left: string}?} opts.state
+ */
+function makeMovable(element, {handle, onStop: _onStop, onMove, state} = {}) {
+    const _onMove = state => {
+        onMove?.(state);
+        assignStyleState(element, state);
+    };
+    if (state) {
+        _onMove(state);
+        _onStop?.(state);
+    }
+
+    handle = handle || element;
+    handle.style["user-select"] = "none";
+    handle.style["touch-action"] = "none";
+    element.style.position = "absolute";
+
+    handle.addEventListener("pointerdown", event => {
+        event = event.targetTouches?.[0] || event;
+        const offsetY = event.clientY - parseInt(getComputedStyle(element).top);
+        const offsetX = event.clientX - parseInt(getComputedStyle(element).left);
+
+        let state;
+        function onMove(event) {
+            !handle.hasPointerCapture(event.pointerId) && handle.setPointerCapture(event.pointerId);
+            event = event.targetTouches?.[0] || event;
+            state = {
+                top:  (event.clientY - offsetY) + "px",
+                left: (event.clientX - offsetX) + "px",
+            };
+            _onMove(state);
+        }
+        function onEnd() {
+            removeEventListener("pointermove", onMove);
+            state && _onStop?.(state);
+        }
+        addEventListener("pointermove", onMove, {passive: true});
+        addEventListener("pointerup", onEnd, {once: true});
+    }, {passive: true});
+}
+
+/**
+ * @param {HTMLElement} element
+ * @param {Object?} opts
+ * @param {number?} opts.minW
+ * @param {number?} opts.minH
+ * @param {number?} opts.size
+ * @param {function?} opts.onStop
+ * @param {function?} opts.onMove
+ * @param {{width: string, height: string}?} opts.state
+ */
+function makeResizable(element, {
+    minW = 240, minH = 240, size = 16, onStop: _onStop, onMove, state
+} = {}) {
+    const _onMove = state => {
+        onMove?.(state);
+        assignStyleState(element, state);
+    };
+    if (state) {
+        _onMove(state);
+        _onStop?.(state);
+    }
+
+    const lrCorner = document.createElement("div");
+    lrCorner.style.cssText =
+        `width: ${size}px; height: ${size}px; border-radius: ${(size / 2)}px;` +
+        `bottom: ${-(size / 2)}px; right: ${-(size / 2)}px; ` +
+        `position: absolute; background-color: transparent; cursor: se-resize; touch-action: none;`;
+    element.append(lrCorner);
+
+    lrCorner.addEventListener("pointerdown",event => {
+        event = event.targetTouches?.[0] || event;
+        lrCorner.setPointerCapture(event.pointerId);
+        const offsetX = event.clientX - element.offsetLeft - parseInt(getComputedStyle(element).width);
+        const offsetY = event.clientY - element.offsetTop  - parseInt(getComputedStyle(element).height);
+
+        let state;
+        function onMove(event) {
+            event = event.targetTouches?.[0] || event;
+            let x = event.clientX - element.offsetLeft - offsetX;
+            let y = event.clientY - element.offsetTop  - offsetY;
+            if (x < minW) { x = minW; }
+            if (y < minH) { y = minH; }
+            state = {
+                width:  x + "px",
+                height: y + "px",
+            };
+            _onMove(state);
+        }
+        function onEnd() {
+            lrCorner.removeEventListener("pointermove", onMove);
+            state && _onStop?.(state);
+        }
+        lrCorner.addEventListener("pointermove", onMove, {passive: true});
+        lrCorner.addEventListener("lostpointercapture", onEnd, {once: true});
+    }, {passive: true});
+}
+
+/**
+ * @param {Object} opts
+ * @param {string} opts.id
+ * @param {function?} opts.onMove
+ * @param {function?} opts.onStop
+ * @param {boolean?} opts.reset
+ * @param {boolean?} opts.restore
+ * @return {{state?: Object, onMove: function, onStop: function}}
+ */
+function storeStateInLS({id: lsName, onMove, onStop, reset, restore}) {
+    if (reset && lsName) {
+        localStorage.removeItem(lsName);
+    }
+    if (!restore || !lsName) {
+        return {onMove, onStop};
+    }
+    const stateJson = localStorage.getItem(lsName);
+    let state;
+    if (stateJson) {
+        state = JSON.parse(stateJson);
+    }
+
+    function saveStateLS(state) {
+        localStorage.setItem(lsName, JSON.stringify(state));
+    }
+
+    let _onStop;
+    if (onStop) {
+        _onStop = function(state) {
+            onStop(state);
+            saveStateLS(state);
+        };
+    } else {
+        _onStop = saveStateLS;
+    }
+
+    return {
+        onMove,
+        onStop: _onStop,
+        state
+    };
+}
+
+/**
+ * @param {HTMLElement} container
+ * @param {ScriptSettings} settings
+ */
+function getListHelper(container, settings) {
+    const headerElem  = container.querySelector(`#result-list-header`);
+    const contentElem = container.querySelector(`#result-list`);
+    const mainHost = url => new URL(url).hostname.split(".").slice(-2).join(".");
+
+    const clickedUrls = new Set();
+    /** @param {MouseEvent} event */
+    function onClickMarkUrlAsClicked(event) {
+        if (!event.target.classList.contains("visible")) {
+            return;
+        }
+        const urlItem = event.target.closest(".url-item");
+        urlItem.classList.add("clicked");
+        const url = urlItem.querySelector("a").href;
+        clickedUrls.add(url);
+        const dupLinks = [...contentElem.querySelectorAll(`.url-item:not(.clicked) a[href="${url}"]`)];
+        for (const dupLink of dupLinks) {
+            dupLink.closest(".url-item").classList.add("clicked");
+        }
+    }
+    contentElem.addEventListener("click", onClickMarkUrlAsClicked);
+
+    /** @param {MouseEvent} event */
+    function onAltContextMenuUnmarkClickedUrl(event) {
+        if (!event.altKey) {
+            return;
+        }
+        if (!event.target.classList.contains("visible")) {
+            return;
+        }
+        event.preventDefault();
+        const urlItem = event.target.closest(".url-item");
+        const wasClicked = urlItem.classList.contains("clicked");
+        if (!wasClicked) {
+            return;
+        }
+        urlItem.classList.remove("clicked");
+        const url = urlItem.querySelector("a").href;
+        clickedUrls.delete(url);
+        const dupLinks = [...contentElem.querySelectorAll(`.url-item.clicked a[href="${url}"]`)];
+        for (const dupLink of dupLinks) {
+            dupLink.closest(".url-item").classList.remove("clicked");
+        }
+    }
+    contentElem.addEventListener("contextmenu", onAltContextMenuUnmarkClickedUrl);
+
+    function urlToHtml(url) {
+        let {prefix = "", main} = url.match(/(?<prefix>^https?:\/\/(www\.)?)?(?<main>.+)/i).groups;
+        let end = "";
+        try {
+            if (main.endsWith("/") && new URL(url).pathname === "/") {
+                main = main.slice(0, -1);
+                end = "/";
+            }
+        } catch (e) {
+            console.error(url, e);
+        }
+
+        prefix && (prefix = `<span class="invisible" data-unselectable-text="${prefix}"><span class="selectable">${prefix}</span></span>`);
+        end    && (end    = `<span class="invisible" data-unselectable-text="${end}"><span class="selectable">${end}</span></span>`);
+        main = `<span class="visible" data-unselectable-text="${main}"><span class="selectable">${main}</span></span>`;
+        return `${prefix}${main}${end}`;
+    }
+
+    return {
+        clearList(addPrompt = false) {
+            headerElem.textContent = "Result list";
+            if (addPrompt) {
+                contentElem.innerHTML = `<div id="result-list-prompt">Click here to list URLs...</div>`;
+            } else {
+                contentElem.innerHTML = "";
+            }
+        },
+        insertUrls(urls) {
+            this.clearList();
+
+            const joinedUrls = [...new Set(urls)].sort().join(" ");
+            const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
+            const title = `title="RMB click to temporary toggle Unsearchable option"`;
+            headerElem.innerHTML = `<span class="header-content" ${title}>Result list (${urls.length})</span> <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
+
+            let resultHtml = "";
+            let prev = urls[0];
+            for (const url of urls) {
+                let linkHtml = urlToHtml(url);
+                if (settings.sort) {
+                    try {
+                        if (mainHost(prev) !== mainHost(url)) {
+                            resultHtml += `<span class="url-pad"></span>`;
+                        }
+                        prev = url;
+                    } catch (e) {
+                        console.error(url, e);
+                    }
+                }
+                const clicked = clickedUrls.has(url) ? " clicked" : "";
+                const html = `<div class="url-item${clicked}"><a href="${url}" target="_blank" rel="noreferrer noopener">${linkHtml}</a></div>`;
+                resultHtml += html;
+            }
+            contentElem.insertAdjacentHTML("beforeend", resultHtml);
+        },
+        headerElem,
+        contentElem,
+    };
+}
+
+/**
+ * @typedef {Object} UrlInfo
+ * @property {string} url
+ * @property {number} number
+ */
+
+/**
+ * @param container
+ * @param {ScriptSettings} settings
+ */
+function getTagsHelper(container, settings) {
+    const tagsListContainerEl  = container.querySelector(`.tags-list`);
+    const tagsPopupContainerEl = container.querySelector(`.tags-popup`);
+    const tagListWrapperEl   = container.querySelector(".tags-list-wrapper");
+    const tagsPopupWrapperEl = container.querySelector(".tags-popup-wrapper");
+    const addTagBtnEl        = container.querySelector(".tag-add");
+    const addTagBtnContentEl = container.querySelector(".tag-add span");
+
+    /** @type {Set<string>} */
+    let selectedTags = new Set();
+    /** @type {Object<string, UrlInfo[]>} */
+    let tagInfoMap = {};
+    let tagsReversed = false;
+    let onUpdateCb = null;
+    let urlsCount = 0;
+
+    tagsPopupContainerEl.addEventListener("click", onClickSelectTagFromPopup);
+    tagsListContainerEl.addEventListener("click", onClickRemoveTagFromSelect);
+
+    tagsListContainerEl.addEventListener("contextmenu", onContextMenuToggleDisablingSelectedTag);
+    tagsPopupContainerEl.addEventListener("contextmenu", onContextMenuAddPopupTagOrToggleDisabling);
+
+    tagsListContainerEl.addEventListener("pointerdown", onMMBPointerDownEnableOnlyTargetTag);
+
+    addTagBtnEl.addEventListener("click", openTagsPopup);
+    addTagBtnEl.addEventListener("contextmenu", onContextMenuSelectAllTagsOrClear);
+    addTagBtnEl.addEventListener("pointerdown", onMMBPointerDownReverseSelectedTags);
+
+    /** @param {Event} event */
+    function getTagFromEvent(event) {
+        const tagEl = /** @type {HTMLElement} */ event.target;
+        if (!tagEl.classList.contains("tag")) {
+            return null;
+        }
+        return tagEl;
+    }
+
+    /** @param {PointerEvent} event */
+    function onMMBPointerDownEnableOnlyTargetTag(event) {
+        const MIDDLE_BUTTON = 1;
+        if (event.button !== MIDDLE_BUTTON) { return; }
+        const listTagEl = getTagFromEvent(event);
+        if (!listTagEl) { return; }
+        event.preventDefault();
+
+        disableAllSelectedTagElems();
+        enableTag(listTagEl);
+
+        updateAddTagBtnTitle();
+        onUpdateCb?.();
+    }
+
+    /** @param {MouseEvent} event */
+    function onClickSelectTagFromPopup(event) {
+        const popupTagEl = getTagFromEvent(event);
+        if (!popupTagEl) { return; }
+
+        const selected = popupTagEl.classList.contains("selected");
+        if (selected) {
+            const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${popupTagEl.dataset.tag}"]`);
+            listTagEl.remove();
+            selectedTags.delete(popupTagEl.dataset.tag);
+        } else {
+            tagsListContainerEl.append(popupTagEl.cloneNode(true));
+            selectedTags.add(popupTagEl.dataset.tag);
+        }
+        popupTagEl.classList.toggle("selected");
+        updateAddTagBtnTitle();
+        onUpdateCb?.();
+    }
+
+    /** @param {MouseEvent} event */
+    function onClickRemoveTagFromSelect(event) {
+        const listTagEl = getTagFromEvent(event);
+        if (!listTagEl) { return; }
+
+        const popupTag = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
+        popupTag.classList.remove("selected");
+        popupTag.classList.remove("disabled");
+        selectedTags.delete(listTagEl.dataset.tag);
+        listTagEl.remove();
+        updateAddTagBtn();
+        onUpdateCb?.();
+    }
+
+    function disableAllSelectedTagElems() {
+        for (const tag of selectedTags) {
+            const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${tag}"]`);
+            const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"]`);
+            listTagEl.classList.add("disabled");
+            popupTagEl.classList.add("disabled");
+        }
+        selectedTags = new Set();
+    }
+    function enableAllSelectedTagElems() {
+        const listTagEls = [...tagsListContainerEl.querySelectorAll(`[data-tag].disabled`)];
+        for (const listTagEl of listTagEls) {
+            const tag = listTagEl.dataset.tag;
+            const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"].disabled`);
+            listTagEl.classList.remove("disabled");
+            popupTagEl.classList.remove("disabled");
+            selectedTags.add(tag);
+        }
+    }
+    function enableTag(listTagEl) {
+        const tag = listTagEl.dataset.tag;
+        const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"].disabled`);
+        listTagEl.classList.remove("disabled");
+        popupTagEl.classList.remove("disabled");
+        selectedTags.add(tag);
+    }
+    function disableTag(listTagEl) {
+        const tag = listTagEl.dataset.tag;
+        const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"]`);
+        listTagEl.classList.add("disabled");
+        popupTagEl.classList.add("disabled");
+        selectedTags.delete(tag);
+    }
+    function disableSelectedTag(listTagEl, popupTagEl) {
+        const disabled = listTagEl.classList.toggle("disabled");
+        if (disabled) {
+            selectedTags.delete(listTagEl.dataset.tag);
+            popupTagEl.classList.add("disabled");
+        } else {
+            selectedTags.add(listTagEl.dataset.tag);
+            popupTagEl.classList.remove("disabled");
+        }
+    }
+
+    /** @param {MouseEvent} event */
+    function onContextMenuToggleDisablingSelectedTag(event) {
+        const listTagEl = getTagFromEvent(event);
+        if (!listTagEl) { return; }
+
+        event.preventDefault();
+        if (event.shiftKey) {
+            const enabled = !listTagEl.classList.contains("disabled");
+            if (enabled) {
+                if (selectedTags.size > 1) {
+                    disableAllSelectedTagElems();
+                    enableTag(listTagEl);
+                } else {
+                    enableAllSelectedTagElems();
+                }
+            } else {
+                const listTagEls = [...tagsListContainerEl.querySelectorAll(`[data-tag]`)];
+                if (selectedTags.size + 1 === listTagEls.length) {
+                    disableAllSelectedTagElems();
+                } else {
+                    enableAllSelectedTagElems();
+                    disableTag(listTagEl);
+                }
+            }
+        } else {
+            const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
+            disableSelectedTag(listTagEl, popupTagEl);
+        }
+        updateAddTagBtnTitle();
+        onUpdateCb?.();
+    }
+
+    /** @param {MouseEvent} event */
+    function onContextMenuAddPopupTagOrToggleDisabling(event) {
+        const popupTagEl = getTagFromEvent(event);
+        if (!popupTagEl) { return; }
+
+        event.preventDefault();
+        const inList = popupTagEl.classList.contains("selected");
+        if (!inList) {
+            popupTagEl.classList.add("disabled");
+            tagsListContainerEl.append(popupTagEl.cloneNode(true));
+            popupTagEl.classList.add("selected");
+        } else {
+            const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${popupTagEl.dataset.tag}"]`);
+            disableSelectedTag(listTagEl, popupTagEl);
+        }
+        updateAddTagBtnTitle();
+        onUpdateCb?.();
+    }
+
+
+    function closeTagsPopup() {
+        addTagBtnEl.classList.remove("rotate");
+        tagsPopupWrapperEl.classList.add("hidden");
+        container.removeEventListener("click", closeTagsPopupOnClick);
+        updateAddTagBtn();
+    }
+    function closeTagsPopupOnClick(event) {
+        const isTagPopup = event.target.closest(".tags-popup-wrapper");
+        const isTag = event.target.classList.contains("tag") && !event.target.classList.contains("tag-add");
+        if (!isTagPopup && !isTag) {
+            closeTagsPopup();
+        }
+    }
+    async function openTagsPopup() {
+        if (tagsPopupWrapperEl.classList.contains("hidden")) {
+            addTagBtnEl.classList.add("rotate");
+            tagsPopupWrapperEl.classList.remove("hidden");
+            updateAddTagBtn();
+            await sleep();
+            container.addEventListener("click", closeTagsPopupOnClick);
+        }
+    }
+
+    function updateAddTagBtn() {
+        const isClosed = tagsPopupWrapperEl.classList.contains("hidden");
+        const isAllTagsSelected = tagsPopupWrapperEl.querySelector(".tag:not(.selected)") === null;
+        if (isClosed && isAllTagsSelected) {
+            addTagBtnContentEl.textContent = "–";
+        } else {
+            addTagBtnContentEl.textContent = "+";
+        }
+        updateAddTagBtnTitle();
+    }
+    function updateAddTagBtnTitle() {
+        const popupTags = [...tagsPopupWrapperEl.querySelectorAll(".tag")];
+        const total = popupTags.length;
+        const selected = popupTags.filter(t => t.classList.contains("selected")).length;
+        const disabled = popupTags.filter(t => t.classList.contains("disabled")).length;
+        const enabled = selected - disabled;
+        const selectedText = enabled !== selected ? ` (${selected})` : "";
+        const tagsInfoText = `${enabled}${selectedText} of ${total} tags`;
+        addTagBtnEl.title = tagsInfoText + ` of ${urlsCount} total urls`;
+    }
+
+    /** @param {MouseEvent} event */
+    function onContextMenuSelectAllTagsOrClear(event) {
+        event.preventDefault();
+        void clicked(addTagBtnEl);
+        const tagEls = [...tagsPopupWrapperEl.querySelectorAll(".tag:not(.selected)")];
+        if (tagEls.length) {
+            for (const tagEl of tagEls) {
+                tagsListContainerEl.append(tagEl.cloneNode(true));
+                selectedTags.add(tagEl.dataset.tag);
+                tagEl.classList.add("selected");
+            }
+        } else {
+            selectedTags = new Set();
+            const tagEls = [...tagsPopupWrapperEl.querySelectorAll(".tag.selected")];
+            for (const tagEl of tagEls) {
+                tagEl.classList.remove("selected");
+                tagEl.classList.remove("disabled");
+            }
+            tagsListContainerEl.innerHTML = "";
+        }
+        updateAddTagBtn();
+        onUpdateCb?.();
+    }
+
+    function selectAllTags() {
+        const tagEls = [...tagsPopupWrapperEl.querySelectorAll(".tag:not(.selected)")];
+        for (const tagEl of tagEls) {
+            tagsListContainerEl.append(tagEl.cloneNode(true));
+            selectedTags.add(tagEl.dataset.tag);
+            tagEl.classList.add("selected");
+        }
+    }
+
+    /** @param {PointerEvent} event */
+    function onMMBPointerDownReverseSelectedTags(event) {
+        const MIDDLE_BUTTON = 1;
+        if (event.button !== MIDDLE_BUTTON) {
+            return;
+        }
+        event.preventDefault();
+
+        addTagBtnEl.classList.toggle("active");
+        tagListWrapperEl.classList.toggle("reversed");
+        tagsReversed = !tagsReversed;
+        onUpdateCb?.();
+    }
+
+    function clearTags() {
+        urlsCount = 0;
+        selectedTags = new Set();
+        tagInfoMap = {};
+        tagsReversed = false;
+        tagListWrapperEl.classList.remove("reversed");
+        addTagBtnEl.classList.remove("active");
+        addTagBtnEl.title = "";
+        addTagBtnContentEl.textContent = "+";
+        tagsListContainerEl.innerHTML = "";
+        tagsPopupContainerEl.innerHTML = "";
+    }
+
+    /**
+     * @param {string[]} urls
+     * @param {function?} onUpdate
+     */
+    function renderTags(urls, onUpdate) {
+        clearTags();
+        if (!urls.length) {
+            return;
+        }
+        if (onUpdate) {
+            onUpdateCb = onUpdate;
+        }
+        urlsCount = urls.length;
+
+        const other = "other";
+        let i = 0;
+        for (const url of urls) {
+            let host = url.match(/\w+\.[a-z]+(?=\/)/i)?.[0];
+            if (!host) {
+                host = other;
+            }
+            if (!settings.case_sensitive) {
+                host = host.toLowerCase();
+            }
+            const tagUrls = tagInfoMap[host] || (tagInfoMap[host] = []);
+            tagUrls.push({url, number: i++});
+        }
+        const hostToUrlInfosEntries = Object.entries(tagInfoMap)
+            .filter(([k, v]) => k !== other)
+            .sort(([k1, v1], [k2, v2]) => {
+                return v2.length - v1.length;
+            });
+
+        let tagsHtml = "";
+        for (const [k, v] of hostToUrlInfosEntries) {
+            const color = getHsl(hashString(k), 90, 5);
+            tagsHtml += `<span class="tag" data-tag="${k}" title="${v.length}" data-color="${color}"></span>`;
+        }
+        if (tagInfoMap[other]) {
+            tagsHtml += `<span class="tag" data-tag="${other}" title="${tagInfoMap[other].length}" data-color="#eee"></span>`;
+        }
+
+        tagsPopupContainerEl.innerHTML = tagsHtml;
+        const tagsEls = [...tagsPopupContainerEl.querySelectorAll(`.tag[data-color]`)];
+        tagsEls.forEach(tag => tag.style.backgroundColor = tag.dataset.color);
+
+        if (settings.auto_tags) {
+            selectAllTags();
+        }
+
+        updateAddTagBtn();
+    }
+
+    function getFilteredUrls() {
+        if (!selectedTags.size) {
+            return Object.values(tagInfoMap).flatMap(urlInfos => {
+                return urlInfos;
+            }).sort((urlInfo1, urlInfo2) => {
+                return urlInfo1.number - urlInfo2.number;
+            }).map(urlInfo => urlInfo.url);
+        }
+        return Object.entries(tagInfoMap).filter(([tag, urlInfos]) => {
+            if (tagsReversed) {
+                return !selectedTags.has(tag);
+            } else {
+                return  selectedTags.has(tag);
+            }
+        }).flatMap(([tag, urlInfos]) => {
+            return urlInfos;
+        }).sort((urlInfo1, urlInfo2) => {
+            return urlInfo1.number - urlInfo2.number;
+        }).map(urlInfo => urlInfo.url);
+    }
+
+    function getTags() {
+        return selectedTags;
+    }
+
+    return {
+        renderTags,
+        getFilteredUrls,
+        clearTags,
+        getTags,
+    }
+}
+
+/** @return {string[]} */
+function parseUrls(targetSelector = "body", {
+    includeTextUrls, onlyTextUrls, bracketsTrim,
+}) {
+    let elems;
+    try {
+        elems = [...document.querySelectorAll(targetSelector)];
+    } catch {
+        console.error("Invalid selector");
+        return [];
+    }
+
+    includeTextUrls = includeTextUrls || onlyTextUrls;
+
+    const urls = [];
+    for (const el of elems) {
+
+        let anchorUrls;
+        if (onlyTextUrls) {
+            anchorUrls = [];
+        } else {
+            if (el.tagName === "A") {
+                anchorUrls = [el.href];
+            } else {
+                anchorUrls = [...el.querySelectorAll("a")].map(a => a.href);
+            }
+        }
+
+        urls.push(anchorUrls);
+        if (includeTextUrls) {
+            const textUrls = parseUrlsFromText(el.innerText, bracketsTrim);
+            urls.push(textUrls.filter(url => !anchorUrls.includes(url)));
+        }
+    }
+    return urls.flat();
+}
+
+function urlsToText(targetSelector = "body", urlFilter) {
+    let count = 0;
+    [...document.querySelectorAll(targetSelector)]
+        .forEach(el => {
+            const anchors = [...el.querySelectorAll("a")]
+                .filter(a => urlFilter(a.href));
+
+            for (const a of anchors) {
+                if (a.dataset.urlToText !== undefined) {
+                    continue;
+                }
+
+                a.dataset.urlToText = "";
+                if (a.title) {
+                    a.dataset.originalTitle = a.title;
+                }
+
+                a.title = a.textContent;
+                a.textContent = a.href + " ";
+
+                count++;
+            }
+        });
+    return count;
+}
+
+function undoUrlsToText(targetSelector = "body") {
+    let count = 0;
+    [...document.querySelectorAll(targetSelector)]
+        .forEach(el => {
+            const anchors = [...el.querySelectorAll(`a[data-url-to-text]`)];
+            for (const a of anchors) {
+                a.textContent = a.title;
+                if (a.dataset.originalTitle) {
+                    a.title = a.dataset.originalTitle;
+                    a.removeAttribute("data-original-title");
+                } else {
+                    a.removeAttribute("title");
+                }
+                a.removeAttribute("data-url-to-text");
+                count++;
+            }
+        });
+    return count;
+}
+
+/**
+ * @param {string} url
+ * @return {string[]}
+ */
+function splitOnUnmatchedBrackets(url) {
+    const chars = [...url];
+    let rounds  = 0;
+    let squares = 0;
+    let i = 0;
+    for (const char of chars) {
+        i++;
+        if (char === "(") {
+            rounds++;
+        } else if (char === ")") {
+            rounds--;
+        } else if (char === "[") {
+            squares++;
+        } else if (char === "]") {
+            squares--;
+        }
+        if (rounds < 0 || squares < 0 ) {
+            const before = chars.slice(0, i - 1).join("");
+            const after  = chars.slice(i - 1).join("");
+            return [before, after];
+        }
+    }
+    return [url, null];
+}
+
+function parseUrlsFromText(text, bracketsTrim = true) {
+    const regex = /[^\s<>"():\/]+\.(?<host1>[^\s<>"()\/:]+(:\d+)?)\/[^\s<>"]+/g;
+    const urls = [...text.matchAll(regex)]
+        .map(match => match[0])
+        .map(text => {
+            return "https://" + text; // consider all link are https
+        });
+    if (bracketsTrim) { // Trim unmatched closed brackets — ")", or "]" with the followed content
+        return urls.flatMap(url => {
+            const [_url, after] = splitOnUnmatchedBrackets(url);
+            if (after && after.includes("://") && after.match(regex)) {
+                return [_url, ...parseUrlsFromText(after)];
+            }
+            return _url;
+        });
+    }
+    return urls;
 }
 
 function getTags() {
@@ -852,830 +1679,27 @@ fieldset, hr {
 }
 
 /**
- * @typedef {Object} UrlInfo
- * @property {string} url
- * @property {number} number
+ * @param {Object} opt
+ * @param {ScriptSettings} opt.settings
+ * @param {function(ScriptSettings)} opt.updateSettings
+ * @param {Wrapper} opt.wrapper
+ * @param {Popup} opt.popup
+ * @param {Minim} opt.minim
  */
-
-/**
- * @param container
- * @param {ScriptSettings} settings
- */
-function getTagsHelper(container, settings) {
-    const tagsListContainerEl  = container.querySelector(`.tags-list`);
-    const tagsPopupContainerEl = container.querySelector(`.tags-popup`);
-    const tagListWrapperEl   = container.querySelector(".tags-list-wrapper");
-    const tagsPopupWrapperEl = container.querySelector(".tags-popup-wrapper");
-    const addTagBtnEl        = container.querySelector(".tag-add");
-    const addTagBtnContentEl = container.querySelector(".tag-add span");
-
-    /** @type {Set<string>} */
-    let selectedTags = new Set();
-    /** @type {Object<string, UrlInfo[]>} */
-    let tagInfoMap = {};
-    let tagsReversed = false;
-    let onUpdateCb = null;
-    let urlsCount = 0;
-
-    tagsPopupContainerEl.addEventListener("click", onClickSelectTagFromPopup);
-    tagsListContainerEl.addEventListener("click", onClickRemoveTagFromSelect);
-
-    tagsListContainerEl.addEventListener("contextmenu", onContextMenuToggleDisablingSelectedTag);
-    tagsPopupContainerEl.addEventListener("contextmenu", onContextMenuAddPopupTagOrToggleDisabling);
-
-    tagsListContainerEl.addEventListener("pointerdown", onMMBPointerDownEnableOnlyTargetTag);
-
-    addTagBtnEl.addEventListener("click", openTagsPopup);
-    addTagBtnEl.addEventListener("contextmenu", onContextMenuSelectAllTagsOrClear);
-    addTagBtnEl.addEventListener("pointerdown", onMMBPointerDownReverseSelectedTags);
-
-    /** @param {Event} event */
-    function getTagFromEvent(event) {
-        const tagEl = /** @type {HTMLElement} */ event.target;
-        if (!tagEl.classList.contains("tag")) {
-            return null;
-        }
-        return tagEl;
-    }
-
-    /** @param {PointerEvent} event */
-    function onMMBPointerDownEnableOnlyTargetTag(event) {
-        const MIDDLE_BUTTON = 1;
-        if (event.button !== MIDDLE_BUTTON) { return; }
-        const listTagEl = getTagFromEvent(event);
-        if (!listTagEl) { return; }
-        event.preventDefault();
-
-        disableAllSelectedTagElems();
-        enableTag(listTagEl);
-
-        updateAddTagBtnTitle();
-        onUpdateCb?.();
-    }
-
-    /** @param {MouseEvent} event */
-    function onClickSelectTagFromPopup(event) {
-        const popupTagEl = getTagFromEvent(event);
-        if (!popupTagEl) { return; }
-
-        const selected = popupTagEl.classList.contains("selected");
-        if (selected) {
-            const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${popupTagEl.dataset.tag}"]`);
-            listTagEl.remove();
-            selectedTags.delete(popupTagEl.dataset.tag);
-        } else {
-            tagsListContainerEl.append(popupTagEl.cloneNode(true));
-            selectedTags.add(popupTagEl.dataset.tag);
-        }
-        popupTagEl.classList.toggle("selected");
-        updateAddTagBtnTitle();
-        onUpdateCb?.();
-    }
-
-    /** @param {MouseEvent} event */
-    function onClickRemoveTagFromSelect(event) {
-        const listTagEl = getTagFromEvent(event);
-        if (!listTagEl) { return; }
-
-        const popupTag = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
-        popupTag.classList.remove("selected");
-        popupTag.classList.remove("disabled");
-        selectedTags.delete(listTagEl.dataset.tag);
-        listTagEl.remove();
-        updateAddTagBtn();
-        onUpdateCb?.();
-    }
-
-    function disableAllSelectedTagElems() {
-        for (const tag of selectedTags) {
-            const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${tag}"]`);
-            const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"]`);
-            listTagEl.classList.add("disabled");
-            popupTagEl.classList.add("disabled");
-        }
-        selectedTags = new Set();
-    }
-    function enableAllSelectedTagElems() {
-        const listTagEls = [...tagsListContainerEl.querySelectorAll(`[data-tag].disabled`)];
-        for (const listTagEl of listTagEls) {
-            const tag = listTagEl.dataset.tag;
-            const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"].disabled`);
-            listTagEl.classList.remove("disabled");
-            popupTagEl.classList.remove("disabled");
-            selectedTags.add(tag);
-        }
-    }
-    function enableTag(listTagEl) {
-        const tag = listTagEl.dataset.tag;
-        const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"].disabled`);
-        listTagEl.classList.remove("disabled");
-        popupTagEl.classList.remove("disabled");
-        selectedTags.add(tag);
-    }
-    function disableTag(listTagEl) {
-        const tag = listTagEl.dataset.tag;
-        const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"]`);
-        listTagEl.classList.add("disabled");
-        popupTagEl.classList.add("disabled");
-        selectedTags.delete(tag);
-    }
-    function disableSelectedTag(listTagEl, popupTagEl) {
-        const disabled = listTagEl.classList.toggle("disabled");
-        if (disabled) {
-            selectedTags.delete(listTagEl.dataset.tag);
-            popupTagEl.classList.add("disabled");
-        } else {
-            selectedTags.add(listTagEl.dataset.tag);
-            popupTagEl.classList.remove("disabled");
-        }
-    }
-
-    /** @param {MouseEvent} event */
-    function onContextMenuToggleDisablingSelectedTag(event) {
-        const listTagEl = getTagFromEvent(event);
-        if (!listTagEl) { return; }
-
-        event.preventDefault();
-        if (event.shiftKey) {
-            const enabled = !listTagEl.classList.contains("disabled");
-            if (enabled) {
-                if (selectedTags.size > 1) {
-                    disableAllSelectedTagElems();
-                    enableTag(listTagEl);
-                } else {
-                    enableAllSelectedTagElems();
-                }
-            } else {
-                const listTagEls = [...tagsListContainerEl.querySelectorAll(`[data-tag]`)];
-                if (selectedTags.size + 1 === listTagEls.length) {
-                    disableAllSelectedTagElems();
-                } else {
-                    enableAllSelectedTagElems();
-                    disableTag(listTagEl);
-                }
-            }
-        } else {
-            const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
-            disableSelectedTag(listTagEl, popupTagEl);
-        }
-        updateAddTagBtnTitle();
-        onUpdateCb?.();
-    }
-
-    /** @param {MouseEvent} event */
-    function onContextMenuAddPopupTagOrToggleDisabling(event) {
-        const popupTagEl = getTagFromEvent(event);
-        if (!popupTagEl) { return; }
-
-        event.preventDefault();
-        const inList = popupTagEl.classList.contains("selected");
-        if (!inList) {
-            popupTagEl.classList.add("disabled");
-            tagsListContainerEl.append(popupTagEl.cloneNode(true));
-            popupTagEl.classList.add("selected");
-        } else {
-            const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${popupTagEl.dataset.tag}"]`);
-            disableSelectedTag(listTagEl, popupTagEl);
-        }
-        updateAddTagBtnTitle();
-        onUpdateCb?.();
-    }
-
-
-    function closeTagsPopup() {
-        addTagBtnEl.classList.remove("rotate");
-        tagsPopupWrapperEl.classList.add("hidden");
-        container.removeEventListener("click", closeTagsPopupOnClick);
-        updateAddTagBtn();
-    }
-    function closeTagsPopupOnClick(event) {
-        const isTagPopup = event.target.closest(".tags-popup-wrapper");
-        const isTag = event.target.classList.contains("tag") && !event.target.classList.contains("tag-add");
-        if (!isTagPopup && !isTag) {
-            closeTagsPopup();
-        }
-    }
-    async function openTagsPopup() {
-        if (tagsPopupWrapperEl.classList.contains("hidden")) {
-            addTagBtnEl.classList.add("rotate");
-            tagsPopupWrapperEl.classList.remove("hidden");
-            updateAddTagBtn();
-            await sleep();
-            container.addEventListener("click", closeTagsPopupOnClick);
-        }
-    }
-
-    function updateAddTagBtn() {
-        const isClosed = tagsPopupWrapperEl.classList.contains("hidden");
-        const isAllTagsSelected = tagsPopupWrapperEl.querySelector(".tag:not(.selected)") === null;
-        if (isClosed && isAllTagsSelected) {
-            addTagBtnContentEl.textContent = "–";
-        } else {
-            addTagBtnContentEl.textContent = "+";
-        }
-        updateAddTagBtnTitle();
-    }
-    function updateAddTagBtnTitle() {
-        const popupTags = [...tagsPopupWrapperEl.querySelectorAll(".tag")];
-        const total = popupTags.length;
-        const selected = popupTags.filter(t => t.classList.contains("selected")).length;
-        const disabled = popupTags.filter(t => t.classList.contains("disabled")).length;
-        const enabled = selected - disabled;
-        const selectedText = enabled !== selected ? ` (${selected})` : "";
-        const tagsInfoText = `${enabled}${selectedText} of ${total} tags`;
-        addTagBtnEl.title = tagsInfoText + ` of ${urlsCount} total urls`;
-    }
-
-    /** @param {MouseEvent} event */
-    function onContextMenuSelectAllTagsOrClear(event) {
-        event.preventDefault();
-        void clicked(addTagBtnEl);
-        const tagEls = [...tagsPopupWrapperEl.querySelectorAll(".tag:not(.selected)")];
-        if (tagEls.length) {
-            for (const tagEl of tagEls) {
-                tagsListContainerEl.append(tagEl.cloneNode(true));
-                selectedTags.add(tagEl.dataset.tag);
-                tagEl.classList.add("selected");
-            }
-        } else {
-            selectedTags = new Set();
-            const tagEls = [...tagsPopupWrapperEl.querySelectorAll(".tag.selected")];
-            for (const tagEl of tagEls) {
-                tagEl.classList.remove("selected");
-                tagEl.classList.remove("disabled");
-            }
-            tagsListContainerEl.innerHTML = "";
-        }
-        updateAddTagBtn();
-        onUpdateCb?.();
-    }
-
-    function selectAllTags() {
-        const tagEls = [...tagsPopupWrapperEl.querySelectorAll(".tag:not(.selected)")];
-        for (const tagEl of tagEls) {
-            tagsListContainerEl.append(tagEl.cloneNode(true));
-            selectedTags.add(tagEl.dataset.tag);
-            tagEl.classList.add("selected");
-        }
-    }
-
-    /** @param {PointerEvent} event */
-    function onMMBPointerDownReverseSelectedTags(event) {
-        const MIDDLE_BUTTON = 1;
-        if (event.button !== MIDDLE_BUTTON) {
-            return;
-        }
-        event.preventDefault();
-
-        addTagBtnEl.classList.toggle("active");
-        tagListWrapperEl.classList.toggle("reversed");
-        tagsReversed = !tagsReversed;
-        onUpdateCb?.();
-    }
-
-    function clearTags() {
-        urlsCount = 0;
-        selectedTags = new Set();
-        tagInfoMap = {};
-        tagsReversed = false;
-        tagListWrapperEl.classList.remove("reversed");
-        addTagBtnEl.classList.remove("active");
-        addTagBtnEl.title = "";
-        addTagBtnContentEl.textContent = "+";
-        tagsListContainerEl.innerHTML = "";
-        tagsPopupContainerEl.innerHTML = "";
-    }
-
-    /**
-     * @param {string[]} urls
-     * @param {function?} onUpdate
-     */
-    function renderTags(urls, onUpdate) {
-        clearTags();
-        if (!urls.length) {
-            return;
-        }
-        if (onUpdate) {
-            onUpdateCb = onUpdate;
-        }
-        urlsCount = urls.length;
-
-        const other = "other";
-        let i = 0;
-        for (const url of urls) {
-            let host = url.match(/\w+\.[a-z]+(?=\/)/i)?.[0];
-            if (!host) {
-                host = other;
-            }
-            if (!settings.case_sensitive) {
-                host = host.toLowerCase();
-            }
-            const tagUrls = tagInfoMap[host] || (tagInfoMap[host] = []);
-            tagUrls.push({url, number: i++});
-        }
-        const hostToUrlInfosEntries = Object.entries(tagInfoMap)
-            .filter(([k, v]) => k !== other)
-            .sort(([k1, v1], [k2, v2]) => {
-                return v2.length - v1.length;
-            });
-
-        let tagsHtml = "";
-        for (const [k, v] of hostToUrlInfosEntries) {
-            const color = getHsl(hashString(k), 90, 5);
-            tagsHtml += `<span class="tag" data-tag="${k}" title="${v.length}" data-color="${color}"></span>`;
-        }
-        if (tagInfoMap[other]) {
-            tagsHtml += `<span class="tag" data-tag="${other}" title="${tagInfoMap[other].length}" data-color="#eee"></span>`;
-        }
-
-        tagsPopupContainerEl.innerHTML = tagsHtml;
-        const tagsEls = [...tagsPopupContainerEl.querySelectorAll(`.tag[data-color]`)];
-        tagsEls.forEach(tag => tag.style.backgroundColor = tag.dataset.color);
-
-        if (settings.auto_tags) {
-            selectAllTags();
-        }
-
-        updateAddTagBtn();
-    }
-
-    function getFilteredUrls() {
-        if (!selectedTags.size) {
-            return Object.values(tagInfoMap).flatMap(urlInfos => {
-                return urlInfos;
-            }).sort((urlInfo1, urlInfo2) => {
-                return urlInfo1.number - urlInfo2.number;
-            }).map(urlInfo => urlInfo.url);
-        }
-        return Object.entries(tagInfoMap).filter(([tag, urlInfos]) => {
-            if (tagsReversed) {
-                return !selectedTags.has(tag);
-            } else {
-                return  selectedTags.has(tag);
-            }
-        }).flatMap(([tag, urlInfos]) => {
-            return urlInfos;
-        }).sort((urlInfo1, urlInfo2) => {
-            return urlInfo1.number - urlInfo2.number;
-        }).map(urlInfo => urlInfo.url);
-    }
-
-    function getTags() {
-        return selectedTags;
-    }
-
-    return {
-        renderTags,
-        getFilteredUrls,
-        clearTags,
-        getTags,
-    }
-}
-
-/**
- * @param {HTMLElement} container
- * @param {ScriptSettings} settings
- */
-function getListHelper(container, settings) {
-    const headerElem  = container.querySelector(`#result-list-header`);
-    const contentElem = container.querySelector(`#result-list`);
-    const mainHost = url => new URL(url).hostname.split(".").slice(-2).join(".");
-
-    const clickedUrls = new Set();
-    /** @param {MouseEvent} event */
-    function onClickMarkUrlAsClicked(event) {
-        if (!event.target.classList.contains("visible")) {
-            return;
-        }
-        const urlItem = event.target.closest(".url-item");
-        urlItem.classList.add("clicked");
-        const url = urlItem.querySelector("a").href;
-        clickedUrls.add(url);
-        const dupLinks = [...contentElem.querySelectorAll(`.url-item:not(.clicked) a[href="${url}"]`)];
-        for (const dupLink of dupLinks) {
-            dupLink.closest(".url-item").classList.add("clicked");
-        }
-    }
-    contentElem.addEventListener("click", onClickMarkUrlAsClicked);
-
-    /** @param {MouseEvent} event */
-    function onAltContextMenuUnmarkClickedUrl(event) {
-        if (!event.altKey) {
-            return;
-        }
-        if (!event.target.classList.contains("visible")) {
-            return;
-        }
-        event.preventDefault();
-        const urlItem = event.target.closest(".url-item");
-        const wasClicked = urlItem.classList.contains("clicked");
-        if (!wasClicked) {
-            return;
-        }
-        urlItem.classList.remove("clicked");
-        const url = urlItem.querySelector("a").href;
-        clickedUrls.delete(url);
-        const dupLinks = [...contentElem.querySelectorAll(`.url-item.clicked a[href="${url}"]`)];
-        for (const dupLink of dupLinks) {
-            dupLink.closest(".url-item").classList.remove("clicked");
-        }
-    }
-    contentElem.addEventListener("contextmenu", onAltContextMenuUnmarkClickedUrl);
-
-    function urlToHtml(url) {
-        let {prefix = "", main} = url.match(/(?<prefix>^https?:\/\/(www\.)?)?(?<main>.+)/i).groups;
-        let end = "";
-        try {
-            if (main.endsWith("/") && new URL(url).pathname === "/") {
-                main = main.slice(0, -1);
-                end = "/";
-            }
-        } catch (e) {
-            console.error(url, e);
-        }
-
-        prefix && (prefix = `<span class="invisible" data-unselectable-text="${prefix}"><span class="selectable">${prefix}</span></span>`);
-        end    && (end    = `<span class="invisible" data-unselectable-text="${end}"><span class="selectable">${end}</span></span>`);
-        main = `<span class="visible" data-unselectable-text="${main}"><span class="selectable">${main}</span></span>`;
-        return `${prefix}${main}${end}`;
-    }
-
-    return {
-        clearList(addPrompt = false) {
-            headerElem.textContent = "Result list";
-            if (addPrompt) {
-                contentElem.innerHTML = `<div id="result-list-prompt">Click here to list URLs...</div>`;
-            } else {
-                contentElem.innerHTML = "";
-            }
-        },
-        insertUrls(urls) {
-            this.clearList();
-
-            const joinedUrls = [...new Set(urls)].sort().join(" ");
-            const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
-            const title = `title="RMB click to temporary toggle Unsearchable option"`;
-            headerElem.innerHTML = `<span class="header-content" ${title}>Result list (${urls.length})</span> <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
-
-            let resultHtml = "";
-            let prev = urls[0];
-            for (const url of urls) {
-                let linkHtml = urlToHtml(url);
-                if (settings.sort) {
-                    try {
-                        if (mainHost(prev) !== mainHost(url)) {
-                            resultHtml += `<span class="url-pad"></span>`;
-                        }
-                        prev = url;
-                    } catch (e) {
-                        console.error(url, e);
-                    }
-                }
-                const clicked = clickedUrls.has(url) ? " clicked" : "";
-                const html = `<div class="url-item${clicked}"><a href="${url}" target="_blank" rel="noreferrer noopener">${linkHtml}</a></div>`;
-                resultHtml += html;
-            }
-            contentElem.insertAdjacentHTML("beforeend", resultHtml);
-        },
-        headerElem,
-        contentElem,
-    };
-}
-
-/** @return {string[]} */
-function parseUrls(targetSelector = "body", {
-    includeTextUrls, onlyTextUrls, bracketsTrim,
-}) {
-    let elems;
-    try {
-        elems = [...document.querySelectorAll(targetSelector)];
-    } catch {
-        console.error("Invalid selector");
-        return [];
-    }
-
-    includeTextUrls = includeTextUrls || onlyTextUrls;
-
-    const urls = [];
-    for (const el of elems) {
-
-        let anchorUrls;
-        if (onlyTextUrls) {
-            anchorUrls = [];
-        } else {
-            if (el.tagName === "A") {
-                anchorUrls = [el.href];
-            } else {
-                anchorUrls = [...el.querySelectorAll("a")].map(a => a.href);
-            }
-        }
-
-        urls.push(anchorUrls);
-        if (includeTextUrls) {
-            const textUrls = parseUrlsFromText(el.innerText, bracketsTrim);
-            urls.push(textUrls.filter(url => !anchorUrls.includes(url)));
-        }
-    }
-    return urls.flat();
-}
-
-function urlsToText(targetSelector = "body", urlFilter) {
-    let count = 0;
-    [...document.querySelectorAll(targetSelector)]
-        .forEach(el => {
-            const anchors = [...el.querySelectorAll("a")]
-                .filter(a => urlFilter(a.href));
-
-            for (const a of anchors) {
-                if (a.dataset.urlToText !== undefined) {
-                    continue;
-                }
-
-                a.dataset.urlToText = "";
-                if (a.title) {
-                    a.dataset.originalTitle = a.title;
-                }
-
-                a.title = a.textContent;
-                a.textContent = a.href + " ";
-
-                count++;
-            }
-        });
-    return count;
-}
-
-function undoUrlsToText(targetSelector = "body") {
-    let count = 0;
-    [...document.querySelectorAll(targetSelector)]
-        .forEach(el => {
-            const anchors = [...el.querySelectorAll(`a[data-url-to-text]`)];
-            for (const a of anchors) {
-                a.textContent = a.title;
-                if (a.dataset.originalTitle) {
-                    a.title = a.dataset.originalTitle;
-                    a.removeAttribute("data-original-title");
-                } else {
-                    a.removeAttribute("title");
-                }
-                a.removeAttribute("data-url-to-text");
-                count++;
-            }
-        });
-    return count;
-}
-
-/**
- * @param {string} url
- * @return {string[]}
- */
-function splitOnUnmatchedBrackets(url) {
-    const chars = [...url];
-    let rounds  = 0;
-    let squares = 0;
-    let i = 0;
-    for (const char of chars) {
-        i++;
-        if (char === "(") {
-            rounds++;
-        } else if (char === ")") {
-            rounds--;
-        } else if (char === "[") {
-            squares++;
-        } else if (char === "]") {
-            squares--;
-        }
-        if (rounds < 0 || squares < 0 ) {
-            const before = chars.slice(0, i - 1).join("");
-            const after  = chars.slice(i - 1).join("");
-            return [before, after];
-        }
-    }
-    return [url, null];
-}
-
-function parseUrlsFromText(text, bracketsTrim = true) {
-    const regex = /[^\s<>"():\/]+\.(?<host1>[^\s<>"()\/:]+(:\d+)?)\/[^\s<>"]+/g;
-    const urls = [...text.matchAll(regex)]
-        .map(match => match[0])
-        .map(text => {
-            return "https://" + text; // consider all link are https
-        });
-    if (bracketsTrim) { // Trim unmatched closed brackets — ")", or "]" with the followed content
-        return urls.flatMap(url => {
-            const [_url, after] = splitOnUnmatchedBrackets(url);
-            if (after && after.includes("://") && after.match(regex)) {
-                return [_url, ...parseUrlsFromText(after)];
-            }
-            return _url;
-        });
-    }
-    return urls;
-}
-
-/**
- * @param {HTMLElement} element
- * @param {{[string]: string}} state
- */
-function assignStyleState(element, state) {
-    for (const [k, v] of Object.entries(state)) {
-        element.style[k]  = v;
-    }
-}
-
-/**
- * @param {HTMLElement} element
- * @param {Object?} opts
- * @param {HTMLElement?} opts.handle
- * @param {function?} opts.onStop
- * @param {function?} opts.onMove
- * @param {{top: string, left: string}?} opts.state
- */
-function makeMovable(element, {handle, onStop: _onStop, onMove, state} = {}) {
-    const _onMove = state => {
-        onMove?.(state);
-        assignStyleState(element, state);
-    };
-    if (state) {
-        _onMove(state);
-        _onStop?.(state);
-    }
-
-    handle = handle || element;
-    handle.style["user-select"] = "none";
-    handle.style["touch-action"] = "none";
-    element.style.position = "absolute";
-
-    handle.addEventListener("pointerdown", event => {
-        event = event.targetTouches?.[0] || event;
-        const offsetY = event.clientY - parseInt(getComputedStyle(element).top);
-        const offsetX = event.clientX - parseInt(getComputedStyle(element).left);
-
-        let state;
-        function onMove(event) {
-            !handle.hasPointerCapture(event.pointerId) && handle.setPointerCapture(event.pointerId);
-            event = event.targetTouches?.[0] || event;
-            state = {
-                top:  (event.clientY - offsetY) + "px",
-                left: (event.clientX - offsetX) + "px",
-            };
-            _onMove(state);
-        }
-        function onEnd() {
-            removeEventListener("pointermove", onMove);
-            state && _onStop?.(state);
-        }
-        addEventListener("pointermove", onMove, {passive: true});
-        addEventListener("pointerup", onEnd, {once: true});
-    }, {passive: true});
-}
-
-/**
- * @param {HTMLElement} element
- * @param {Object?} opts
- * @param {number?} opts.minW
- * @param {number?} opts.minH
- * @param {number?} opts.size
- * @param {function?} opts.onStop
- * @param {function?} opts.onMove
- * @param {{width: string, height: string}?} opts.state
- */
-function makeResizable(element, {
-    minW = 240, minH = 240, size = 16, onStop: _onStop, onMove, state
-} = {}) {
-    const _onMove = state => {
-        onMove?.(state);
-        assignStyleState(element, state);
-    };
-    if (state) {
-        _onMove(state);
-        _onStop?.(state);
-    }
-
-    const lrCorner = document.createElement("div");
-    lrCorner.style.cssText =
-        `width: ${size}px; height: ${size}px; border-radius: ${(size / 2)}px;` +
-        `bottom: ${-(size / 2)}px; right: ${-(size / 2)}px; ` +
-        `position: absolute; background-color: transparent; cursor: se-resize; touch-action: none;`;
-    element.append(lrCorner);
-
-    lrCorner.addEventListener("pointerdown",event => {
-        event = event.targetTouches?.[0] || event;
-        lrCorner.setPointerCapture(event.pointerId);
-        const offsetX = event.clientX - element.offsetLeft - parseInt(getComputedStyle(element).width);
-        const offsetY = event.clientY - element.offsetTop  - parseInt(getComputedStyle(element).height);
-
-        let state;
-        function onMove(event) {
-            event = event.targetTouches?.[0] || event;
-            let x = event.clientX - element.offsetLeft - offsetX;
-            let y = event.clientY - element.offsetTop  - offsetY;
-            if (x < minW) { x = minW; }
-            if (y < minH) { y = minH; }
-            state = {
-                width:  x + "px",
-                height: y + "px",
-            };
-            _onMove(state);
-        }
-        function onEnd() {
-            lrCorner.removeEventListener("pointermove", onMove);
-            state && _onStop?.(state);
-        }
-        lrCorner.addEventListener("pointermove", onMove, {passive: true});
-        lrCorner.addEventListener("lostpointercapture", onEnd, {once: true});
-    }, {passive: true});
-}
-
-/**
- * @param {Object} opts
- * @param {string} opts.id
- * @param {function?} opts.onMove
- * @param {function?} opts.onStop
- * @param {boolean?} opts.reset
- * @param {boolean?} opts.restore
- * @return {{state?: Object, onMove: function, onStop: function}}
- */
-function storeStateInLS({id: lsName, onMove, onStop, reset, restore}) {
-    if (reset && lsName) {
-        localStorage.removeItem(lsName);
-    }
-    if (!restore || !lsName) {
-        return {onMove, onStop};
-    }
-    const stateJson = localStorage.getItem(lsName);
-    let state;
-    if (stateJson) {
-        state = JSON.parse(stateJson);
-    }
-
-    function saveStateLS(state) {
-        localStorage.setItem(lsName, JSON.stringify(state));
-    }
-
-    let _onStop;
-    if (onStop) {
-        _onStop = function(state) {
-            onStop(state);
-            saveStateLS(state);
-        };
-    } else {
-        _onStop = saveStateLS;
-    }
-
-    return {
-        onMove,
-        onStop: _onStop,
-        state
-    };
-}
-
-/**
- * @param {ScriptSettings} settings
- * @param {function(ScriptSettings)} updateSettings
- */
-function getRenders(settings, updateSettings) {
-    const {wrapperHtml, wrapperCss}     = getWrapper();
-    const {minimizedHtml, minimizedCss} = getMinimized();
-    const {popupHtml, popupCss}         = getPopup(settings);
-
-
-    let shadowContainer = null;
-    const querySelector    = selector => shadowContainer.querySelector(selector);
-    const querySelectorAll = selector => shadowContainer.querySelectorAll(selector);
-
-    const insertSelector = settings.insert_place;
-    function renderShadowContainer() {
-        const insertPlace   = document.querySelector(insertSelector);
-        const shadowWrapper = document.createElement("div");
-        shadowWrapper.setAttribute("id", "href-taker-outer-shadow-wrapper");
-        shadowWrapper.attachShadow({mode: "open"});
-        shadowWrapper.shadowRoot.innerHTML = wrapperHtml;
-        if (insertSelector === "html") {
-            insertPlace.append(shadowWrapper);
-        } else { // "body", ...
-            insertPlace.prepend(shadowWrapper);
-        }
-
-        shadowContainer = shadowWrapper.shadowRoot.querySelector("#shadow-content-wrapper");
-        addCSS(wrapperCss, shadowContainer);
-        updateSettings({opened: true});
-    }
-    function closeShadowContainer() {
-        document.querySelector(`${insertSelector} > #href-taker-outer-shadow-wrapper`)?.remove();
-        shadowContainer = null;
-        updateSettings({opened: false});
-    }
-    function initShadowContainer() {
-        if (!shadowContainer) {
-            renderShadowContainer();
-            return false;
-        }
-        return true;
+function initPopup({settings, updateSettings, wrapper, popup, minim}) {
+    Object.assign(popup, {renderPopup, closePopup});
+
+    function closePopup() {
+        wrapper.isShadowContainerInited() && wrapper.querySelector("#popup")?.remove();
     }
 
     function renderPopup(resetPosition = false) {
-        initShadowContainer();
+        const {popupHtml, popupCss} = getPopup(settings);
+
+        const {querySelector, querySelectorAll, initShadowContainer, closeShadowContainer} = wrapper;
+        const {closeMinimized, renderMinimized} = minim;
+
+        const shadowContainer = initShadowContainer();
         updateSettings({minimized: false});
 
         const wasOpened = querySelector("#popup");
@@ -1705,7 +1729,7 @@ function getRenders(settings, updateSettings) {
             }
         }
 
-        const headerElem     = querySelector("#popup-header");
+        const headerElem = querySelector("#popup-header");
         makeMovable(popupElem, {
             handle: headerElem,
             ...storeStateInLS({
@@ -1755,8 +1779,8 @@ function getRenders(settings, updateSettings) {
 
         // ------
 
-        const checkboxList  = [...querySelectorAll("input[type=checkbox]")];
-        const inputList     = [...querySelectorAll("input[type=text]")];
+        const checkboxList  = querySelectorAll("input[type=checkbox]");
+        const inputList     = querySelectorAll("input[type=text]");
         checkboxList.forEach(checkbox => {
             checkbox.addEventListener("change", saveSetting);
         });
@@ -1915,24 +1939,6 @@ function getRenders(settings, updateSettings) {
             }
         });
 
-        function getCodeArrays(items, size = 100) {
-            const jsonArray = a => `${a.length ? "[\"" + a.join(`", "`) + "\"]" : "[]"}`;
-            if (items.length <= size) {
-                return `/* ${items.length.toString().padStart(3)} */ ${jsonArray(items)},`;
-            }
-            const len = s => s.toString().length;
-            const count = Math.trunc(items.length / size);
-            const comment = items.length.toString().padStart(1 + len(items.length)) + " ".repeat(3 + len(count));
-            const parts = [`/* ${comment} */`];
-            for (let i = 0; i <= count; i++) {
-                const part = items.slice(size * i, size + size * i);
-                const page = `(${i + 1})`.padStart(2 + len(count));
-                const pageCount = part.length.toString().padStart(1 + len(items.length));
-                parts.push(`/* ${pageCount} ${page} */ ${jsonArray(part)},`);
-            }
-            return parts.join("\n");
-        }
-
         // ------
 
         function urlFilter(url) {
@@ -2035,7 +2041,7 @@ function getRenders(settings, updateSettings) {
 
         // ------
 
-        const headers = [...querySelectorAll(`[data-header_name]`)];
+        const headers = querySelectorAll(`[data-header_name]`);
         for (const header of headers) {
             header.addEventListener("click", event => {
                 const name = header.dataset.header_name;
@@ -2058,15 +2064,58 @@ function getRenders(settings, updateSettings) {
 
         return {renderUrlList};
     }
-    function closePopup() {
-        shadowContainer && querySelector("#popup")?.remove();
-    }
+}
+
+function getMinimized() {
+    const minimizedHtml = `
+<div id="popup-minimized">
+    <div>
+        <span>HrefTaker</span>        
+        <button id="open-popup" title="Open popup">O</button>
+        <button id="close-popup" title="Close popup">X</button>
+    </div>
+</div>`;
+
+    const minimizedCss = cssFromStyle`
+<style>
+#popup-minimized {
+    position: fixed;
+    width: fit-content;
+    background-color: white;
+    padding: 3px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    border: 1px solid gray;
+    border-radius: 2px;
+}
+#popup-minimized span {
+    padding: 0 4px;
+}
+</style>`;
+
+    return {minimizedHtml, minimizedCss};
+}
+
+/**
+ * @param {Object} opt
+ * @param {ScriptSettings} opt.settings
+ * @param {function(ScriptSettings)} opt.updateSettings
+ * @param {Wrapper} opt.wrapper
+ * @param {Popup} opt.popup
+ * @param {Minim} opt.minim
+ */
+function initMinimized({settings, updateSettings, wrapper, popup, minim}) {
+    Object.assign(minim, {closeMinimized, renderMinimized});
 
     function closeMinimized() {
-        shadowContainer && querySelector("#popup-minimized")?.remove();
+        wrapper.isShadowContainerInited() && wrapper.querySelector("#popup-minimized")?.remove();
     }
+
+    const {minimizedHtml, minimizedCss} = getMinimized();
     function renderMinimized(resetPosition = false) {
-        initShadowContainer();
+        const {querySelector, initShadowContainer, closeShadowContainer} = wrapper;
+        const {closePopup, renderPopup} = popup;
+
+        const shadowContainer = initShadowContainer();
 
         const wasOpened = querySelector("#popup-minimized");
         closePopup();
@@ -2095,15 +2144,48 @@ function getRenders(settings, updateSettings) {
             closeShadowContainer();
         });
     }
+}
+
+/**
+ * @typedef {Object} Wrapper
+ * @property {function(selector: string): HTMLElement} querySelector
+ * @property {function(selector: string): HTMLElement[]} querySelectorAll
+ * @property {function} initShadowContainer
+ * @property {function} closeShadowContainer
+ * @property {function} isShadowContainerInited
+ *//**
+ * @typedef {Object} Popup
+ * @property {function} renderPopup
+ * @property {function} closePopup
+ *//**
+ * @typedef {Object} Minim
+ * @property {function} closeMinimized
+ * @property {function} renderMinimized
+ */
+
+/**
+ * @param {ScriptSettings} settings
+ * @param {function(ScriptSettings)} updateSettings
+ */
+function getRenders(settings, updateSettings) {
+    /**
+     * @type {Wrapper} */
+    const wrapper = {};
+    /** @type {Popup} */
+    const popup = {};
+    /** @type {Minim} */
+    const minim = {};
+
+    initWrapper({settings, updateSettings, wrapper});
+    initPopup({settings, updateSettings, wrapper, popup, minim});
+    initMinimized({settings, updateSettings, wrapper, popup, minim});
 
     return {
-        showPopup: renderPopup,
-        closePopup,
-
-        showMinimized: renderMinimized,
-        closeMinimized,
-
-        close: closeShadowContainer,
+        showPopup: popup.renderPopup,
+        closePopup: popup.closePopup,
+        showMinimized: minim.renderMinimized,
+        closeMinimized: minim.closeMinimized,
+        close: wrapper.closeShadowContainer,
     };
 }
 
