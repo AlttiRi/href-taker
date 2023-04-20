@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.9.21-2023.4.20-3062
+// @version     0.9.22-2023.4.20-4d89
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -2059,11 +2059,11 @@ function getRenders(settings, updateSettings) {
         return {renderUrlList};
     }
     function closePopup() {
-        querySelector("#popup")?.remove();
+        shadowContainer && querySelector("#popup")?.remove();
     }
 
     function closeMinimized() {
-        querySelector("#popup-minimized")?.remove();
+        shadowContainer && querySelector("#popup-minimized")?.remove();
     }
     function renderMinimized(resetPosition = false) {
         initShadowContainer();
