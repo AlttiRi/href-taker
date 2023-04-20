@@ -59,7 +59,7 @@ export function getRenders(settings, updateSettings) {
         updateSettings({minimized: false});
 
         const wasOpened = querySelector("#popup");
-        closePopup()
+        closePopup();
         closeMinimized();
         resetPosition = wasOpened || resetPosition;
 
@@ -86,7 +86,6 @@ export function getRenders(settings, updateSettings) {
         }
 
         const headerElem     = querySelector("#popup-header");
-        const resultListElem = querySelector("#result-list-wrapper");
         makeMovable(popupElem, {
             handle: headerElem,
             ...storeStateInLS({
@@ -101,9 +100,6 @@ export function getRenders(settings, updateSettings) {
                 reset: resetPosition,
                 restore: true,
                 id: "ujs-href-taker-popup-size",
-                onMove(state) {
-                    resultListElem.style.width = (parseInt(state.width) - 8) + "px";
-                },
             })
         });
 

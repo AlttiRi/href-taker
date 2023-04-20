@@ -367,8 +367,8 @@ a {
     width: inherit;
 }
 #result-list-wrapper {
-    width: calc(720px - 24px);
     padding-top: 4px;
+    padding-right: 2px;
     /*padding: 4px 4px 8px 12px;*/
     flex-grow: 1;
     overflow-y: hidden;
