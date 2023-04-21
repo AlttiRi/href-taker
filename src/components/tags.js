@@ -47,6 +47,7 @@ export function getTags() {
     display: flex;
     flex-wrap: wrap;
     gap: 3px;
+    padding-top: 1px;
 }
 .tag {
     border: 1px solid gray;

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.4-2023.4.21-bf03
+// @version     0.10.5-2023.4.21-4ed3
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1197,6 +1197,7 @@ function getTags() {
     display: flex;
     flex-wrap: wrap;
     gap: 3px;
+    padding-top: 1px;
 }
 .tag {
     border: 1px solid gray;
