@@ -46,12 +46,17 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         popupElem.addEventListener("focus", () => popupElem.classList.add("focus"));
         let blurTimerId;
         popupElem.addEventListener("blur", () => {
-            blurTimerId = setTimeout(() => {
-                popupElem.classList.remove("focus");
-            }, 250);
+            blurTimerId = setTimeout(() => popupElem.classList.remove("focus"), 250);
         });
         popupElem.addEventListener("pointerup",   () => setTimeout(() => clearTimeout(blurTimerId)));
-        popupElem.addEventListener("pointerdown", () => setTimeout(() => clearTimeout(blurTimerId)));
+        popupElem.addEventListener("pointerdown", ({target}) => {
+            setTimeout(() => {
+                if (target.closest("a")) {
+                    popupElem.focus();
+                }
+                clearTimeout(blurTimerId);
+            });
+        });
 
 
         function setSettingsDataAttributes() {

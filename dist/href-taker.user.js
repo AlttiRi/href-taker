@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.3-2023.4.21-d050
+// @version     0.10.4-2023.4.21-bf03
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1730,12 +1730,17 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         popupElem.addEventListener("focus", () => popupElem.classList.add("focus"));
         let blurTimerId;
         popupElem.addEventListener("blur", () => {
-            blurTimerId = setTimeout(() => {
-                popupElem.classList.remove("focus");
-            }, 250);
+            blurTimerId = setTimeout(() => popupElem.classList.remove("focus"), 250);
         });
         popupElem.addEventListener("pointerup",   () => setTimeout(() => clearTimeout(blurTimerId)));
-        popupElem.addEventListener("pointerdown", () => setTimeout(() => clearTimeout(blurTimerId)));
+        popupElem.addEventListener("pointerdown", ({target}) => {
+            setTimeout(() => {
+                if (target.closest("a")) {
+                    popupElem.focus();
+                }
+                clearTimeout(blurTimerId);
+            });
+        });
 
 
         function setSettingsDataAttributes() {
