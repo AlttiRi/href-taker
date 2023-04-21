@@ -52,7 +52,7 @@ export function getListHelper(container, settings) {
         if (!event.altKey) {
             return;
         }
-        if (!event.target.classList.contains("visible")) {
+        if (!event.target.closest(".url-item-link")) {
             return;
         }
         event.preventDefault();

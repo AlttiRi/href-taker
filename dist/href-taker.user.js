@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.5-2023.4.21-4ed3
+// @version     0.10.6-2023.4.21-e05a
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -559,7 +559,7 @@ function getListHelper(container, settings) {
         if (!event.altKey) {
             return;
         }
-        if (!event.target.classList.contains("visible")) {
+        if (!event.target.closest(".url-item-link")) {
             return;
         }
         event.preventDefault();
@@ -1728,20 +1728,14 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         setSettingsDataAttributes();
 
 
-        popupElem.addEventListener("focus", () => popupElem.classList.add("focus"));
         let blurTimerId;
         popupElem.addEventListener("blur", () => {
             blurTimerId = setTimeout(() => popupElem.classList.remove("focus"), 250);
-        });
-        popupElem.addEventListener("pointerup",   () => setTimeout(() => clearTimeout(blurTimerId)));
-        popupElem.addEventListener("pointerdown", ({target}) => {
-            setTimeout(() => {
-                if (target.closest("a")) {
-                    popupElem.focus();
-                }
-                clearTimeout(blurTimerId);
-            });
-        });
+        }, {capture: true});
+        popupElem.addEventListener("focus", () => {
+            popupElem.classList.add("focus");
+            setTimeout(() => clearTimeout(blurTimerId));
+        }, {capture: true});
 
 
         function setSettingsDataAttributes() {
