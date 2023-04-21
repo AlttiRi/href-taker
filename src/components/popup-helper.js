@@ -44,13 +44,13 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
 
         let blurTimerId;
-        popupElem.addEventListener("blur", () => {
+        popupElem.addEventListener("focusout", () => {
             blurTimerId = setTimeout(() => popupElem.classList.remove("focus"), 250);
-        }, {capture: true});
-        popupElem.addEventListener("focus", () => {
+        });
+        popupElem.addEventListener("focusin", () => {
             popupElem.classList.add("focus");
             setTimeout(() => clearTimeout(blurTimerId));
-        }, {capture: true});
+        });
 
 
         function setSettingsDataAttributes() {
