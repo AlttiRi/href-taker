@@ -42,6 +42,18 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         addCSS(popupCss, popupElem);
         setSettingsDataAttributes();
 
+
+        popupElem.addEventListener("focus", () => popupElem.classList.add("focus"));
+        let blurTimerId;
+        popupElem.addEventListener("blur", () => {
+            blurTimerId = setTimeout(() => {
+                popupElem.classList.remove("focus");
+            }, 250);
+        });
+        popupElem.addEventListener("pointerup",   () => setTimeout(() => clearTimeout(blurTimerId)));
+        popupElem.addEventListener("pointerdown", () => setTimeout(() => clearTimeout(blurTimerId)));
+
+
         function setSettingsDataAttributes() {
             if (!popupElem) {
                 return;

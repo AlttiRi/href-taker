@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.2-2023.4.20-8cf3
+// @version     0.10.3-2023.4.21-d050
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1439,10 +1439,7 @@ this option only defines the default state.">
 #popup[tabindex="-1"] {
     outline: none;
 }
-#popup:focus {
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-}
-#popup:has(*:focus) {
+#popup.focus {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
@@ -1526,10 +1523,10 @@ hr.main {
     line-height: 0;
     display: inline-block;
 }
-#popup[data-no-search-on-blur]:not(:focus) [data-unselectable-text]:after {
+#popup[data-no-search-on-blur]:not(.focus) [data-unselectable-text]:after {
     content: attr(data-unselectable-text);
 }
-#popup[data-no-search-on-blur]:not(:focus) .selectable {
+#popup[data-no-search-on-blur]:not(.focus) .selectable {
     display: none;
 }
 
@@ -1569,18 +1566,14 @@ a {
     background-color: #eeeeee99;
 }
 
-/*:root {*/
-/*  --width: 720px;*/
-/*}*/
 #popup {
-    /*width: var(--width);*/
     width: 720px;
     background-color: white;
     height: 580px;
     border: 1px solid darkgray;
     padding: 6px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-    transition: box-shadow 0.1s;
+    transition: box-shadow 0.4s;
     display: flex;
     flex-direction: column;
 }
@@ -1732,6 +1725,18 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         const popupElem = querySelector("#popup");
         addCSS(popupCss, popupElem);
         setSettingsDataAttributes();
+
+
+        popupElem.addEventListener("focus", () => popupElem.classList.add("focus"));
+        let blurTimerId;
+        popupElem.addEventListener("blur", () => {
+            blurTimerId = setTimeout(() => {
+                popupElem.classList.remove("focus");
+            }, 250);
+        });
+        popupElem.addEventListener("pointerup",   () => setTimeout(() => clearTimeout(blurTimerId)));
+        popupElem.addEventListener("pointerdown", () => setTimeout(() => clearTimeout(blurTimerId)));
+
 
         function setSettingsDataAttributes() {
             if (!popupElem) {

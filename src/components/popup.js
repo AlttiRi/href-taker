@@ -210,10 +210,7 @@ this option only defines the default state.">
 #popup[tabindex="-1"] {
     outline: none;
 }
-#popup:focus {
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-}
-#popup:has(*:focus) {
+#popup.focus {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
@@ -297,10 +294,10 @@ hr.main {
     line-height: 0;
     display: inline-block;
 }
-#popup[data-no-search-on-blur]:not(:focus) [data-unselectable-text]:after {
+#popup[data-no-search-on-blur]:not(.focus) [data-unselectable-text]:after {
     content: attr(data-unselectable-text);
 }
-#popup[data-no-search-on-blur]:not(:focus) .selectable {
+#popup[data-no-search-on-blur]:not(.focus) .selectable {
     display: none;
 }
 
@@ -340,18 +337,14 @@ a {
     background-color: #eeeeee99;
 }
 
-/*:root {*/
-/*  --width: 720px;*/
-/*}*/
 #popup {
-    /*width: var(--width);*/
     width: 720px;
     background-color: white;
     height: 580px;
     border: 1px solid darkgray;
     padding: 6px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-    transition: box-shadow 0.1s;
+    transition: box-shadow 0.4s;
     display: flex;
     flex-direction: column;
 }
