@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.7-2023.4.21-d57a
+// @version     0.10.8-2023.4.22-501b
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -181,7 +181,7 @@ function getCodeArrays(items, size = 100) {
     if (items.length <= size) {
         return `/* ${items.length.toString().padStart(3)} */ ${jsonArray(items)},`;
     }
-    const len = s => s.toString().length;
+    const len = num => num.toString().length;
     const count = Math.trunc(items.length / size);
     const comment = items.length.toString().padStart(1 + len(items.length)) + " ".repeat(3 + len(count));
     const parts = [`/* ${comment} */`];

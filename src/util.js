@@ -41,7 +41,7 @@ export function getCodeArrays(items, size = 100) {
     if (items.length <= size) {
         return `/* ${items.length.toString().padStart(3)} */ ${jsonArray(items)},`;
     }
-    const len = s => s.toString().length;
+    const len = num => num.toString().length;
     const count = Math.trunc(items.length / size);
     const comment = items.length.toString().padStart(1 + len(items.length)) + " ".repeat(3 + len(count));
     const parts = [`/* ${comment} */`];
