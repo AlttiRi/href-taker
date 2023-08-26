@@ -264,18 +264,18 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         const copyButton = querySelector(`button[name="copy_button"]`);
         copyButton.addEventListener("click", event => {
-            void navigator.clipboard.writeText(getTagFilteredUrls().join(" "));
+            void navigator.clipboard.writeText(getTagFilteredUrls().join(" ") + " ");
         });
         copyButton.addEventListener("contextmenu", event => {
             event.preventDefault();
-            void navigator.clipboard.writeText(getTagFilteredUrls().join("\n"));
+            void navigator.clipboard.writeText(getTagFilteredUrls().join("\n") + "\n");
             void clicked(copyButton);
         });
         copyButton.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
             const MIDDLE_BUTTON = 1;
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
-                void navigator.clipboard.writeText(getCodeArrays(getTagFilteredUrls()));
+                void navigator.clipboard.writeText(getCodeArrays(getTagFilteredUrls()) + "\n");
                 void clicked(copyButton);
             }
         });

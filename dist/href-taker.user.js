@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.9-2023.5.17-daad
+// @version     0.10.10-2023.8.26-f5c7
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1949,18 +1949,18 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         const copyButton = querySelector(`button[name="copy_button"]`);
         copyButton.addEventListener("click", event => {
-            void navigator.clipboard.writeText(getTagFilteredUrls().join(" "));
+            void navigator.clipboard.writeText(getTagFilteredUrls().join(" ") + " ");
         });
         copyButton.addEventListener("contextmenu", event => {
             event.preventDefault();
-            void navigator.clipboard.writeText(getTagFilteredUrls().join("\n"));
+            void navigator.clipboard.writeText(getTagFilteredUrls().join("\n") + "\n");
             void clicked(copyButton);
         });
         copyButton.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
             const MIDDLE_BUTTON = 1;
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
-                void navigator.clipboard.writeText(getCodeArrays(getTagFilteredUrls()));
+                void navigator.clipboard.writeText(getCodeArrays(getTagFilteredUrls()) + "\n");
                 void clicked(copyButton);
             }
         });
