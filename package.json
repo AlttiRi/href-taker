@@ -8,8 +8,8 @@
     "bump-and-build": "node ./build.js"
   },
   "devDependencies": {
-    "rollup": "3.28.1",
-    "vite": "4.4.9",
+    "rollup": "4.9.2",
+    "vite": "4.5.1",
     "@types/node": "18.15.13"
   }
 }
