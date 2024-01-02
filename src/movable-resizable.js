@@ -32,14 +32,12 @@ export function makeMovable(element, {handle, onStop: _onStop, onMove, state} = 
     element.style.position = "absolute";
 
     handle.addEventListener("pointerdown", event => {
-        event = event.targetTouches?.[0] || event;
         const offsetY = event.clientY - parseInt(getComputedStyle(element).top);
         const offsetX = event.clientX - parseInt(getComputedStyle(element).left);
 
         let state;
         function onMove(event) {
             !handle.hasPointerCapture(event.pointerId) && handle.setPointerCapture(event.pointerId);
-            event = event.targetTouches?.[0] || event;
             state = {
                 top:  (event.clientY - offsetY) + "px",
                 left: (event.clientX - offsetX) + "px",
@@ -85,14 +83,12 @@ export function makeResizable(element, {
     element.append(lrCorner);
 
     lrCorner.addEventListener("pointerdown",event => {
-        event = event.targetTouches?.[0] || event;
         lrCorner.setPointerCapture(event.pointerId);
         const offsetX = event.clientX - element.offsetLeft - parseInt(getComputedStyle(element).width);
         const offsetY = event.clientY - element.offsetTop  - parseInt(getComputedStyle(element).height);
 
         let state;
         function onMove(event) {
-            event = event.targetTouches?.[0] || event;
             let x = event.clientX - element.offsetLeft - offsetX;
             let y = event.clientY - element.offsetTop  - offsetY;
             if (x < minW) { x = minW; }
