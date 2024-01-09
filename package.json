@@ -4,7 +4,7 @@
   "version": "0.10.12-2024.1.2-4c00",
   "type": "module",
   "scripts": {
-    "dev": "vite --open demo.html",
+    "dev": "vite --open demo.html --host",
     "bump-and-build": "node ./build.js"
   },
   "devDependencies": {

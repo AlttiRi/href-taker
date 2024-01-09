@@ -8,6 +8,13 @@
 /** @typedef {MoveState | ResizeState} AnyState */
 
 /**
+ * @note
+ * `addEventListener("pointerdown")` with `{passive: true}` is fine with ShadowDOM,
+ * in other case use `event.preventDefault()` to prevent bugs when there is a selected text on the page.
+ * Note, that using of `preventDefault` will prevent useful `focus` event, if you use `tabindex="-1"` on the element.
+ */
+
+/**
  * @param {HTMLElement} element
  * @param {AnyState} state
  */
