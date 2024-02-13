@@ -48,7 +48,7 @@ export function loadSettings() {
         console_log: debug,
         console_vars: debug,
         unique: true,
-        sort: true,
+        sort: false,
         reverse: false,
         ignore_first_party: false,
         input_selector: "body",
