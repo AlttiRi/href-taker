@@ -299,8 +299,13 @@ export function getTagsHelper(container, settings) {
     /**
      * @param {string[]} urls
      * @param {function?} onUpdate
+     * @param {boolean?} [keepOld = false]
      */
-    function renderTags(urls, onUpdate) {
+    function renderTags(urls, onUpdate, keepOld = false) {
+        let savedSelectedTags = selectedTags;
+        if (!keepOld) {
+            savedSelectedTags = null;
+        }
         clearTags();
         if (!urls.length) {
             return;
@@ -344,6 +349,21 @@ export function getTagsHelper(container, settings) {
 
         if (settings.auto_tags) {
             selectAllTags();
+
+            // select only saved tags
+            if (savedSelectedTags && savedSelectedTags.size) {
+                for (const tag of selectedTags) {
+                    if (!savedSelectedTags.has(tag)) {
+                        const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${tag}"]`);
+                        const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"]`);
+                        listTagEl.classList.add("disabled");
+                        popupTagEl.classList.add("disabled");
+                    }
+                }
+                selectedTags = savedSelectedTags;
+                onUpdateCb?.();
+            }
+
         }
 
         updateAddTagBtn();

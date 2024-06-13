@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.18-2024.6.13-3e86
+// @version     0.10.19-2024.6.13-d508
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -989,8 +989,13 @@ function getTagsHelper(container, settings) {
     /**
      * @param {string[]} urls
      * @param {function?} onUpdate
+     * @param {boolean?} [keepOld = false]
      */
-    function renderTags(urls, onUpdate) {
+    function renderTags(urls, onUpdate, keepOld = false) {
+        let savedSelectedTags = selectedTags;
+        if (!keepOld) {
+            savedSelectedTags = null;
+        }
         clearTags();
         if (!urls.length) {
             return;
@@ -1034,6 +1039,21 @@ function getTagsHelper(container, settings) {
 
         if (settings.auto_tags) {
             selectAllTags();
+
+            // select only saved tags
+            if (savedSelectedTags && savedSelectedTags.size) {
+                for (const tag of selectedTags) {
+                    if (!savedSelectedTags.has(tag)) {
+                        const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${tag}"]`);
+                        const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${tag}"]`);
+                        listTagEl.classList.add("disabled");
+                        popupTagEl.classList.add("disabled");
+                    }
+                }
+                selectedTags = savedSelectedTags;
+                onUpdateCb?.();
+            }
+
         }
 
         updateAddTagBtn();
@@ -1980,19 +2000,22 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             return tagsHelper.getFilteredUrls();
         }
 
+        const renderUrlListEventHandler = () => renderUrlList();
         function renderUrlList(keepOld = false) {
             reparseUrlList(keepOld);
-            listHelper.contentElem.removeEventListener("click", renderUrlList);
-            tagsHelper.renderTags(settings.show_tags ? urls : [], onTagsChanges);
-            listHelper.insertUrls(urls);
+            listHelper.contentElem.removeEventListener("click", renderUrlListEventHandler);
+            tagsHelper.renderTags(settings.show_tags ? urls : [], onTagsChanges, keepOld);
+            if (!keepOld) {
+                listHelper.insertUrls(urls);
+            }
             isListRendered = true;
         }
         function onTagsChanges() {
             listHelper.insertUrls(getTagFilteredUrls());
         }
 
-        listBtn.addEventListener("click", renderUrlList);
-        listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
+        listBtn.addEventListener("click", renderUrlListEventHandler);
+        listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
         listBtn.addEventListener("pointerdown", event => {
             const MIDDLE_BUTTON = 1; // LEFT = 0; RIGHT = 2; BACK = 3; FORWARD = 4;
             if (event.button !== MIDDLE_BUTTON) {
@@ -2001,7 +2024,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             event.preventDefault();
             listHelper.clearList(true);
             tagsHelper.clearTags();
-            listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
+            listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
             void clicked(listBtn);
         });
         listBtn.addEventListener("contextmenu", event => {

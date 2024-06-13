@@ -239,19 +239,22 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             return tagsHelper.getFilteredUrls();
         }
 
+        const renderUrlListEventHandler = () => renderUrlList();
         function renderUrlList(keepOld = false) {
             reparseUrlList(keepOld);
-            listHelper.contentElem.removeEventListener("click", renderUrlList);
-            tagsHelper.renderTags(settings.show_tags ? urls : [], onTagsChanges);
-            listHelper.insertUrls(urls);
+            listHelper.contentElem.removeEventListener("click", renderUrlListEventHandler);
+            tagsHelper.renderTags(settings.show_tags ? urls : [], onTagsChanges, keepOld);
+            if (!keepOld) {
+                listHelper.insertUrls(urls);
+            }
             isListRendered = true;
         }
         function onTagsChanges() {
             listHelper.insertUrls(getTagFilteredUrls());
         }
 
-        listBtn.addEventListener("click", renderUrlList);
-        listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
+        listBtn.addEventListener("click", renderUrlListEventHandler);
+        listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
         listBtn.addEventListener("pointerdown", event => {
             const MIDDLE_BUTTON = 1; // LEFT = 0; RIGHT = 2; BACK = 3; FORWARD = 4;
             if (event.button !== MIDDLE_BUTTON) {
@@ -260,7 +263,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             event.preventDefault();
             listHelper.clearList(true);
             tagsHelper.clearTags();
-            listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
+            listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
             void clicked(listBtn);
         });
         listBtn.addEventListener("contextmenu", event => {
