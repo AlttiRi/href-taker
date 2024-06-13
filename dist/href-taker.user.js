@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.16-2024.6.13-d232
+// @version     0.10.17-2024.6.13-e149
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -314,13 +314,15 @@ button.active, .button.active {
  */
 function initWrapper({settings, updateSettings, wrapper}) {
     const {wrapperHtml, wrapperCss} = getWrapper();
-    addCSS(cssFromStyle`
-    <style>
-        html:not(:hover) #href-taker-outer-shadow-wrapper.minimized {
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-    </style>`);
+
+    // it lags on discord.com
+    // addCSS(cssFromStyle`
+    // <style>
+    //     html:not(:hover) > #href-taker-outer-shadow-wrapper.minimized {
+    //         opacity: 0;
+    //         transition: opacity 0.3s;
+    //     }
+    // </style>`);
 
     let shadowContainer = null;
     const querySelector    = selector => shadowContainer.querySelector(selector);
