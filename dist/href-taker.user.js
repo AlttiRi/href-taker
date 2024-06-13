@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.12-2024.1.2-4c00
+// @version     0.10.13-2024.6.13-467a
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -74,7 +74,7 @@ function loadSettings() {
         console_log: debug,
         console_vars: debug,
         unique: true,
-        sort: true,
+        sort: false,
         reverse: false,
         ignore_first_party: false,
         input_selector: "body",
@@ -358,6 +358,13 @@ function initWrapper({settings, updateSettings, wrapper}) {
 
 /** @typedef {MoveStyleProps | ResizeStyleProps} AnyStyleProps */
 /** @typedef {MoveState | ResizeState} AnyState */
+
+/**
+ * @note
+ * `addEventListener("pointerdown")` with `{passive: true}` is fine with ShadowDOM,
+ * in other case use `event.preventDefault()` to prevent bugs when there is a selected text on the page.
+ * Note, that using of `preventDefault` will prevent useful `focus` event, if you use `tabindex="-1"` on the element.
+ */
 
 /**
  * @param {HTMLElement} element
@@ -1334,7 +1341,10 @@ function getPopup(settings) {
     <div class="content" data-content_name="controls">
         <div class="control-row">
             <div class="control-row-inner">
-                <button title="From anchors" name="list_button" class="short btn-left">List links</button>
+                <button title="- LMB to list links \n- RMB to append new links \n- MMB to clear list" 
+                        name="list_button" 
+                        class="short btn-left"
+                        >List links</button>
                 <span id="include-text-url-wrapper">
                     <label title="Include URLs parsed from text">
                         <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
@@ -1942,8 +1952,8 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             return tagsHelper.getFilteredUrls();
         }
 
-        function renderUrlList() {
-            reparseUrlList();
+        function renderUrlList(keepOld = false) {
+            reparseUrlList(keepOld);
             listHelper.contentElem.removeEventListener("click", renderUrlList);
             tagsHelper.renderTags(settings.show_tags ? urls : [], onTagsChanges);
             listHelper.insertUrls(urls);
@@ -1955,11 +1965,20 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         listBtn.addEventListener("click", renderUrlList);
         listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
-        listBtn.addEventListener("contextmenu", event => {
+        listBtn.addEventListener("pointerdown", event => {
+            const MIDDLE_BUTTON = 1; // LEFT = 0; RIGHT = 2; BACK = 3; FORWARD = 4;
+            if (event.button !== MIDDLE_BUTTON) {
+                return;
+            }
             event.preventDefault();
             listHelper.clearList(true);
             tagsHelper.clearTags();
             listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
+            void clicked(listBtn);
+        });
+        listBtn.addEventListener("contextmenu", event => {
+            event.preventDefault();
+            renderUrlList(true);
             void clicked(listBtn);
         });
 
@@ -2027,13 +2046,19 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 return 1;
             }
         };
-        function reparseUrlList() {
+        function reparseUrlList(keepOld = false) {
             const selector = getSelector();
-            urls = parseUrls(selector, {
+            const newUrls = parseUrls(selector, {
                 includeTextUrls: settings.include_text_url,
                 onlyTextUrls:    settings.only_text_url,
                 bracketsTrim:    settings.brackets_trim,
             });
+
+            if (keepOld) {
+                urls = [...urls, ...newUrls];
+            } else {
+                urls = newUrls;
+            }
 
             let onlyTexts = settings.input_only.trim().split(/\s+/g).filter(o => o);
             let ignoreTexts = settings.input_ignore.trim().split(/\s+/g).filter(o => o);

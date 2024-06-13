@@ -86,7 +86,10 @@ export function getPopup(settings) {
     <div class="content" data-content_name="controls">
         <div class="control-row">
             <div class="control-row-inner">
-                <button title="From anchors" name="list_button" class="short btn-left">List links</button>
+                <button title="- LMB to list links \n- RMB to append new links \n- MMB to clear list" 
+                        name="list_button" 
+                        class="short btn-left"
+                        >List links</button>
                 <span id="include-text-url-wrapper">
                     <label title="Include URLs parsed from text">
                         <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>

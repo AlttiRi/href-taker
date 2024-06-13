@@ -239,8 +239,8 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             return tagsHelper.getFilteredUrls();
         }
 
-        function renderUrlList() {
-            reparseUrlList();
+        function renderUrlList(keepOld = false) {
+            reparseUrlList(keepOld);
             listHelper.contentElem.removeEventListener("click", renderUrlList);
             tagsHelper.renderTags(settings.show_tags ? urls : [], onTagsChanges);
             listHelper.insertUrls(urls);
@@ -252,11 +252,20 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         listBtn.addEventListener("click", renderUrlList);
         listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
-        listBtn.addEventListener("contextmenu", event => {
+        listBtn.addEventListener("pointerdown", event => {
+            const MIDDLE_BUTTON = 1; // LEFT = 0; RIGHT = 2; BACK = 3; FORWARD = 4;
+            if (event.button !== MIDDLE_BUTTON) {
+                return;
+            }
             event.preventDefault();
             listHelper.clearList(true);
             tagsHelper.clearTags();
             listHelper.contentElem.addEventListener("click", renderUrlList, {once: true});
+            void clicked(listBtn);
+        });
+        listBtn.addEventListener("contextmenu", event => {
+            event.preventDefault();
+            renderUrlList(true);
             void clicked(listBtn);
         });
 
@@ -324,13 +333,19 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 return 1;
             }
         };
-        function reparseUrlList() {
+        function reparseUrlList(keepOld = false) {
             const selector = getSelector();
-            urls = parseUrls(selector, {
+            const newUrls = parseUrls(selector, {
                 includeTextUrls: settings.include_text_url,
                 onlyTextUrls:    settings.only_text_url,
                 bracketsTrim:    settings.brackets_trim,
             });
+
+            if (keepOld) {
+                urls = [...urls, ...newUrls];
+            } else {
+                urls = newUrls;
+            }
 
             let onlyTexts = settings.input_only.trim().split(/\s+/g).filter(o => o);
             let ignoreTexts = settings.input_ignore.trim().split(/\s+/g).filter(o => o);
