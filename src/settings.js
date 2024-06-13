@@ -1,3 +1,5 @@
+import {localStorage} from "./gm-util.js";
+
 const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "alttiri.github.io"].some(h => location.hostname === h);
 
 /**

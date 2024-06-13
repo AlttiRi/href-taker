@@ -17,5 +17,4 @@ function getLocalStoragePropertyDescriptor() {
     iframe.remove();
     return pd;
 }
-const localStorage = global.localStorage || getLocalStoragePropertyDescriptor().get.call(global);
-Object.defineProperty(global, "localStorage", localStorage);
+export const localStorage = global.localStorage || getLocalStoragePropertyDescriptor().get.call(global);

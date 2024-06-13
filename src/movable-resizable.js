@@ -1,3 +1,5 @@
+import {localStorage} from "./gm-util.js";
+
 /** @typedef {"top" | "left"} MoveStyleProps */
 /** @typedef {Record<MoveStyleProps, string>} MoveState  */
 
