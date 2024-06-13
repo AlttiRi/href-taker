@@ -12,14 +12,22 @@ import {cssFromStyle} from "./util.js";
 export function initWrapper({settings, updateSettings, wrapper}) {
     const {wrapperHtml, wrapperCss} = getWrapper();
 
-    // it lags on discord.com
-    // addCSS(cssFromStyle`
-    // <style>
-    //     html:not(:hover) > #href-taker-outer-shadow-wrapper.minimized {
-    //         opacity: 0;
-    //         transition: opacity 0.3s;
-    //     }
-    // </style>`);
+    addCSS(cssFromStyle`
+    <style>
+        #href-taker-outer-shadow-wrapper {
+            opacity: 1;
+            transition: opacity 0.2s;
+        }
+        #href-taker-outer-shadow-wrapper.minimized.no-hover {
+            opacity: 0;
+            transition: opacity 0.3s 0.2s;
+        }
+    </style>`);
+    document.documentElement.addEventListener("mouseleave", () =>
+        wrapper.element.classList.add("no-hover"));
+    document.documentElement.addEventListener("mouseenter", () =>
+        wrapper.element.classList.remove("no-hover"));
+
 
     let shadowContainer = null;
     const querySelector    = selector => shadowContainer.querySelector(selector);
