@@ -16,6 +16,7 @@ export function initMinimized({settings, updateSettings, wrapper, popup, minim})
 
     function closeMinimized() {
         wrapper.isShadowContainerInited() && wrapper.querySelector("#popup-minimized")?.remove();
+        wrapper.element.classList.remove("minimized");
     }
 
     const {minimizedHtml, minimizedCss} = getMinimized();
@@ -51,5 +52,7 @@ export function initMinimized({settings, updateSettings, wrapper, popup, minim})
             updateSettings({minimized: false});
             closeShadowContainer();
         });
+
+        wrapper.element.classList.add("minimized");
     }
 }

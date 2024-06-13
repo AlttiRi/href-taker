@@ -1,5 +1,6 @@
 import {addCSS} from "../gm-util.js";
 import {getWrapper} from "./wrapper.js";
+import {cssFromStyle} from "./util.js";
 
 
 /**
@@ -10,6 +11,13 @@ import {getWrapper} from "./wrapper.js";
  */
 export function initWrapper({settings, updateSettings, wrapper}) {
     const {wrapperHtml, wrapperCss} = getWrapper();
+    addCSS(cssFromStyle`
+    <style>
+        html:not(:hover) #href-taker-outer-shadow-wrapper.minimized {
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+    </style>`);
 
     let shadowContainer = null;
     const querySelector    = selector => shadowContainer.querySelector(selector);
@@ -22,6 +30,7 @@ export function initWrapper({settings, updateSettings, wrapper}) {
         shadowWrapper.setAttribute("id", "href-taker-outer-shadow-wrapper");
         shadowWrapper.attachShadow({mode: "open"});
         shadowWrapper.shadowRoot.innerHTML = wrapperHtml;
+        wrapper.element = shadowWrapper;
         if (insertSelector === "html") {
             insertPlace.append(shadowWrapper);
         } else { // "body", ...

@@ -10,6 +10,7 @@ import {initMinimized} from "./components/minimized-helper.js";
  * @property {function} initShadowContainer
  * @property {function} closeShadowContainer
  * @property {function} isShadowContainerInited
+ * @property {HTMLDivElement} element
  *//**
  * @typedef {Object} Popup
  * @property {function} renderPopup

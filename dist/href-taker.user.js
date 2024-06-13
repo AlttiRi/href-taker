@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.14-2024.6.13-1472
+// @version     0.10.15-2024.6.13-0e97
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -315,6 +315,13 @@ button.active, .button.active {
  */
 function initWrapper({settings, updateSettings, wrapper}) {
     const {wrapperHtml, wrapperCss} = getWrapper();
+    addCSS(cssFromStyle`
+    <style>
+        html:not(:hover) #href-taker-outer-shadow-wrapper.minimized {
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+    </style>`);
 
     let shadowContainer = null;
     const querySelector    = selector => shadowContainer.querySelector(selector);
@@ -327,6 +334,7 @@ function initWrapper({settings, updateSettings, wrapper}) {
         shadowWrapper.setAttribute("id", "href-taker-outer-shadow-wrapper");
         shadowWrapper.attachShadow({mode: "open"});
         shadowWrapper.shadowRoot.innerHTML = wrapperHtml;
+        wrapper.element = shadowWrapper;
         if (insertSelector === "html") {
             insertPlace.append(shadowWrapper);
         } else { // "body", ...
@@ -2188,6 +2196,7 @@ function initMinimized({settings, updateSettings, wrapper, popup, minim}) {
 
     function closeMinimized() {
         wrapper.isShadowContainerInited() && wrapper.querySelector("#popup-minimized")?.remove();
+        wrapper.element.classList.remove("minimized");
     }
 
     const {minimizedHtml, minimizedCss} = getMinimized();
@@ -2223,6 +2232,8 @@ function initMinimized({settings, updateSettings, wrapper, popup, minim}) {
             updateSettings({minimized: false});
             closeShadowContainer();
         });
+
+        wrapper.element.classList.add("minimized");
     }
 }
 
@@ -2233,6 +2244,7 @@ function initMinimized({settings, updateSettings, wrapper, popup, minim}) {
  * @property {function} initShadowContainer
  * @property {function} closeShadowContainer
  * @property {function} isShadowContainerInited
+ * @property {HTMLDivElement} element
  *//**
  * @typedef {Object} Popup
  * @property {function} renderPopup
