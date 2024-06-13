@@ -8,3 +8,14 @@ export function addCSS(cssText, target = document.head) {
     target.append(styleElem);
     return styleElem;
 }
+
+
+function getLocalStoragePropertyDescriptor() {
+    const iframe = document.createElement("iframe");
+    document.head.append(iframe);
+    const pd = Object.getOwnPropertyDescriptor(iframe.contentWindow, "localStorage");
+    iframe.remove();
+    return pd;
+}
+const localStorage = global.localStorage || getLocalStoragePropertyDescriptor().get.call(global);
+Object.defineProperty(global, "localStorage", localStorage);

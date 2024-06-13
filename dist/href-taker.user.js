@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.13-2024.6.13-467a
+// @version     0.10.14-2024.6.13-1472
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -23,6 +23,17 @@ function addCSS(cssText, target = document.head) {
     target.append(styleElem);
     return styleElem;
 }
+
+
+function getLocalStoragePropertyDescriptor() {
+    const iframe = document.createElement("iframe");
+    document.head.append(iframe);
+    const pd = Object.getOwnPropertyDescriptor(iframe.contentWindow, "localStorage");
+    iframe.remove();
+    return pd;
+}
+const localStorage$1 = global.localStorage || getLocalStoragePropertyDescriptor().get.call(global);
+Object.defineProperty(global, "localStorage", localStorage$1);
 
 const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "alttiri.github.io"].some(h => location.hostname === h);
 
