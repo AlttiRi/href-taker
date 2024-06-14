@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.19-2024.6.13-d508
+// @version     0.10.20-2024.6.14-465d
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -2024,6 +2024,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             event.preventDefault();
             listHelper.clearList(true);
             tagsHelper.clearTags();
+            urls = [];
             listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
             void clicked(listBtn);
         });

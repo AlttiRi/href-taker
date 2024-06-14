@@ -263,6 +263,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             event.preventDefault();
             listHelper.clearList(true);
             tagsHelper.clearTags();
+            urls = [];
             listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
             void clicked(listBtn);
         });
