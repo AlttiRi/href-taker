@@ -361,7 +361,6 @@ export function getTagsHelper(container, settings) {
                     }
                 }
                 selectedTags = savedSelectedTags;
-                onUpdateCb?.();
             }
 
         }

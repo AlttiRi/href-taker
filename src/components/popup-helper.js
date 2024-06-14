@@ -244,9 +244,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             reparseUrlList(keepOld);
             listHelper.contentElem.removeEventListener("click", renderUrlListEventHandler);
             tagsHelper.renderTags(settings.show_tags ? urls : [], onTagsChanges, keepOld);
-            if (!keepOld) {
-                listHelper.insertUrls(urls);
-            }
+            listHelper.insertUrls(getTagFilteredUrls());
             isListRendered = true;
         }
         function onTagsChanges() {

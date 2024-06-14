@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.20-2024.6.14-465d
+// @version     0.10.21-2024.6.14-b393
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1051,7 +1051,6 @@ function getTagsHelper(container, settings) {
                     }
                 }
                 selectedTags = savedSelectedTags;
-                onUpdateCb?.();
             }
 
         }
@@ -2005,9 +2004,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             reparseUrlList(keepOld);
             listHelper.contentElem.removeEventListener("click", renderUrlListEventHandler);
             tagsHelper.renderTags(settings.show_tags ? urls : [], onTagsChanges, keepOld);
-            if (!keepOld) {
-                listHelper.insertUrls(urls);
-            }
+            listHelper.insertUrls(getTagFilteredUrls());
             isListRendered = true;
         }
         function onTagsChanges() {
