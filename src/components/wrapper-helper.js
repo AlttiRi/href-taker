@@ -6,7 +6,7 @@ import {cssFromStyle} from "./util.js";
 /**
  * @param {Object} opt
  * @param {ScriptSettings} opt.settings
- * @param {function(ScriptSettings)} opt.updateSettings
+ * @param {function(Partial<ScriptSettings>)} opt.updateSettings
  * @param {Wrapper} opt.wrapper
  */
 export function initWrapper({settings, updateSettings, wrapper}) {

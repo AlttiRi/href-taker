@@ -6,7 +6,7 @@ import {getMinimized} from "./minimized.js";
 /**
  * @param {Object} opt
  * @param {ScriptSettings} opt.settings
- * @param {function(ScriptSettings)} opt.updateSettings
+ * @param {function(Partial<ScriptSettings>)} opt.updateSettings
  * @param {Wrapper} opt.wrapper
  * @param {Popup} opt.popup
  * @param {Minim} opt.minim

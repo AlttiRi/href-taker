@@ -75,7 +75,7 @@ export function loadSettings() {
     };
     const LocalStoreName = "ujs-href-taker";
 
-    /** @type ScriptSettings */
+    /** @type {Partial<ScriptSettings>} */
     let savedSettings;
     try {
         savedSettings = JSON.parse(localStorage.getItem(LocalStoreName)) || {};

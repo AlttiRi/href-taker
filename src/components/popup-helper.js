@@ -11,7 +11,7 @@ import {getPopup} from "./popup.js";
 /**
  * @param {Object} opt
  * @param {ScriptSettings} opt.settings
- * @param {function(ScriptSettings)} opt.updateSettings
+ * @param {function(Partial<ScriptSettings>)} opt.updateSettings
  * @param {Wrapper} opt.wrapper
  * @param {Popup} opt.popup
  * @param {Minim} opt.minim
@@ -134,7 +134,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             const inputDataList     =    inputList.map(checkbox => [checkbox.name, checkbox.value]);
             const inputDisabledList =    inputList.map(checkbox => [checkbox.name + "_disabled", checkbox.disabled]);
             const _settings = Object.fromEntries([checkboxDataList, inputDataList, inputDisabledList].flat());
-            const changedKeys = updateSettings(_settings);
+            const changedKeys = updateSettings(/*** @type {Partial<ScriptSettings>} */ _settings);
             updateHtml(changedKeys);
         }
         let isListRendered = false;

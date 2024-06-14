@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.21-2024.6.14-b393
+// @version     0.10.22-2024.6.14-ab7e
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -109,7 +109,7 @@ function loadSettings() {
     };
     const LocalStoreName = "ujs-href-taker";
 
-    /** @type ScriptSettings */
+    /** @type {Partial<ScriptSettings>} */
     let savedSettings;
     try {
         savedSettings = JSON.parse(localStorage.getItem(LocalStoreName)) || {};
@@ -309,7 +309,7 @@ button.active, .button.active {
 /**
  * @param {Object} opt
  * @param {ScriptSettings} opt.settings
- * @param {function(ScriptSettings)} opt.updateSettings
+ * @param {function(Partial<ScriptSettings>)} opt.updateSettings
  * @param {Wrapper} opt.wrapper
  */
 function initWrapper({settings, updateSettings, wrapper}) {
@@ -1771,7 +1771,7 @@ fieldset, hr {
 /**
  * @param {Object} opt
  * @param {ScriptSettings} opt.settings
- * @param {function(ScriptSettings)} opt.updateSettings
+ * @param {function(Partial<ScriptSettings>)} opt.updateSettings
  * @param {Wrapper} opt.wrapper
  * @param {Popup} opt.popup
  * @param {Minim} opt.minim
@@ -1894,7 +1894,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             const inputDataList     =    inputList.map(checkbox => [checkbox.name, checkbox.value]);
             const inputDisabledList =    inputList.map(checkbox => [checkbox.name + "_disabled", checkbox.disabled]);
             const _settings = Object.fromEntries([checkboxDataList, inputDataList, inputDisabledList].flat());
-            const changedKeys = updateSettings(_settings);
+            const changedKeys = updateSettings(/*** @type {Partial<ScriptSettings>} */ _settings);
             updateHtml(changedKeys);
         }
         let isListRendered = false;
@@ -2216,7 +2216,7 @@ function getMinimized() {
 /**
  * @param {Object} opt
  * @param {ScriptSettings} opt.settings
- * @param {function(ScriptSettings)} opt.updateSettings
+ * @param {function(Partial<ScriptSettings>)} opt.updateSettings
  * @param {Wrapper} opt.wrapper
  * @param {Popup} opt.popup
  * @param {Minim} opt.minim
