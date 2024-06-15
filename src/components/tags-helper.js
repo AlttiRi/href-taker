@@ -21,7 +21,7 @@ export function getTagsHelper(container, settings) {
 
     /** @type {Set<string>} */
     let selectedTags = new Set();
-    /** @type {Object<string, UrlInfo[]>} */
+    /** @type {Record<string, UrlInfo[]>} */
     let tagInfoMap = {};
     let tagsReversed = false;
     let onUpdateCb = null;
@@ -328,11 +328,27 @@ export function getTagsHelper(container, settings) {
             const tagUrls = tagInfoMap[host] || (tagInfoMap[host] = []);
             tagUrls.push({url, number: i++});
         }
+
+        /**
+         * @param {[string, UrlInfo[]]} o1
+         * @param {[string, UrlInfo[]]} o2
+         * @return {-1 | 0 | 1}
+         */
+        function numTagComparator([k1, v1], [k2, v2]) {
+            return v2.length - v1.length;
+        }
+        /**
+         * @param {[string, UrlInfo[]]} o1
+         * @param {[string, UrlInfo[]]} o2
+         * @return {-1 | 0 | 1}
+         */
+        function nameTagComparator([k1, v1], [k2, v2]) {
+            return k2 - k1;
+        }
+        const comparator = settings.sort_tags_by_name ? nameTagComparator : numTagComparator;
         const hostToUrlInfosEntries = Object.entries(tagInfoMap)
             .filter(([k, v]) => k !== other)
-            .sort(([k1, v1], [k2, v2]) => {
-                return v2.length - v1.length;
-            });
+            .sort(comparator);
 
         let tagsHtml = "";
         for (const [k, v] of hostToUrlInfosEntries) {
@@ -368,13 +384,19 @@ export function getTagsHelper(container, settings) {
         updateAddTagBtn();
     }
 
+    /**
+     * @param {UrlInfo} urlInfo1
+     * @param {UrlInfo} urlInfo2
+     * @return {-1 | 0 | 1}
+     */
+    function numComparator(urlInfo1, urlInfo2) {
+        return urlInfo1.number - urlInfo2.number;
+    }
     function getFilteredUrls() {
         if (!selectedTags.size) {
             return Object.values(tagInfoMap).flatMap(urlInfos => {
                 return urlInfos;
-            }).sort((urlInfo1, urlInfo2) => {
-                return urlInfo1.number - urlInfo2.number;
-            }).map(urlInfo => urlInfo.url);
+            }).sort(numComparator).map(urlInfo => urlInfo.url);
         }
         return Object.entries(tagInfoMap).filter(([tag, urlInfos]) => {
             if (tagsReversed) {
@@ -384,9 +406,7 @@ export function getTagsHelper(container, settings) {
             }
         }).flatMap(([tag, urlInfos]) => {
             return urlInfos;
-        }).sort((urlInfo1, urlInfo2) => {
-            return urlInfo1.number - urlInfo2.number;
-        }).map(urlInfo => urlInfo.url);
+        }).sort(numComparator).map(urlInfo => urlInfo.url);
     }
 
     function getTags() {

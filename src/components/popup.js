@@ -2,6 +2,12 @@ import {cssFromStyle} from "./util.js";
 import {getTags} from "./tags.js";
 
 
+/** @type {Partial<ScriptSettings>} */
+const resetSettings = {
+    // append_on_hover:   false, // todo
+    sort_tags_by_name: false,
+}
+
 /** @param {ScriptSettings} settings */
 export function getPopup(settings) {
     const {
@@ -33,8 +39,11 @@ export function getPopup(settings) {
         // filters_collapsed,
         // controls_collapsed,
         no_search_on_blur,
-        unsearchable
-    } = settings;
+        unsearchable,
+        // keep_in_storage, // todo
+        // append_on_hover, // todo
+        sort_tags_by_name,
+    } = Object.assign(settings, resetSettings);
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
 
@@ -162,6 +171,10 @@ export function getPopup(settings) {
                     <label title="Show all tags automatically" data-name="auto_tags">
                         <input type="checkbox" name="auto_tags" ${checked(auto_tags)}>
                         Auto tags
+                    </label>
+                    <label title="Sort tags by name (temporary)">
+                        <input type="checkbox" name="sort_tags_by_name" ${checked(sort_tags_by_name)}>
+                        Name-sort tags 
                     </label>
                     <label title="Log the result list to console">
                         <input type="checkbox" name="console_log" ${checked(console_log)}>
