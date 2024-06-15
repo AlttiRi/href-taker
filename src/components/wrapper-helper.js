@@ -24,9 +24,9 @@ export function initWrapper({settings, updateSettings, wrapper}) {
         }
     </style>`);
     document.documentElement.addEventListener("mouseleave", () =>
-        wrapper.element.classList.add("no-hover"));
+        wrapper.element?.classList.add("no-hover"));
     document.documentElement.addEventListener("mouseenter", () =>
-        wrapper.element.classList.remove("no-hover"));
+        wrapper.element?.classList.remove("no-hover"));
 
 
     let shadowContainer = null;

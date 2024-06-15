@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.22-2024.6.14-ab7e
+// @version     0.10.23-2024.6.15-35f8
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -327,9 +327,9 @@ function initWrapper({settings, updateSettings, wrapper}) {
         }
     </style>`);
     document.documentElement.addEventListener("mouseleave", () =>
-        wrapper.element.classList.add("no-hover"));
+        wrapper.element?.classList.add("no-hover"));
     document.documentElement.addEventListener("mouseenter", () =>
-        wrapper.element.classList.remove("no-hover"));
+        wrapper.element?.classList.remove("no-hover"));
 
 
     let shadowContainer = null;
