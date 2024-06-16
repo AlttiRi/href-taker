@@ -308,7 +308,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             void clicked(listBtn);
         });
         listBtn.addEventListener("pointerenter", event => {
-            if (settings.append_on_hover) {
+            if (settings.append_on_hover) { // todo append on scroll on the button
                 renderUrlList(true);
                 void clicked(listBtn);
             }
