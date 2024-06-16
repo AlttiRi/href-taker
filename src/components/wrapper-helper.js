@@ -23,9 +23,9 @@ export function initWrapper({settings, updateSettings, wrapper}) {
             transition: opacity 0.3s 0.2s;
         }
     </style>`);
-    document.documentElement.addEventListener("mouseleave", () =>
+    document.documentElement.addEventListener("pointerleave", () =>
         wrapper.element?.classList.add("no-hover"));
-    document.documentElement.addEventListener("mouseenter", () =>
+    document.documentElement.addEventListener("pointerenter", () =>
         wrapper.element?.classList.remove("no-hover"));
 
 

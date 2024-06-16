@@ -4,7 +4,7 @@ import {getTags} from "./tags.js";
 
 /** @type {Partial<ScriptSettings>} */
 const resetSettings = {
-    // append_on_hover:   false, // todo
+    append_on_hover:   false,
     sort_tags_by_name: false,
 }
 
@@ -40,8 +40,8 @@ export function getPopup(settings) {
         // controls_collapsed,
         no_search_on_blur,
         unsearchable,
-        // keep_in_storage, // todo
-        // append_on_hover, // todo
+        keep_in_storage,
+        append_on_hover,
         sort_tags_by_name,
     } = Object.assign(settings, resetSettings);
     const checked  = isChecked  => isChecked  ? "checked"  : "";
@@ -117,6 +117,18 @@ export function getPopup(settings) {
         <div class="control-row">
             <div class="control-row-inner">
                 <button title="Copy URLs separated by space" name="copy_button" class="short btn-left">Copy</button>
+                <span id="append-on-hover-wrapper">
+                    <label title="Append URL on the button hover">
+                        <input type="checkbox" name="append_on_hover" ${checked(append_on_hover)}>
+                        AoH
+                    </label>
+                </span>
+                <span id="keep-in-storage-wrapper">
+                    <label title="Keep URLs the localStorage">
+                        <input type="checkbox" name="keep_in_storage" ${checked(keep_in_storage)}>
+                        KiS
+                    </label>
+                </span>
             </div>
             <button title="Show Extra Settings" name="extra_settings_button" class="long btn-right">Extra Settings</button>
         </div>

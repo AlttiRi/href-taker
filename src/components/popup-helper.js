@@ -1,4 +1,4 @@
-import {addCSS, global} from "../gm-util.js";
+import {addCSS, global, localStorage} from "../gm-util.js";
 import {makeMovable, makeResizable, storeStateInLS} from "../movable-resizable.js";
 import {debounce, getCodeArrays} from "../util.js";
 import {getListHelper} from "./list-helper.js";
@@ -212,11 +212,48 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         }
 
         // ------
-
-        let urls = [];
-        if (settings.console_vars) {
-            global.urls = urls;
+        /** @type {string[]} */
+        let mainUrls;
+        /** @param {string[]} newUrls
+         *  @return string[]  */
+        function setMainUrls(newUrls) {
+            mainUrls = newUrls;
+            if (settings.console_vars) {
+                global.urls = mainUrls;
+            }
         }
+        setMainUrls([]);
+
+        /** @param {string[]} newUrls */
+        function addUrlsToStore(newUrls) {
+            const urls = Array.from(new Set(newUrls));
+            localStorage.setItem("ujs-href-taker-urls", JSON.stringify(urls));
+        }
+        /** @returns {string[]}  */
+        function getUrlsFromStore() {
+            const str = localStorage.getItem("ujs-href-taker-urls") || "[]";
+            let storedUrls;
+            try {
+                storedUrls = JSON.parse(str);
+            } catch (e) {
+                storedUrls = [];
+            }
+            return storedUrls;
+        }
+        if (settings.keep_in_storage) {
+            setMainUrls(getUrlsFromStore());
+        }
+
+        /** @type {HTMLInputElement} */
+        const checkboxKiS = querySelector(`[type="checkbox"][name="keep_in_storage"]`);
+        checkboxKiS.addEventListener("change", () => {
+            if (checkboxKiS.checked) {
+                addUrlsToStore(mainUrls);
+            } else {
+                addUrlsToStore([]);
+                renderUrlList();
+            }
+        });
 
         // ------
 
@@ -234,7 +271,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         function getTagFilteredUrls() {
             if (!settings.show_tags || !tagsHelper.getTags().size) {
-                return urls;
+                return mainUrls;
             }
             return tagsHelper.getFilteredUrls();
         }
@@ -243,7 +280,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         function renderUrlList(keepOld = false) {
             reparseUrlList(keepOld);
             listHelper.contentElem.removeEventListener("click", renderUrlListEventHandler);
-            tagsHelper.renderTags(settings.show_tags ? urls : [], onTagsChanges, keepOld);
+            tagsHelper.renderTags(settings.show_tags ? mainUrls : [], onTagsChanges, keepOld);
             listHelper.insertUrls(getTagFilteredUrls());
             isListRendered = true;
         }
@@ -261,7 +298,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             event.preventDefault();
             listHelper.clearList(true);
             tagsHelper.clearTags();
-            urls = [];
+            setMainUrls([]);
             listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
             void clicked(listBtn);
         });
@@ -270,7 +307,12 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             renderUrlList(true);
             void clicked(listBtn);
         });
-
+        listBtn.addEventListener("pointerenter", event => {
+            if (settings.append_on_hover) {
+                renderUrlList(true);
+                void clicked(listBtn);
+            }
+        });
         // ------
 
         const copyButton = querySelector(`button[name="copy_button"]`);
@@ -335,24 +377,23 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 return 1;
             }
         };
+        // Updates `mainUrls`.
         function reparseUrlList(keepOld = false) {
             const selector = getSelector();
-            const newUrls = parseUrls(selector, {
+            let newUrls = parseUrls(selector, {
                 includeTextUrls: settings.include_text_url,
                 onlyTextUrls:    settings.only_text_url,
                 bracketsTrim:    settings.brackets_trim,
             });
 
-            if (keepOld) {
-                urls = [...urls, ...newUrls];
-            } else {
-                urls = newUrls;
+            if (keepOld || settings.keep_in_storage) {
+                newUrls = [...mainUrls, ...newUrls];
             }
 
-            let onlyTexts = settings.input_only.trim().split(/\s+/g).filter(o => o);
+            let onlyTexts   =   settings.input_only.trim().split(/\s+/g).filter(o => o);
             let ignoreTexts = settings.input_ignore.trim().split(/\s+/g).filter(o => o);
             if (!settings.case_sensitive) {
-                onlyTexts = onlyTexts.map(text => text.toLowerCase());
+                onlyTexts     = onlyTexts.map(text => text.toLowerCase());
                 ignoreTexts = ignoreTexts.map(text => text.toLowerCase());
             }
 
@@ -366,35 +407,36 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 matchIgnore = url => ignoreTexts.some(text => url.includes(text));
             }
 
-            urls = urls.filter(urlFilter);
+            newUrls = newUrls.filter(urlFilter);
             if (settings.https) {
-                urls = urls.map(url => url.startsWith("http://") ? url.replace("http://", "https://"): url);
+                newUrls = newUrls.map(url => url.startsWith("http://") ? url.replace("http://", "https://"): url);
             }
             if (!settings.input_only_disabled && onlyTexts.length) {
                 if (!settings.reverse_input_only) {
-                    urls = urls.filter(url =>  matchOnly(url));
+                    newUrls = newUrls.filter(url =>  matchOnly(url));
                 } else {
-                    urls = urls.filter(url => !matchOnly(url));
+                    newUrls = newUrls.filter(url => !matchOnly(url));
                 }
             }
             if (!settings.input_ignore_disabled) {
-                urls = urls.filter(url => !matchIgnore(url));
+                newUrls = newUrls.filter(url => !matchIgnore(url));
             }
             if (settings.unique) {
-                urls = [...new Set(urls)];
+                newUrls = [...new Set(newUrls)];
             }
             if (settings.sort) {
-                urls.sort(urlComparator);
+                newUrls.sort(urlComparator);
             }
             if (settings.reverse) {
-                urls.reverse();
+                newUrls.reverse();
             }
             if (settings.console_log) {
-                console.log(getCodeArrays(urls));
+                console.log(getCodeArrays(newUrls));
             }
-            if (settings.console_vars) {
-                global.urls = urls;
+            if (settings.keep_in_storage) {
+                addUrlsToStore(newUrls);
             }
+            setMainUrls(newUrls);
         }
 
         // ------

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.10.23-2024.6.15-35f8
+// @version     0.10.24-2024.6.16-4f05
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -68,7 +68,10 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} controls_collapsed
  * @property {boolean} no_search_on_blur
  * @property {boolean} unsearchable
- * @property {string} insert_place
+ * @property {string}  insert_place
+ * @property {boolean} keep_in_storage
+ * @property {boolean} append_on_hover
+ * @property {boolean} sort_tags_by_name
  */
 
 /** @return {{settings: ScriptSettings, updateSettings: function}} */
@@ -106,6 +109,9 @@ function loadSettings() {
         no_search_on_blur: false,
         unsearchable: false,
         insert_place: "html",
+        keep_in_storage: false,
+        append_on_hover: false,
+        sort_tags_by_name: false,
     };
     const LocalStoreName = "ujs-href-taker";
 
@@ -326,9 +332,9 @@ function initWrapper({settings, updateSettings, wrapper}) {
             transition: opacity 0.3s 0.2s;
         }
     </style>`);
-    document.documentElement.addEventListener("mouseleave", () =>
+    document.documentElement.addEventListener("pointerleave", () =>
         wrapper.element?.classList.add("no-hover"));
-    document.documentElement.addEventListener("mouseenter", () =>
+    document.documentElement.addEventListener("pointerenter", () =>
         wrapper.element?.classList.remove("no-hover"));
 
 
@@ -711,7 +717,7 @@ function getTagsHelper(container, settings) {
 
     /** @type {Set<string>} */
     let selectedTags = new Set();
-    /** @type {Object<string, UrlInfo[]>} */
+    /** @type {Record<string, UrlInfo[]>} */
     let tagInfoMap = {};
     let tagsReversed = false;
     let onUpdateCb = null;
@@ -1018,11 +1024,27 @@ function getTagsHelper(container, settings) {
             const tagUrls = tagInfoMap[host] || (tagInfoMap[host] = []);
             tagUrls.push({url, number: i++});
         }
+
+        /**
+         * @param {[string, UrlInfo[]]} o1
+         * @param {[string, UrlInfo[]]} o2
+         * @return {-1 | 0 | 1}
+         */
+        function numTagComparator([k1, v1], [k2, v2]) {
+            return v2.length - v1.length;
+        }
+        /**
+         * @param {[string, UrlInfo[]]} o1
+         * @param {[string, UrlInfo[]]} o2
+         * @return {-1 | 0 | 1}
+         */
+        function nameTagComparator([k1, v1], [k2, v2]) {
+            return k2 - k1;
+        }
+        const comparator = settings.sort_tags_by_name ? nameTagComparator : numTagComparator;
         const hostToUrlInfosEntries = Object.entries(tagInfoMap)
             .filter(([k, v]) => k !== other)
-            .sort(([k1, v1], [k2, v2]) => {
-                return v2.length - v1.length;
-            });
+            .sort(comparator);
 
         let tagsHtml = "";
         for (const [k, v] of hostToUrlInfosEntries) {
@@ -1058,13 +1080,19 @@ function getTagsHelper(container, settings) {
         updateAddTagBtn();
     }
 
+    /**
+     * @param {UrlInfo} urlInfo1
+     * @param {UrlInfo} urlInfo2
+     * @return {-1 | 0 | 1}
+     */
+    function numComparator(urlInfo1, urlInfo2) {
+        return urlInfo1.number - urlInfo2.number;
+    }
     function getFilteredUrls() {
         if (!selectedTags.size) {
             return Object.values(tagInfoMap).flatMap(urlInfos => {
                 return urlInfos;
-            }).sort((urlInfo1, urlInfo2) => {
-                return urlInfo1.number - urlInfo2.number;
-            }).map(urlInfo => urlInfo.url);
+            }).sort(numComparator).map(urlInfo => urlInfo.url);
         }
         return Object.entries(tagInfoMap).filter(([tag, urlInfos]) => {
             if (tagsReversed) {
@@ -1074,9 +1102,7 @@ function getTagsHelper(container, settings) {
             }
         }).flatMap(([tag, urlInfos]) => {
             return urlInfos;
-        }).sort((urlInfo1, urlInfo2) => {
-            return urlInfo1.number - urlInfo2.number;
-        }).map(urlInfo => urlInfo.url);
+        }).sort(numComparator).map(urlInfo => urlInfo.url);
     }
 
     function getTags() {
@@ -1304,6 +1330,12 @@ function getTags() {
         return {tagsHtml, tagsCss};
 }
 
+/** @type {Partial<ScriptSettings>} */
+const resetSettings = {
+    append_on_hover:   false,
+    sort_tags_by_name: false,
+};
+
 /** @param {ScriptSettings} settings */
 function getPopup(settings) {
     const {
@@ -1335,8 +1367,11 @@ function getPopup(settings) {
         // filters_collapsed,
         // controls_collapsed,
         no_search_on_blur,
-        unsearchable
-    } = settings;
+        unsearchable,
+        keep_in_storage,
+        append_on_hover,
+        sort_tags_by_name,
+    } = Object.assign(settings, resetSettings);
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
 
@@ -1410,6 +1445,18 @@ function getPopup(settings) {
         <div class="control-row">
             <div class="control-row-inner">
                 <button title="Copy URLs separated by space" name="copy_button" class="short btn-left">Copy</button>
+                <span id="append-on-hover-wrapper">
+                    <label title="Append URL on the button hover">
+                        <input type="checkbox" name="append_on_hover" ${checked(append_on_hover)}>
+                        AoH
+                    </label>
+                </span>
+                <span id="keep-in-storage-wrapper">
+                    <label title="Keep URLs the localStorage">
+                        <input type="checkbox" name="keep_in_storage" ${checked(keep_in_storage)}>
+                        KiS
+                    </label>
+                </span>
             </div>
             <button title="Show Extra Settings" name="extra_settings_button" class="long btn-right">Extra Settings</button>
         </div>
@@ -1464,6 +1511,10 @@ function getPopup(settings) {
                     <label title="Show all tags automatically" data-name="auto_tags">
                         <input type="checkbox" name="auto_tags" ${checked(auto_tags)}>
                         Auto tags
+                    </label>
+                    <label title="Sort tags by name (temporary)">
+                        <input type="checkbox" name="sort_tags_by_name" ${checked(sort_tags_by_name)}>
+                        Name-sort tags 
                     </label>
                     <label title="Log the result list to console">
                         <input type="checkbox" name="console_log" ${checked(console_log)}>
@@ -1972,11 +2023,48 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         }
 
         // ------
-
-        let urls = [];
-        if (settings.console_vars) {
-            global.urls = urls;
+        /** @type {string[]} */
+        let mainUrls;
+        /** @param {string[]} newUrls
+         *  @return string[]  */
+        function setMainUrls(newUrls) {
+            mainUrls = newUrls;
+            if (settings.console_vars) {
+                global.urls = mainUrls;
+            }
         }
+        setMainUrls([]);
+
+        /** @param {string[]} newUrls */
+        function addUrlsToStore(newUrls) {
+            const urls = Array.from(new Set(newUrls));
+            localStorage.setItem("ujs-href-taker-urls", JSON.stringify(urls));
+        }
+        /** @returns {string[]}  */
+        function getUrlsFromStore() {
+            const str = localStorage.getItem("ujs-href-taker-urls") || "[]";
+            let storedUrls;
+            try {
+                storedUrls = JSON.parse(str);
+            } catch (e) {
+                storedUrls = [];
+            }
+            return storedUrls;
+        }
+        if (settings.keep_in_storage) {
+            setMainUrls(getUrlsFromStore());
+        }
+
+        /** @type {HTMLInputElement} */
+        const checkboxKiS = querySelector(`[type="checkbox"][name="keep_in_storage"]`);
+        checkboxKiS.addEventListener("change", () => {
+            if (checkboxKiS.checked) {
+                addUrlsToStore(mainUrls);
+            } else {
+                addUrlsToStore([]);
+                renderUrlList();
+            }
+        });
 
         // ------
 
@@ -1994,7 +2082,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         function getTagFilteredUrls() {
             if (!settings.show_tags || !tagsHelper.getTags().size) {
-                return urls;
+                return mainUrls;
             }
             return tagsHelper.getFilteredUrls();
         }
@@ -2003,7 +2091,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         function renderUrlList(keepOld = false) {
             reparseUrlList(keepOld);
             listHelper.contentElem.removeEventListener("click", renderUrlListEventHandler);
-            tagsHelper.renderTags(settings.show_tags ? urls : [], onTagsChanges, keepOld);
+            tagsHelper.renderTags(settings.show_tags ? mainUrls : [], onTagsChanges, keepOld);
             listHelper.insertUrls(getTagFilteredUrls());
             isListRendered = true;
         }
@@ -2021,7 +2109,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             event.preventDefault();
             listHelper.clearList(true);
             tagsHelper.clearTags();
-            urls = [];
+            setMainUrls([]);
             listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
             void clicked(listBtn);
         });
@@ -2030,7 +2118,12 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             renderUrlList(true);
             void clicked(listBtn);
         });
-
+        listBtn.addEventListener("pointerenter", event => {
+            if (settings.append_on_hover) {
+                renderUrlList(true);
+                void clicked(listBtn);
+            }
+        });
         // ------
 
         const copyButton = querySelector(`button[name="copy_button"]`);
@@ -2095,24 +2188,23 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 return 1;
             }
         };
+        // Updates `mainUrls`.
         function reparseUrlList(keepOld = false) {
             const selector = getSelector();
-            const newUrls = parseUrls(selector, {
+            let newUrls = parseUrls(selector, {
                 includeTextUrls: settings.include_text_url,
                 onlyTextUrls:    settings.only_text_url,
                 bracketsTrim:    settings.brackets_trim,
             });
 
-            if (keepOld) {
-                urls = [...urls, ...newUrls];
-            } else {
-                urls = newUrls;
+            if (keepOld || settings.keep_in_storage) {
+                newUrls = [...mainUrls, ...newUrls];
             }
 
-            let onlyTexts = settings.input_only.trim().split(/\s+/g).filter(o => o);
+            let onlyTexts   =   settings.input_only.trim().split(/\s+/g).filter(o => o);
             let ignoreTexts = settings.input_ignore.trim().split(/\s+/g).filter(o => o);
             if (!settings.case_sensitive) {
-                onlyTexts = onlyTexts.map(text => text.toLowerCase());
+                onlyTexts     = onlyTexts.map(text => text.toLowerCase());
                 ignoreTexts = ignoreTexts.map(text => text.toLowerCase());
             }
 
@@ -2126,35 +2218,36 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 matchIgnore = url => ignoreTexts.some(text => url.includes(text));
             }
 
-            urls = urls.filter(urlFilter);
+            newUrls = newUrls.filter(urlFilter);
             if (settings.https) {
-                urls = urls.map(url => url.startsWith("http://") ? url.replace("http://", "https://"): url);
+                newUrls = newUrls.map(url => url.startsWith("http://") ? url.replace("http://", "https://"): url);
             }
             if (!settings.input_only_disabled && onlyTexts.length) {
                 if (!settings.reverse_input_only) {
-                    urls = urls.filter(url =>  matchOnly(url));
+                    newUrls = newUrls.filter(url =>  matchOnly(url));
                 } else {
-                    urls = urls.filter(url => !matchOnly(url));
+                    newUrls = newUrls.filter(url => !matchOnly(url));
                 }
             }
             if (!settings.input_ignore_disabled) {
-                urls = urls.filter(url => !matchIgnore(url));
+                newUrls = newUrls.filter(url => !matchIgnore(url));
             }
             if (settings.unique) {
-                urls = [...new Set(urls)];
+                newUrls = [...new Set(newUrls)];
             }
             if (settings.sort) {
-                urls.sort(urlComparator);
+                newUrls.sort(urlComparator);
             }
             if (settings.reverse) {
-                urls.reverse();
+                newUrls.reverse();
             }
             if (settings.console_log) {
-                console.log(getCodeArrays(urls));
+                console.log(getCodeArrays(newUrls));
             }
-            if (settings.console_vars) {
-                global.urls = urls;
+            if (settings.keep_in_storage) {
+                addUrlsToStore(newUrls);
             }
+            setMainUrls(newUrls);
         }
 
         // ------
