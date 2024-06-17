@@ -100,7 +100,12 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         // ------
 
         const closeButton = querySelector("#close-button");
-        closeButton.addEventListener("click", closeShadowContainer);
+        closeButton.addEventListener("click", () => {
+            if (settings.keep_in_storage && settings.clear_store_on_close) {
+                addUrlsToStore([]);
+            }
+            closeShadowContainer();
+        });
 
         // ------
 

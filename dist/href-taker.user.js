@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.11.0-2024.6.16-4f05
+// @version     0.11.1-2024.6.17-6ce2
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -72,6 +72,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} keep_in_storage
  * @property {boolean} append_on_hover
  * @property {boolean} sort_tags_by_name
+ * @property {boolean} clear_store_on_close
  */
 
 /** @return {{settings: ScriptSettings, updateSettings: function}} */
@@ -112,6 +113,7 @@ function loadSettings() {
         keep_in_storage: false,
         append_on_hover: false,
         sort_tags_by_name: false,
+        clear_store_on_close: true,
     };
     const LocalStoreName = "ujs-href-taker";
 
@@ -1371,6 +1373,7 @@ function getPopup(settings) {
         keep_in_storage,
         append_on_hover,
         sort_tags_by_name,
+        clear_store_on_close,
     } = Object.assign(settings, resetSettings);
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
@@ -1519,6 +1522,10 @@ function getPopup(settings) {
                     <label title="Log the result list to console">
                         <input type="checkbox" name="console_log" ${checked(console_log)}>
                         Console log
+                    </label>
+                    <label title="Clear store on popup close">
+                        <input type="checkbox" name="clear_store_on_close" ${checked(clear_store_on_close)}>
+                        Clear store
                     </label>
                     <label title="Expose variables to console">
                         <input type="checkbox" name="console_vars" ${checked(console_vars)}>
@@ -1911,7 +1918,12 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         // ------
 
         const closeButton = querySelector("#close-button");
-        closeButton.addEventListener("click", closeShadowContainer);
+        closeButton.addEventListener("click", () => {
+            if (settings.keep_in_storage && settings.clear_store_on_close) {
+                addUrlsToStore([]);
+            }
+            closeShadowContainer();
+        });
 
         // ------
 
@@ -2119,7 +2131,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             void clicked(listBtn);
         });
         listBtn.addEventListener("pointerenter", event => {
-            if (settings.append_on_hover) {
+            if (settings.append_on_hover) { // todo append on scroll on the button
                 renderUrlList(true);
                 void clicked(listBtn);
             }

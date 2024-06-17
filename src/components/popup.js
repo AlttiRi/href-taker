@@ -43,6 +43,7 @@ export function getPopup(settings) {
         keep_in_storage,
         append_on_hover,
         sort_tags_by_name,
+        clear_store_on_close,
     } = Object.assign(settings, resetSettings);
     const checked  = isChecked  => isChecked  ? "checked"  : "";
     const disabled = isDisabled => isDisabled ? "disabled" : "";
@@ -191,6 +192,10 @@ export function getPopup(settings) {
                     <label title="Log the result list to console">
                         <input type="checkbox" name="console_log" ${checked(console_log)}>
                         Console log
+                    </label>
+                    <label title="Clear store on popup close">
+                        <input type="checkbox" name="clear_store_on_close" ${checked(clear_store_on_close)}>
+                        Clear store
                     </label>
                     <label title="Expose variables to console">
                         <input type="checkbox" name="console_vars" ${checked(console_vars)}>

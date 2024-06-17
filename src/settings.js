@@ -38,6 +38,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} keep_in_storage
  * @property {boolean} append_on_hover
  * @property {boolean} sort_tags_by_name
+ * @property {boolean} clear_store_on_close
  */
 
 /** @return {{settings: ScriptSettings, updateSettings: function}} */
@@ -78,6 +79,7 @@ export function loadSettings() {
         keep_in_storage: false,
         append_on_hover: false,
         sort_tags_by_name: false,
+        clear_store_on_close: true,
     };
     const LocalStoreName = "ujs-href-taker";
 
