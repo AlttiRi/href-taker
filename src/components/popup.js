@@ -96,7 +96,7 @@ export function getPopup(settings) {
     <div class="content" data-content_name="controls">
         <div class="control-row">
             <div class="control-row-inner">
-                <button title="- LMB to list links \n- RMB to append new links \n- MMB to clear list" 
+                <button title="LMB: list links \nRMB: append new links \nMMB: clear the list" 
                         name="list_button" 
                         class="short btn-left"
                         >List links</button>
@@ -112,12 +112,16 @@ export function getPopup(settings) {
                 </label>
             </div>
             <div>
-                <button name="to_text_button" class="long btn-right">URLs to text</button>
+                <button name="to_text_button" class="long btn-right"
+                >URLs to text</button>
             </div>
         </div>
         <div class="control-row">
             <div class="control-row-inner">
-                <button title="Copy URLs separated by space" name="copy_button" class="short btn-left">Copy</button>
+                <button title="Copy URLs. \nRMB: as a row \nRMB: as a column \nMMB: as JS array"
+                        name="copy_button" class="short btn-left"
+                >Copy</button>
+                
                 <span id="append-on-hover-wrapper">
                     <label title="Append URLs on the button hover">
                         <input type="checkbox" name="append_on_hover" ${checked(append_on_hover)}>
@@ -131,7 +135,8 @@ export function getPopup(settings) {
                     </label>
                 </span>
             </div>
-            <button title="Show Extra Settings" name="extra_settings_button" class="long btn-right">Extra Settings</button>
+            <button title="Show Extra Settings" name="extra_settings_button" class="long btn-right"
+            >Extra Settings</button>
         </div>
         <div class="hidden" id="extra_settings">
             <hr>
