@@ -125,7 +125,7 @@ export function getPopup(settings) {
                     </label>
                 </span>
                 <span id="keep-in-storage-wrapper">
-                    <label title="Keep URLs the localStorage">
+                    <label title="Keep URLs in localStorage">
                         <input type="checkbox" name="keep_in_storage" ${checked(keep_in_storage)}>
                         KiS
                     </label>

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.11.2-2024.6.17-cfbb
+// @version     0.11.3-2024.6.17-520c
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1455,7 +1455,7 @@ function getPopup(settings) {
                     </label>
                 </span>
                 <span id="keep-in-storage-wrapper">
-                    <label title="Keep URLs the localStorage">
+                    <label title="Keep URLs in localStorage">
                         <input type="checkbox" name="keep_in_storage" ${checked(keep_in_storage)}>
                         KiS
                     </label>
