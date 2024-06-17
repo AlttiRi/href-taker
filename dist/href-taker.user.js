@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.11.1-2024.6.17-6ce2
+// @version     0.11.2-2024.6.17-cfbb
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1449,7 +1449,7 @@ function getPopup(settings) {
             <div class="control-row-inner">
                 <button title="Copy URLs separated by space" name="copy_button" class="short btn-left">Copy</button>
                 <span id="append-on-hover-wrapper">
-                    <label title="Append URL on the button hover">
+                    <label title="Append URLs on the button hover">
                         <input type="checkbox" name="append_on_hover" ${checked(append_on_hover)}>
                         AoH
                     </label>
