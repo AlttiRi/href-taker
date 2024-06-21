@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.12.0-2024.6.21-4a06
+// @version     0.12.1-2024.6.21-d422
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -15,6 +15,11 @@
 
 const global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
 
+/**
+ * @param {string} cssText
+ * @param {HTMLElement} target
+ * @return {HTMLStyleElement}
+ */
 function addCSS(cssText, target = document.head) {
     if (typeof GM_addElement === "function") {
         return GM_addElement(target, "style", {textContent: cssText});
@@ -33,6 +38,8 @@ function getLocalStoragePropertyDescriptor() {
     iframe.remove();
     return pd;
 }
+
+/** @type {Storage} */
 const localStorage = global.localStorage || getLocalStoragePropertyDescriptor().get.call(global);
 
 /**

@@ -1,5 +1,10 @@
 const global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
 
+/**
+ * @param {string} cssText
+ * @param {HTMLElement} target
+ * @return {HTMLStyleElement}
+ */
 export function addCSS(cssText, target = document.head) {
     if (typeof GM_addElement === "function") {
         return GM_addElement(target, "style", {textContent: cssText});
@@ -18,6 +23,8 @@ function getLocalStoragePropertyDescriptor() {
     iframe.remove();
     return pd;
 }
+
+/** @type {Storage} */
 export const localStorage = global.localStorage || getLocalStoragePropertyDescriptor().get.call(global);
 
 /**
