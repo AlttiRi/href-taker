@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.12.3-2024.6.21-063a
+// @version     0.12.4-2024.6.21-1560
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -600,7 +600,18 @@ function storeStateInLS({id: lsName, onMove, onStop, reset, restore}) {
 function getListHelper(container, settings) {
     const headerElem  = container.querySelector(`#result-list-header`);
     const contentElem = container.querySelector(`#result-list`);
-    const mainHost = url => new URL(url).hostname.split(".").slice(-2).join(".");
+    /**
+     * @param {string} url
+     * @return {string}
+     */
+    const mainHost = url => {
+        try {
+            return new URL(url).hostname.split(".").slice(-2).join(".");
+        } catch (e) {
+            console.error(url, e);
+            return "";
+        }
+    };
 
     contentElem.addEventListener("click", onClickMarkUrlAsClicked);
     contentElem.addEventListener("contextmenu", onAltContextMenuUnmarkClickedUrl);
@@ -704,14 +715,10 @@ function getListHelper(container, settings) {
             for (const url of urls) {
                 let linkHtml = urlToHtml(url);
                 if (settings.sort) {
-                    try {
-                        if (mainHost(prev) !== mainHost(url)) {
-                            resultHtml += `<span class="url-pad"></span>`;
-                        }
-                        prev = url;
-                    } catch (e) {
-                        console.error(url, e);
+                    if (mainHost(prev) !== mainHost(url)) {
+                        resultHtml += `<span class="url-pad"></span>`;
                     }
+                    prev = url;
                 }
                 const clicked = clickedUrls.has(url) ? " clicked" : "";
                 const html = `<div class="url-item${clicked}"><a href="${url}" ${anchorAttr}>${linkHtml}</a></div>`;
