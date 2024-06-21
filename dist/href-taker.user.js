@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.12.2-2024.6.21-d598
+// @version     0.12.3-2024.6.21-063a
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1950,7 +1950,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         const closeButton = querySelector("#close-button");
         closeButton.addEventListener("click", () => {
             if (settings.keep_in_storage && settings.clear_store_on_close) {
-                addUrlsToStore([]);
+                clearUrlsStore();
             }
             closeShadowContainer();
         });
@@ -2075,12 +2075,18 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 setGlobalValue({urls: mainUrls});
             }
         }
-        setMainUrls([]);
+        function clearMainUrls() {
+            setMainUrls([]);
+        }
+        clearMainUrls();
 
         /** @param {string[]} newUrls */
         function addUrlsToStore(newUrls) {
             const urls = Array.from(new Set(newUrls));
             localStorage.setItem("ujs-href-taker-urls", JSON.stringify(urls));
+        }
+        function clearUrlsStore() {
+            addUrlsToStore([]);
         }
         /** @returns {string[]}  */
         function getUrlsFromStore() {
@@ -2103,7 +2109,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             if (checkboxKiS.checked) {
                 addUrlsToStore(mainUrls);
             } else {
-                addUrlsToStore([]);
+                clearUrlsStore();
                 renderUrlList();
             }
         });
@@ -2131,7 +2137,8 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         const renderUrlListEventHandler = () => {
             if (settings.keep_in_storage) {
-                addUrlsToStore([]);
+                clearMainUrls();
+                clearUrlsStore();
             }
             renderUrlList();
         };
@@ -2158,7 +2165,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             event.preventDefault();
             listHelper.clearList(true);
             tagsHelper.clearTags();
-            setMainUrls([]);
+            clearMainUrls();
             listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
             void clicked(listBtn);
         });

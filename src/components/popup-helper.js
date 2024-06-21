@@ -102,7 +102,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         const closeButton = querySelector("#close-button");
         closeButton.addEventListener("click", () => {
             if (settings.keep_in_storage && settings.clear_store_on_close) {
-                addUrlsToStore([]);
+                clearUrlsStore();
             }
             closeShadowContainer();
         });
@@ -227,12 +227,18 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 setGlobalValue({urls: mainUrls});
             }
         }
-        setMainUrls([]);
+        function clearMainUrls() {
+            setMainUrls([]);
+        }
+        clearMainUrls();
 
         /** @param {string[]} newUrls */
         function addUrlsToStore(newUrls) {
             const urls = Array.from(new Set(newUrls));
             localStorage.setItem("ujs-href-taker-urls", JSON.stringify(urls));
+        }
+        function clearUrlsStore() {
+            addUrlsToStore([]);
         }
         /** @returns {string[]}  */
         function getUrlsFromStore() {
@@ -255,7 +261,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             if (checkboxKiS.checked) {
                 addUrlsToStore(mainUrls);
             } else {
-                addUrlsToStore([]);
+                clearUrlsStore();
                 renderUrlList();
             }
         });
@@ -283,7 +289,8 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         const renderUrlListEventHandler = () => {
             if (settings.keep_in_storage) {
-                addUrlsToStore([]);
+                clearMainUrls();
+                clearUrlsStore();
             }
             renderUrlList();
         };
@@ -310,7 +317,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             event.preventDefault();
             listHelper.clearList(true);
             tagsHelper.clearTags();
-            setMainUrls([]);
+            clearMainUrls();
             listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
             void clicked(listBtn);
         });
