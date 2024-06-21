@@ -281,7 +281,13 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             return tagsHelper.getFilteredUrls();
         }
 
-        const renderUrlListEventHandler = () => renderUrlList();
+        const renderUrlListEventHandler = () => {
+            if (settings.keep_in_storage) {
+                addUrlsToStore([]);
+            }
+            renderUrlList();
+        };
+        listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
         function renderUrlList(keepOld = false) {
             reparseUrlList(keepOld);
             listHelper.contentElem.removeEventListener("click", renderUrlListEventHandler);
@@ -293,9 +299,10 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             listHelper.insertUrls(getTagFilteredUrls());
         }
 
+        /* onLeftClick */
         listBtn.addEventListener("click", renderUrlListEventHandler);
-        listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
-        listBtn.addEventListener("pointerdown", event => {
+        /* onMiddleClick */
+        listBtn.addEventListener("pointerdown", function onMiddleClick(event) {
             const MIDDLE_BUTTON = 1; // LEFT = 0; RIGHT = 2; BACK = 3; FORWARD = 4;
             if (event.button !== MIDDLE_BUTTON) {
                 return;
@@ -307,13 +314,15 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
             void clicked(listBtn);
         });
-        listBtn.addEventListener("contextmenu", event => {
+        /* onRightClick */
+        listBtn.addEventListener("contextmenu", function onRightClick(event) {
             event.preventDefault();
             renderUrlList(true);
             void clicked(listBtn);
         });
+        /* onPointerEnter */
         listBtn.addEventListener("pointerenter", event => {
-            if (settings.append_on_hover) { // todo append on scroll on the button
+            if (settings.append_on_hover) { // todo append urls on scroll over the button
                 renderUrlList(true);
                 void clicked(listBtn);
             }
