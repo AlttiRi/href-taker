@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.11.4-2024.6.17-f499
+// @version     0.12.0-2024.6.21-4a06
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -14,6 +14,7 @@
 
 
 const global = typeof unsafeWindow === "object" ? unsafeWindow.globalThis : globalThis;
+
 function addCSS(cssText, target = document.head) {
     if (typeof GM_addElement === "function") {
         return GM_addElement(target, "style", {textContent: cssText});
@@ -33,6 +34,23 @@ function getLocalStoragePropertyDescriptor() {
     return pd;
 }
 const localStorage = global.localStorage || getLocalStoragePropertyDescriptor().get.call(global);
+
+/**
+ * @param {object} object - an object
+ * @param {string} [namespace = "hreftaker"] - a global value with props
+ */
+function setGlobalValue(object, namespace = "hreftaker") {
+    let target = global[namespace];
+    if (!target) {
+        if (namespace !== "") {
+            global[namespace] = {};
+            target = global[namespace];
+        } else {
+            target = global;
+        }
+    }
+    Object.assign(target, object);
+}
 
 const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "alttiri.github.io"].some(h => location.hostname === h);
 
@@ -2047,7 +2065,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         function setMainUrls(newUrls) {
             mainUrls = newUrls;
             if (settings.console_vars) {
-                global.urls = mainUrls;
+                setGlobalValue({urls: mainUrls});
             }
         }
         setMainUrls([]);
@@ -2284,8 +2302,10 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             renderUrlList();
         }
         if (settings.console_vars) {
-            Object.assign(global, {renderUrlList});
-            Object.assign(global, {getFilteredUrls: getTagFilteredUrls});
+            setGlobalValue({
+                renderUrlList,
+                getFilteredUrls: getTagFilteredUrls,
+            });
         }
 
         // ------
@@ -2440,7 +2460,7 @@ function initHrefTaker() {
     }
     const methods = {...render, settings, updateSettings};
     if (settings.console_vars) {
-        Object.assign(global, methods);
+        setGlobalValue(methods);
     }
 
     return methods;

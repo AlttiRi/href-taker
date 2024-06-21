@@ -1,4 +1,4 @@
-import {global} from "./gm-util.js";
+import {setGlobalValue} from "./gm-util.js";
 import {loadSettings} from "./settings.js";
 import {getRenders} from "./renders.js";
 
@@ -23,7 +23,7 @@ function initHrefTaker() {
     }
     const methods = {...render, settings, updateSettings};
     if (settings.console_vars) {
-        Object.assign(global, methods);
+        setGlobalValue(methods);
     }
 
     return methods;

@@ -1,4 +1,4 @@
-import {addCSS, global, localStorage} from "../gm-util.js";
+import {addCSS, localStorage, setGlobalValue} from "../gm-util.js";
 import {makeMovable, makeResizable, storeStateInLS} from "../movable-resizable.js";
 import {debounce, getCodeArrays} from "../util.js";
 import {getListHelper} from "./list-helper.js";
@@ -224,7 +224,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         function setMainUrls(newUrls) {
             mainUrls = newUrls;
             if (settings.console_vars) {
-                global.urls = mainUrls;
+                setGlobalValue({urls: mainUrls});
             }
         }
         setMainUrls([]);
@@ -461,8 +461,10 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             renderUrlList();
         }
         if (settings.console_vars) {
-            Object.assign(global, {renderUrlList});
-            Object.assign(global, {getFilteredUrls: getTagFilteredUrls});
+            setGlobalValue({
+                renderUrlList,
+                getFilteredUrls: getTagFilteredUrls,
+            });
         }
 
         // ------
