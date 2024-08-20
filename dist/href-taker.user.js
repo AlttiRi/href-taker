@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.12.4-2024.6.21-1560
+// @version     0.12.5-2024.8.20-9551
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -2239,7 +2239,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         });
 
         // ------
-        const urlComparator = (a, b) => {
+        const urlHostnameComparator = (a, b) => {
             try {
                 const aUrl = new URL(a);
                 const bUrl = new URL(b);
@@ -2301,7 +2301,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 newUrls = [...new Set(newUrls)];
             }
             if (settings.sort) {
-                newUrls.sort(urlComparator);
+                newUrls.sort(urlHostnameComparator);
             }
             if (settings.reverse) {
                 newUrls.reverse();

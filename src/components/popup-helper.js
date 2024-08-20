@@ -384,7 +384,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         });
 
         // ------
-        const urlComparator = (a, b) => {
+        const urlHostnameComparator = (a, b) => {
             try {
                 const aUrl = new URL(a);
                 const bUrl = new URL(b);
@@ -446,7 +446,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 newUrls = [...new Set(newUrls)];
             }
             if (settings.sort) {
-                newUrls.sort(urlComparator);
+                newUrls.sort(urlHostnameComparator);
             }
             if (settings.reverse) {
                 newUrls.reverse();
