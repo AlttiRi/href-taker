@@ -2,13 +2,13 @@ import {getHsl, hashString, sleep} from "../util.js";
 import {clicked} from "./util.js";
 
 /**
- * @typedef {Object} UrlInfo
+ * @typedef {object} UrlInfo
  * @property {string} url
  * @property {number} number
  */
 
 /**
- * @param container
+ * @param {HTMLElement} container
  * @param {ScriptSettings} settings
  */
 export function getTagsHelper(container, settings) {
@@ -298,7 +298,7 @@ export function getTagsHelper(container, settings) {
 
     /**
      * @param {string[]} urls
-     * @param {function?} onUpdate
+     * @param {Function?} onUpdate
      * @param {boolean?} [keepOld = false]
      */
     function renderTags(urls, onUpdate, keepOld = false) {

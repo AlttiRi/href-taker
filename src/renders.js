@@ -4,26 +4,26 @@ import {initMinimized} from "./components/minimized-helper.js";
 
 
 /**
- * @typedef {Object} Wrapper
- * @property {function(selector: string): HTMLElement} querySelector
- * @property {function(selector: string): HTMLElement[]} querySelectorAll
- * @property {function} initShadowContainer
- * @property {function} closeShadowContainer
- * @property {function} isShadowContainerInited
+ * @typedef {object} Wrapper
+ * @property {(selector: string) => HTMLElement} querySelector
+ * @property {(selector: string) => HTMLElement[]} querySelectorAll
+ * @property {Function} initShadowContainer
+ * @property {Function} closeShadowContainer
+ * @property {Function} isShadowContainerInited
  * @property {HTMLDivElement} element
  *//**
- * @typedef {Object} Popup
- * @property {function} renderPopup
- * @property {function} closePopup
+ * @typedef {object} Popup
+ * @property {Function} renderPopup
+ * @property {Function} closePopup
  *//**
- * @typedef {Object} Minim
- * @property {function} closeMinimized
- * @property {function} renderMinimized
+ * @typedef {object} Minim
+ * @property {Function} closeMinimized
+ * @property {Function} renderMinimized
  */
 
 /**
  * @param {ScriptSettings} settings
- * @param {function(ScriptSettings)} updateSettings
+ * @param {(ss: Partial<ScriptSettings>) => string[]} updateSettings
  */
 export function getRenders(settings, updateSettings) {
     /** @type {Wrapper} */

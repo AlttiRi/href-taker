@@ -11,7 +11,7 @@ import {getPopup} from "./popup.js";
 /**
  * @param {object} opt
  * @param {ScriptSettings} opt.settings
- * @param {function(Partial<ScriptSettings>)} opt.updateSettings
+ * @param {(ss: Partial<ScriptSettings>) => string[]} opt.updateSettings
  * @param {Wrapper} opt.wrapper
  * @param {Popup} opt.popup
  * @param {Minim} opt.minim

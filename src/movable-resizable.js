@@ -28,7 +28,7 @@ function assignStyleState(element, state) {
 
 /**
  * @param {HTMLElement} element
- * @param {Object?} opts
+ * @param {object?} opts
  * @param {HTMLElement} [opts.handle]
  * @param {(state: MoveState) => void} [opts.onStop]
  * @param {(state: MoveState) => void} [opts.onMove]
@@ -73,7 +73,7 @@ export function makeMovable(element, {handle, onStop: _onStop, onMove, state} = 
 
 /**
  * @param {HTMLElement} element
- * @param {Object?} opts
+ * @param {object?} opts
  * @param {number} [opts.minW]
  * @param {number} [opts.minH]
  * @param {number} [opts.size]
@@ -140,7 +140,7 @@ export function makeResizable(element, {
 /**
  * @template T
  * @extends {AnyState}
- * @param {Object}              opt - `StoreStateOpt`
+ * @param {object}              opt - `StoreStateOpt`
  * @param {string}              opt.id
  * @param {(state: T) => void} [opt.onMove]
  * @param {(state: T) => void} [opt.onStop]

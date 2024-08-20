@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.13.0-2024.8.20-8414
+// @version     0.13.1-2024.8.20-565f
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -101,7 +101,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} clear_store_on_close
  */
 
-/** @return {{settings: ScriptSettings, updateSettings: Function}} */
+/** @return {{settings: ScriptSettings, updateSettings: (ss: Partial<ScriptSettings>) => string[]}} */
 function loadSettings() {
     /** @type {ScriptSettings} */
     const defaultSettings = {
@@ -157,6 +157,7 @@ function loadSettings() {
 
     const str = input => JSON.stringify(input);
     function updateSettings(newSettings, callback) {
+        /** @type {string[]} */
         const changedKeys = [];
         for (const [key, newValue] of Object.entries(newSettings)) {
             if (settings[key] === undefined && newValue !== undefined) {
@@ -342,9 +343,9 @@ button.active, .button.active {
 }
 
 /**
- * @param {Object} opt
+ * @param {object} opt
  * @param {ScriptSettings} opt.settings
- * @param {function(Partial<ScriptSettings>)} opt.updateSettings
+ * @param {(ss: Partial<ScriptSettings>) => string[]} opt.updateSettings
  * @param {Wrapper} opt.wrapper
  */
 function initWrapper({settings, updateSettings, wrapper}) {
@@ -441,7 +442,7 @@ function assignStyleState(element, state) {
 
 /**
  * @param {HTMLElement} element
- * @param {Object?} opts
+ * @param {object?} opts
  * @param {HTMLElement} [opts.handle]
  * @param {(state: MoveState) => void} [opts.onStop]
  * @param {(state: MoveState) => void} [opts.onMove]
@@ -486,7 +487,7 @@ function makeMovable(element, {handle, onStop: _onStop, onMove, state} = {}) {
 
 /**
  * @param {HTMLElement} element
- * @param {Object?} opts
+ * @param {object?} opts
  * @param {number} [opts.minW]
  * @param {number} [opts.minH]
  * @param {number} [opts.size]
@@ -553,7 +554,7 @@ function makeResizable(element, {
 /**
  * @template T
  * @extends {AnyState}
- * @param {Object}              opt - `StoreStateOpt`
+ * @param {object}              opt - `StoreStateOpt`
  * @param {string}              opt.id
  * @param {(state: T) => void} [opt.onMove]
  * @param {(state: T) => void} [opt.onStop]
@@ -734,13 +735,13 @@ function getListHelper(container, settings) {
 }
 
 /**
- * @typedef {Object} UrlInfo
+ * @typedef {object} UrlInfo
  * @property {string} url
  * @property {number} number
  */
 
 /**
- * @param container
+ * @param {HTMLElement} container
  * @param {ScriptSettings} settings
  */
 function getTagsHelper(container, settings) {
@@ -1030,7 +1031,7 @@ function getTagsHelper(container, settings) {
 
     /**
      * @param {string[]} urls
-     * @param {function?} onUpdate
+     * @param {Function?} onUpdate
      * @param {boolean?} [keepOld = false]
      */
     function renderTags(urls, onUpdate, keepOld = false) {
@@ -1874,7 +1875,7 @@ fieldset, hr {
 /**
  * @param {object} opt
  * @param {ScriptSettings} opt.settings
- * @param {function(Partial<ScriptSettings>)} opt.updateSettings
+ * @param {(ss: Partial<ScriptSettings>) => string[]} opt.updateSettings
  * @param {Wrapper} opt.wrapper
  * @param {Popup} opt.popup
  * @param {Minim} opt.minim
@@ -2386,9 +2387,9 @@ function getMinimized() {
 }
 
 /**
- * @param {Object} opt
+ * @param {object} opt
  * @param {ScriptSettings} opt.settings
- * @param {function(Partial<ScriptSettings>)} opt.updateSettings
+ * @param {(ss: Partial<ScriptSettings>) => string[]} opt.updateSettings
  * @param {Wrapper} opt.wrapper
  * @param {Popup} opt.popup
  * @param {Minim} opt.minim
@@ -2440,26 +2441,26 @@ function initMinimized({settings, updateSettings, wrapper, popup, minim}) {
 }
 
 /**
- * @typedef {Object} Wrapper
- * @property {function(selector: string): HTMLElement} querySelector
- * @property {function(selector: string): HTMLElement[]} querySelectorAll
- * @property {function} initShadowContainer
- * @property {function} closeShadowContainer
- * @property {function} isShadowContainerInited
+ * @typedef {object} Wrapper
+ * @property {(selector: string) => HTMLElement} querySelector
+ * @property {(selector: string) => HTMLElement[]} querySelectorAll
+ * @property {Function} initShadowContainer
+ * @property {Function} closeShadowContainer
+ * @property {Function} isShadowContainerInited
  * @property {HTMLDivElement} element
  *//**
- * @typedef {Object} Popup
- * @property {function} renderPopup
- * @property {function} closePopup
+ * @typedef {object} Popup
+ * @property {Function} renderPopup
+ * @property {Function} closePopup
  *//**
- * @typedef {Object} Minim
- * @property {function} closeMinimized
- * @property {function} renderMinimized
+ * @typedef {object} Minim
+ * @property {Function} closeMinimized
+ * @property {Function} renderMinimized
  */
 
 /**
  * @param {ScriptSettings} settings
- * @param {function(ScriptSettings)} updateSettings
+ * @param {(ss: Partial<ScriptSettings>) => string[]} updateSettings
  */
 function getRenders(settings, updateSettings) {
     /** @type {Wrapper} */

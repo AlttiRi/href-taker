@@ -4,9 +4,9 @@ import {cssFromStyle} from "./util.js";
 
 
 /**
- * @param {Object} opt
+ * @param {object} opt
  * @param {ScriptSettings} opt.settings
- * @param {function(Partial<ScriptSettings>)} opt.updateSettings
+ * @param {(ss: Partial<ScriptSettings>) => string[]} opt.updateSettings
  * @param {Wrapper} opt.wrapper
  */
 export function initWrapper({settings, updateSettings, wrapper}) {

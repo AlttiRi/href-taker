@@ -42,7 +42,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} clear_store_on_close
  */
 
-/** @return {{settings: ScriptSettings, updateSettings: Function}} */
+/** @return {{settings: ScriptSettings, updateSettings: (ss: Partial<ScriptSettings>) => string[]}} */
 export function loadSettings() {
     /** @type {ScriptSettings} */
     const defaultSettings = {
@@ -98,6 +98,7 @@ export function loadSettings() {
 
     const str = input => JSON.stringify(input);
     function updateSettings(newSettings, callback) {
+        /** @type {string[]} */
         const changedKeys = [];
         for (const [key, newValue] of Object.entries(newSettings)) {
             if (settings[key] === undefined && newValue !== undefined) {
