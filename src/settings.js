@@ -3,7 +3,7 @@ import {localStorage} from "./gm-util.js";
 const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "alttiri.github.io"].some(h => location.hostname === h);
 
 /**
- * @typedef {Object|null} ScriptSettings
+ * @typedef {object | null} ScriptSettings
  * @property {string}  input_only
  * @property {boolean} input_only_disabled
  * @property {string}  input_ignore
@@ -14,6 +14,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} console_vars
  * @property {boolean} unique
  * @property {boolean} sort
+ * @property {boolean} hostname_sort
  * @property {boolean} reverse
  * @property {boolean} ignore_first_party
  * @property {string}  input_selector
@@ -41,7 +42,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} clear_store_on_close
  */
 
-/** @return {{settings: ScriptSettings, updateSettings: function}} */
+/** @return {{settings: ScriptSettings, updateSettings: Function}} */
 export function loadSettings() {
     /** @type {ScriptSettings} */
     const defaultSettings = {
@@ -55,6 +56,7 @@ export function loadSettings() {
         console_vars: debug,
         unique: true,
         sort: false,
+        hostname_sort: false,
         reverse: false,
         ignore_first_party: false,
         input_selector: "body",

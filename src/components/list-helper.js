@@ -46,7 +46,7 @@ export function getListHelper(container, settings) {
         markUrlAsClicked(event);
     }
 
-    /** @param {MouseEvent|PointerEvent} event */
+    /** @param {MouseEvent | PointerEvent} event */
     function markUrlAsClicked(event) {
         const urlItem = event.target.closest(".url-item");
         urlItem.classList.add("clicked");
@@ -121,7 +121,7 @@ export function getListHelper(container, settings) {
             let prev = urls[0];
             for (const url of urls) {
                 let linkHtml = urlToHtml(url);
-                if (settings.sort) {
+                if (settings.hostname_sort || settings.sort) {
                     if (mainHost(prev) !== mainHost(url)) {
                         resultHtml += `<span class="url-pad"></span>`;
                     }

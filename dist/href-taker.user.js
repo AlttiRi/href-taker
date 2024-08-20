@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.12.5-2024.8.20-9551
+// @version     0.13.0-2024.8.20-8414
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -62,7 +62,7 @@ function setGlobalValue(object, namespace = "hreftaker") {
 const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "alttiri.github.io"].some(h => location.hostname === h);
 
 /**
- * @typedef {Object|null} ScriptSettings
+ * @typedef {object | null} ScriptSettings
  * @property {string}  input_only
  * @property {boolean} input_only_disabled
  * @property {string}  input_ignore
@@ -73,6 +73,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} console_vars
  * @property {boolean} unique
  * @property {boolean} sort
+ * @property {boolean} hostname_sort
  * @property {boolean} reverse
  * @property {boolean} ignore_first_party
  * @property {string}  input_selector
@@ -100,7 +101,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} clear_store_on_close
  */
 
-/** @return {{settings: ScriptSettings, updateSettings: function}} */
+/** @return {{settings: ScriptSettings, updateSettings: Function}} */
 function loadSettings() {
     /** @type {ScriptSettings} */
     const defaultSettings = {
@@ -114,6 +115,7 @@ function loadSettings() {
         console_vars: debug,
         unique: true,
         sort: false,
+        hostname_sort: false,
         reverse: false,
         ignore_first_party: false,
         input_selector: "body",
@@ -639,7 +641,7 @@ function getListHelper(container, settings) {
         markUrlAsClicked(event);
     }
 
-    /** @param {MouseEvent|PointerEvent} event */
+    /** @param {MouseEvent | PointerEvent} event */
     function markUrlAsClicked(event) {
         const urlItem = event.target.closest(".url-item");
         urlItem.classList.add("clicked");
@@ -714,7 +716,7 @@ function getListHelper(container, settings) {
             let prev = urls[0];
             for (const url of urls) {
                 let linkHtml = urlToHtml(url);
-                if (settings.sort) {
+                if (settings.hostname_sort || settings.sort) {
                     if (mainHost(prev) !== mainHost(url)) {
                         resultHtml += `<span class="url-pad"></span>`;
                     }
@@ -1383,6 +1385,7 @@ function getPopup(settings) {
         console_vars,
         unique,
         sort,
+        hostname_sort,
         input_selector,
         input_selector_disabled,
         ignore_first_party,
@@ -1462,12 +1465,10 @@ function getPopup(settings) {
                         name="list_button" 
                         class="short btn-left"
                         >List links</button>
-                <span id="include-text-url-wrapper">
-                    <label title="Include URLs parsed from text">
-                        <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
-                        Include text
-                    </label>
-                </span>
+                <label title="Include URLs parsed from text" id="include_text_url-label">
+                    <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
+                    Include text
+                </label>
                 <label title="Only URLs parsed from text">
                     <input type="checkbox" name="only_text_url" ${checked(only_text_url)}>
                     Only text
@@ -1516,9 +1517,13 @@ function getPopup(settings) {
                         <input type="checkbox" name="unique" ${checked(unique)}>
                         Only unique
                     </label>
-                    <label title="Sort URLs by hostname">
+                    <label title="Sort URLs">
                         <input type="checkbox" name="sort" ${checked(sort)}>
                         Sort
+                    </label>
+                    <label title="Sort URLs by hostname" id="hostname_sort-label">
+                        <input type="checkbox" name="hostname_sort" ${checked(hostname_sort)}>
+                        Host-Sort
                     </label>
                     <label title="Reverse list">
                         <input type="checkbox" name="reverse" ${checked(reverse)}>
@@ -1805,7 +1810,10 @@ button {
     margin-right: 8px;
 }
 
-[data-only-text-url] #include-text-url-wrapper {
+[data-only-text-url] #include_text_url-label {
+    color: gray;
+}
+[data-sort] #hostname_sort-label {
     color: gray;
 }
 
@@ -1864,7 +1872,7 @@ fieldset, hr {
 }
 
 /**
- * @param {Object} opt
+ * @param {object} opt
  * @param {ScriptSettings} opt.settings
  * @param {function(Partial<ScriptSettings>)} opt.updateSettings
  * @param {Wrapper} opt.wrapper
@@ -1994,7 +2002,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             const inputDataList     =    inputList.map(checkbox => [checkbox.name, checkbox.value]);
             const inputDisabledList =    inputList.map(checkbox => [checkbox.name + "_disabled", checkbox.disabled]);
             const _settings = Object.fromEntries([checkboxDataList, inputDataList, inputDisabledList].flat());
-            const changedKeys = updateSettings(/*** @type {Partial<ScriptSettings>} */ _settings);
+            const changedKeys = updateSettings(/** @type {Partial<ScriptSettings>} */ _settings);
             updateHtml(changedKeys);
         }
         let isListRendered = false;
@@ -2253,6 +2261,8 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 return 1;
             }
         };
+        const urlComparator = (a, b) => a.localeCompare(b);
+
         // Updates `mainUrls`.
         function reparseUrlList(keepOld = false) {
             const selector = getSelector();
@@ -2301,6 +2311,8 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 newUrls = [...new Set(newUrls)];
             }
             if (settings.sort) {
+                newUrls.sort(urlComparator);
+            } else if (settings.hostname_sort) {
                 newUrls.sort(urlHostnameComparator);
             }
             if (settings.reverse) {

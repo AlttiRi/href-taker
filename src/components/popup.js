@@ -21,6 +21,7 @@ export function getPopup(settings) {
         console_vars,
         unique,
         sort,
+        hostname_sort,
         input_selector,
         input_selector_disabled,
         ignore_first_party,
@@ -100,12 +101,10 @@ export function getPopup(settings) {
                         name="list_button" 
                         class="short btn-left"
                         >List links</button>
-                <span id="include-text-url-wrapper">
-                    <label title="Include URLs parsed from text">
-                        <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
-                        Include text
-                    </label>
-                </span>
+                <label title="Include URLs parsed from text" id="include_text_url-label">
+                    <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
+                    Include text
+                </label>
                 <label title="Only URLs parsed from text">
                     <input type="checkbox" name="only_text_url" ${checked(only_text_url)}>
                     Only text
@@ -154,9 +153,13 @@ export function getPopup(settings) {
                         <input type="checkbox" name="unique" ${checked(unique)}>
                         Only unique
                     </label>
-                    <label title="Sort URLs by hostname">
+                    <label title="Sort URLs">
                         <input type="checkbox" name="sort" ${checked(sort)}>
                         Sort
+                    </label>
+                    <label title="Sort URLs by hostname" id="hostname_sort-label">
+                        <input type="checkbox" name="hostname_sort" ${checked(hostname_sort)}>
+                        Host-Sort
                     </label>
                     <label title="Reverse list">
                         <input type="checkbox" name="reverse" ${checked(reverse)}>
@@ -443,7 +446,10 @@ button {
     margin-right: 8px;
 }
 
-[data-only-text-url] #include-text-url-wrapper {
+[data-only-text-url] #include_text_url-label {
+    color: gray;
+}
+[data-sort] #hostname_sort-label {
     color: gray;
 }
 

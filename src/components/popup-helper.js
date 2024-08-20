@@ -9,7 +9,7 @@ import {getPopup} from "./popup.js";
 
 
 /**
- * @param {Object} opt
+ * @param {object} opt
  * @param {ScriptSettings} opt.settings
  * @param {function(Partial<ScriptSettings>)} opt.updateSettings
  * @param {Wrapper} opt.wrapper
@@ -139,7 +139,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             const inputDataList     =    inputList.map(checkbox => [checkbox.name, checkbox.value]);
             const inputDisabledList =    inputList.map(checkbox => [checkbox.name + "_disabled", checkbox.disabled]);
             const _settings = Object.fromEntries([checkboxDataList, inputDataList, inputDisabledList].flat());
-            const changedKeys = updateSettings(/*** @type {Partial<ScriptSettings>} */ _settings);
+            const changedKeys = updateSettings(/** @type {Partial<ScriptSettings>} */ _settings);
             updateHtml(changedKeys);
         }
         let isListRendered = false;
@@ -398,6 +398,8 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 return 1;
             }
         };
+        const urlComparator = (a, b) => a.localeCompare(b);
+
         // Updates `mainUrls`.
         function reparseUrlList(keepOld = false) {
             const selector = getSelector();
@@ -446,6 +448,8 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 newUrls = [...new Set(newUrls)];
             }
             if (settings.sort) {
+                newUrls.sort(urlComparator);
+            } else if (settings.hostname_sort) {
                 newUrls.sort(urlHostnameComparator);
             }
             if (settings.reverse) {
