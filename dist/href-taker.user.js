@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.13.1-2024.8.20-565f
+// @version     0.14.0-2024.9.6-8b49
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -67,6 +67,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} input_only_disabled
  * @property {string}  input_ignore
  * @property {boolean} input_ignore_disabled
+ * @property {boolean} include_media
  * @property {boolean} include_text_url
  * @property {boolean} only_text_url
  * @property {boolean} console_log
@@ -109,6 +110,7 @@ function loadSettings() {
         input_only_disabled: false,
         input_ignore: "",
         input_ignore_disabled: false,
+        include_media: false,
         include_text_url: true,
         only_text_url: false,
         console_log: debug,
@@ -1156,7 +1158,7 @@ function getTagsHelper(container, settings) {
 
 /** @return {string[]} */
 function parseUrls(targetSelector = "body", {
-    includeTextUrls, onlyTextUrls, bracketsTrim,
+    includeTextUrls, onlyTextUrls, bracketsTrim, includeMedia,
 }) {
     let elems;
     try {
@@ -1180,12 +1182,18 @@ function parseUrls(targetSelector = "body", {
             } else {
                 anchorUrls = [...el.querySelectorAll("a")].map(a => a.href);
             }
+            urls.push(anchorUrls);
         }
 
-        urls.push(anchorUrls);
         if (includeTextUrls) {
             const textUrls = parseUrlsFromText(el.innerText, bracketsTrim);
             urls.push(textUrls.filter(url => !anchorUrls.includes(url)));
+        }
+
+        if (includeMedia) {
+            const imageUrls = [...el.querySelectorAll("img")].map(el => el.src);
+            const videoUrls = [...el.querySelectorAll("video, video source")].map(el => el.src);
+            urls.push(imageUrls, videoUrls);
         }
     }
     return urls.flat();
@@ -1380,6 +1388,7 @@ function getPopup(settings) {
         input_only_disabled,
         input_ignore,
         input_ignore_disabled,
+        include_media,
         include_text_url,
         only_text_url,
         console_log,
@@ -1468,11 +1477,15 @@ function getPopup(settings) {
                         >List links</button>
                 <label title="Include URLs parsed from text" id="include_text_url-label">
                     <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
-                    Include text
+                    Text
                 </label>
                 <label title="Only URLs parsed from text">
                     <input type="checkbox" name="only_text_url" ${checked(only_text_url)}>
                     Only text
+                </label>
+                <label title="Include media (img, video) tags">
+                    <input type="checkbox" name="include_media" ${checked(include_media)}>
+                    Media
                 </label>
             </div>
             <div>
@@ -2271,6 +2284,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 includeTextUrls: settings.include_text_url,
                 onlyTextUrls:    settings.only_text_url,
                 bracketsTrim:    settings.brackets_trim,
+                includeMedia:    settings.include_media,
             });
 
             if (keepOld || settings.keep_in_storage) {

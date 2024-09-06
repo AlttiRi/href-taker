@@ -407,6 +407,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 includeTextUrls: settings.include_text_url,
                 onlyTextUrls:    settings.only_text_url,
                 bracketsTrim:    settings.brackets_trim,
+                includeMedia:    settings.include_media,
             });
 
             if (keepOld || settings.keep_in_storage) {

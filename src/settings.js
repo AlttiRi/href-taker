@@ -8,6 +8,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} input_only_disabled
  * @property {string}  input_ignore
  * @property {boolean} input_ignore_disabled
+ * @property {boolean} include_media
  * @property {boolean} include_text_url
  * @property {boolean} only_text_url
  * @property {boolean} console_log
@@ -50,6 +51,7 @@ export function loadSettings() {
         input_only_disabled: false,
         input_ignore: "",
         input_ignore_disabled: false,
+        include_media: false,
         include_text_url: true,
         only_text_url: false,
         console_log: debug,

@@ -1,6 +1,6 @@
 /** @return {string[]} */
 export function parseUrls(targetSelector = "body", {
-    includeTextUrls, onlyTextUrls, bracketsTrim,
+    includeTextUrls, onlyTextUrls, bracketsTrim, includeMedia,
 }) {
     let elems;
     try {
@@ -24,12 +24,18 @@ export function parseUrls(targetSelector = "body", {
             } else {
                 anchorUrls = [...el.querySelectorAll("a")].map(a => a.href);
             }
+            urls.push(anchorUrls);
         }
 
-        urls.push(anchorUrls);
         if (includeTextUrls) {
             const textUrls = parseUrlsFromText(el.innerText, bracketsTrim);
             urls.push(textUrls.filter(url => !anchorUrls.includes(url)));
+        }
+
+        if (includeMedia) {
+            const imageUrls = [...el.querySelectorAll("img")].map(el => el.src);
+            const videoUrls = [...el.querySelectorAll("video, video source")].map(el => el.src);
+            urls.push(imageUrls, videoUrls);
         }
     }
     return urls.flat();

@@ -96,7 +96,7 @@ span[onclick]:active {
 <div>
     <p>Here is the webpage to demonstrate how the <a href="https://github.com/AlttiRi/href-taker/blob/master/href-taker.user.js" target="_blank">userscript</a> works.</p>
     <p>Click on the button to open the popup.</p>
-    <p><button onclick="showPopup()">Show popup</button></p>
+    <p><button onclick="hreftaker.showPopup()">Show popup</button></p>
     <br>
     <p><i>Remember, you can move the popup.</i></p>
     <hr>
@@ -410,6 +410,48 @@ span[onclick]:active {
     <hr>
 </div>
 <br>
+
+<div class="content">
+    <h4>Images ("img[src]"):</h4>
+    <div>pwbUJwD</div>
+    <div>
+        <img src="https://i.imgur.com/pwbUJwD.jpeg" alt="imgur">
+    </div>
+    <div>IP0ePF6</div>
+    <div>
+        <img src="https://i.imgur.com/IP0ePF6.jpeg" alt="imgur">
+    </div>
+    <hr>
+
+    <h4>GIFs ("img[src]"):</h4>
+    <div>zN8Sslu</div>
+    <div>
+        <img src="https://i.imgur.com/zN8Sslu.gif" alt="imgur">
+    </div>
+    <div>fCMDIEs</div>
+    <div>
+        <img src="https://i.imgur.com/fCMDIEs.gif" alt="imgur" data-src="https://i.imgur.com/zi3TsL4.gif">
+    </div>
+    <hr>
+
+    <h4>Videos ("video[src]"):</h4>
+    <div>QaF1umk</div>
+    <div>
+        <video src="https://i.imgur.com/QaF1umk.mp4" loop></video>
+    </div>
+    <div>4ZR9GWY</div>
+    <div>
+        <video src="https://i.imgur.com/4ZR9GWY.mp4" loop></video>
+    </div>
+
+    <h4>Videos ("video source[src]"):</h4>
+    <div>yrkiBQf</div>
+    <video id="video-id" width="auto" height="auto" loop>
+        <source src="https://i.imgur.com/yrkiBQf.mp4" type="video/mp4">
+    </video>
+    <hr>
+
+</div>
 
 </body>
 </html>

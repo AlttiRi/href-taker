@@ -15,6 +15,7 @@ export function getPopup(settings) {
         input_only_disabled,
         input_ignore,
         input_ignore_disabled,
+        include_media,
         include_text_url,
         only_text_url,
         console_log,
@@ -103,11 +104,15 @@ export function getPopup(settings) {
                         >List links</button>
                 <label title="Include URLs parsed from text" id="include_text_url-label">
                     <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
-                    Include text
+                    Text
                 </label>
                 <label title="Only URLs parsed from text">
                     <input type="checkbox" name="only_text_url" ${checked(only_text_url)}>
                     Only text
+                </label>
+                <label title="Include media (img, video) tags">
+                    <input type="checkbox" name="include_media" ${checked(include_media)}>
+                    Media
                 </label>
             </div>
             <div>
