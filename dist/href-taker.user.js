@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.14.0-2024.9.6-8b49
+// @version     0.14.1-2024.9.7-2c02
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1078,7 +1078,7 @@ function getTagsHelper(container, settings) {
          * @return {-1 | 0 | 1}
          */
         function nameTagComparator([k1, v1], [k2, v2]) {
-            return k2 - k1;
+            return k1.localeCompare(k2);
         }
         const comparator = settings.sort_tags_by_name ? nameTagComparator : numTagComparator;
         const hostToUrlInfosEntries = Object.entries(tagInfoMap)
