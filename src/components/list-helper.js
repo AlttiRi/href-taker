@@ -113,8 +113,10 @@ export function getListHelper(container, settings) {
 
             const joinedUrls = [...new Set(urls)].sort().join(" ");
             const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
+            const modifiers = settings.sort ? "-S" : settings.hostname_sort ? "-HS" : "";
             const title = `title="RMB click to temporary toggle Unsearchable option"`;
-            headerElem.innerHTML = `<span class="header-content" ${title}>Result list (${urls.length})</span> <span class="urls-hash">#${hexes.toUpperCase()}</span>`;
+            headerElem.innerHTML = `<span class="header-content" ${title}>Result list (${urls.length})</span> <span class="urls-hash"
+>#${hexes.toUpperCase()}</span><span class="list-modifiers">${modifiers}</span>`;
 
             const anchorAttr = `class="url-item-link" target="_blank" rel="noreferrer noopener"`;
             let resultHtml = "";

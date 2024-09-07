@@ -467,7 +467,7 @@ input[disabled] {
     color: gray;
 }
 
-.urls-hash {
+.urls-hash, .list-modifiers {
     color: gray;
 }
 
