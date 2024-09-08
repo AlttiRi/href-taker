@@ -1,37 +1,3 @@
-export function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-export function debounce(runnable, ms = 100) {
-    let timerId;
-    return function() {
-        if (timerId) {
-            clearTimeout(timerId);
-        }
-        timerId = setTimeout(() => {
-            runnable.apply(this, arguments);
-            timerId = null;
-        }, ms);
-    }
-}
-
-/**
- * `hashCode` like
- * @example
- * hashString("Qwerty") === -1862984904
- * hashString("A") === 65
- * @param {string} str
- * @return {number}
- */
-export function hashString(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = Math.imul(Math.imul(31, hash) + str.charCodeAt(i), 1);
-    }
-    return hash;
-}
-
-
 /**
  * @param {string[]} items
  * @param {number} size
@@ -54,10 +20,7 @@ export function getCodeArrays(items, size = 100) {
     return parts.join("\n");
 }
 
-
 // --------------------------
-
-
 
 export function getHsl(seed, L = 40, dL = 20) {
     const H = Math.trunc(360 * getRandomValue(seed));

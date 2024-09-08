@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.14.4-2024.9.8-1d7e
+// @version     0.15.0-2024.9.8-4027
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -186,28 +186,13 @@ function loadSettings() {
     };
 }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function debounce(runnable, ms = 100) {
-    let timerId;
-    return function() {
-        if (timerId) {
-            clearTimeout(timerId);
-        }
-        timerId = setTimeout(() => {
-            runnable.apply(this, arguments);
-            timerId = null;
-        }, ms);
-    }
-}
-
 /**
- * `hashCode` like
+ * Java's `hashCode` like.
  * @example
+ * hashString("Lorem Ipsum") === -488052133
  * hashString("Qwerty") === -1862984904
  * hashString("A") === 65
+ * hashString("👾👽💀") === -2019372252
  * @param {string} str
  * @return {number}
  */
@@ -219,48 +204,47 @@ function hashString(str) {
     return hash;
 }
 
+/** A classic `debounce` wrap function. */
+function debounce(runnable, ms = 50, scope) {
+    let timerId;
+    return function debounced() {
+        if (timerId !== undefined) {
+            clearTimeout(timerId);
+        }
+        const delayed = () => {
+            runnable.apply(this, arguments);
+            timerId = undefined;
+        };
+        timerId = setTimeout(delayed, ms);
+    };
+}
 
+// @ts-ignore
+const __setImmediate = typeof globalThis.setImmediate === "function" ? globalThis.setImmediate : null;
+const setImmediate = __setImmediate || /*#__PURE__*/ (function () {
+    const { port1, port2 } = new MessageChannel();
+    const queue = [];
+    port1.onmessage = function () {
+        const callback = queue.shift();
+        callback();
+    };
+    return function setImmediateLike(callback) {
+        port2.postMessage(null);
+        queue.push(callback);
+    };
+})();
 /**
- * @param {string[]} items
- * @param {number} size
+ * Sleeps `ms` milliseconds.
+ * If param is `undefined` it sleeps until the next macro-task.
+ * Note: With `0` real ms will be `4`+ ms.
+ * @param {number?} ms
  * */
-function getCodeArrays(items, size = 100) {
-    const jsonArray = a => `${a.length ? "[\"" + a.join(`", "`) + "\"]" : "[]"}`;
-    if (items.length <= size) {
-        return `// \n/* ${items.length.toString().padStart(3)} */ ${jsonArray(items)},`;
+function sleep(ms) {
+    if (ms === undefined) {
+        return new Promise(resolve => setImmediate(resolve));
     }
-    const len = num => num.toString().length;
-    const count = Math.trunc(items.length / size);
-    const comment = items.length.toString().padStart(1 + len(items.length)) + " ".repeat(3 + len(count));
-    const parts = [`/* ${comment} */ // `];
-    for (let i = 0; i <= count; i++) {
-        const part = items.slice(size * i, size + size * i);
-        const page = `(${i + 1})`.padStart(2 + len(count));
-        const pageCount = part.length.toString().padStart(1 + len(items.length));
-        parts.push(`/* ${pageCount} ${page} */ ${jsonArray(part)},`);
-    }
-    return parts.join("\n");
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
-
-
-// --------------------------
-
-
-
-function getHsl(seed, L = 40, dL = 20) {
-    const H = Math.trunc(360 * getRandomValue(seed));
-    const _L = Math.trunc((L + getRandomValue(seed + 1) * dL)) + "%";
-    return `hsl(${H}, 100%, ${_L})`;
-}
-
-function getRandomValue(seed = Date.now()) {
-    let x = seed + 0x6D2B79F5;
-    x = Math.imul(x ^ x >>> 15, x | 1);
-    x ^= x + Math.imul(x ^ x >>> 7, x | 61);
-    return ((x ^ x >>> 14) >>> 0) / 4294967296;
-}
-
-// --------------------------
 
 /**
  * Removes `<style>` and `</style>` tags are required for IDE syntax highlighting.
@@ -597,6 +581,45 @@ function storeStateInLS({id: lsName, onMove, onStop, reset, restore}) {
         state
     };
 }
+
+/**
+ * @param {string[]} items
+ * @param {number} size
+ * */
+function getCodeArrays(items, size = 100) {
+    const jsonArray = a => `${a.length ? "[\"" + a.join(`", "`) + "\"]" : "[]"}`;
+    if (items.length <= size) {
+        return `// \n/* ${items.length.toString().padStart(3)} */ ${jsonArray(items)},`;
+    }
+    const len = num => num.toString().length;
+    const count = Math.trunc(items.length / size);
+    const comment = items.length.toString().padStart(1 + len(items.length)) + " ".repeat(3 + len(count));
+    const parts = [`/* ${comment} */ // `];
+    for (let i = 0; i <= count; i++) {
+        const part = items.slice(size * i, size + size * i);
+        const page = `(${i + 1})`.padStart(2 + len(count));
+        const pageCount = part.length.toString().padStart(1 + len(items.length));
+        parts.push(`/* ${pageCount} ${page} */ ${jsonArray(part)},`);
+    }
+    return parts.join("\n");
+}
+
+// --------------------------
+
+function getHsl(seed, L = 40, dL = 20) {
+    const H = Math.trunc(360 * getRandomValue(seed));
+    const _L = Math.trunc((L + getRandomValue(seed + 1) * dL)) + "%";
+    return `hsl(${H}, 100%, ${_L})`;
+}
+
+function getRandomValue(seed = Date.now()) {
+    let x = seed + 0x6D2B79F5;
+    x = Math.imul(x ^ x >>> 15, x | 1);
+    x ^= x + Math.imul(x ^ x >>> 7, x | 61);
+    return ((x ^ x >>> 14) >>> 0) / 4294967296;
+}
+
+// --------------------------
 
 /**
  * @param {HTMLElement} container
@@ -2024,7 +2047,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         checkboxList.forEach(checkbox => {
             checkbox.addEventListener("change", saveSetting);
         });
-        const saveSettingDebounced = debounce(saveSetting, 150);
+        const saveSettingDebounced = debounce(saveSetting, 250);
         inputList.forEach(checkbox => {
             checkbox.addEventListener("input", saveSettingDebounced);
         });

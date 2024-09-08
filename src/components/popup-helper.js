@@ -1,12 +1,12 @@
+import {debounce} from "@alttiri/util-js";
 import {addCSS, localStorage, setGlobalValue} from "../gm-util.js";
 import {makeMovable, makeResizable, storeStateInLS} from "../movable-resizable.js";
-import {debounce, getCodeArrays} from "../util.js";
+import {getCodeArrays} from "../util.js";
 import {getListHelper} from "./list-helper.js";
 import {getTagsHelper} from "./tags-helper.js";
 import {clicked} from "./util.js";
 import {parseUrls, undoUrlsToText, urlsToText} from "../text-urls-parsing.js";
 import {getPopup} from "./popup.js";
-
 
 /**
  * @param {object} opt
@@ -130,7 +130,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         checkboxList.forEach(checkbox => {
             checkbox.addEventListener("change", saveSetting);
         });
-        const saveSettingDebounced = debounce(saveSetting, 150);
+        const saveSettingDebounced = debounce(saveSetting, 250);
         inputList.forEach(checkbox => {
             checkbox.addEventListener("input", saveSettingDebounced);
         });

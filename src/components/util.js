@@ -1,4 +1,4 @@
-import {sleep} from "../util.js";
+import {sleep} from "@alttiri/util-js";
 
 /**
  * Removes `<style>` and `</style>` tags are required for IDE syntax highlighting.

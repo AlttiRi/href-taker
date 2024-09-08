@@ -1,15 +1,19 @@
 {
   "name": "href-taker",
   "private": true,
-  "version": "0.14.4-2024.9.8-1d7e",
+  "version": "0.15.0-2024.9.8-4027",
   "type": "module",
   "scripts": {
     "dev": "vite --open demo.html --host",
     "bump-and-build": "node ./build.js"
   },
   "devDependencies": {
+    "@types/node": "20.12.12",
     "rollup": "4.21.2",
-    "vite": "5.4.3",
-    "@types/node": "20.12.12"
+    "@rollup/plugin-node-resolve": "15.2.3",
+    "vite": "5.4.3"
+  },
+  "dependencies": {
+    "@alttiri/util-js": "1.14.1-20240908"
   }
 }

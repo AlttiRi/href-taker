@@ -1,5 +1,6 @@
-import {getHsl, hashString, sleep} from "../util.js";
+import {getHsl} from "../util.js";
 import {clicked} from "./util.js";
+import {hashString, sleep} from "@alttiri/util-js";
 
 /**
  * @typedef {object} UrlInfo

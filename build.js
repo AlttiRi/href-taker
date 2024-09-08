@@ -1,10 +1,12 @@
 import fs from "node:fs/promises";
 import {createHash} from "node:crypto";
 import {rollup} from "rollup";
+import {nodeResolve} from "@rollup/plugin-node-resolve";
 
 
 const bundle = await rollup({
   input: "./src/main.js",
+  plugins: [nodeResolve()]
 });
 const bundles = await bundle.generate({});
 const code = bundles.output[0].code;

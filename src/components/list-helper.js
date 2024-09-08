@@ -1,4 +1,4 @@
-import {hashString} from "../util.js";
+import {hashString} from "@alttiri/util-js";
 
 /**
  * @param {HTMLElement} container
