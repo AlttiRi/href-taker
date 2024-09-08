@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.16.0-2024.9.8-1de1
+// @version     0.16.1-2024.9.8-f505
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1600,7 +1600,7 @@ function getPopup(settings) {
         </div>
         <div class="control-row">
             <div class="control-row-inner">
-                <button title="Copy URLs. \nRMB: as a row \nRMB: as a column \nMMB: as JS array"
+                <button title="Copy URLs. \nRMB: as a row \nRMB: as a column \nMMB: as JS array\nAlt+Click to download txt"
                         name="copy_button" class="short btn-left"
                 >Copy</button>
                 
