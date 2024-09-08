@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.14.2-2024.9.7-67bc
+// @version     0.14.3-2024.9.8-2892
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -711,10 +711,13 @@ function getListHelper(container, settings) {
 
             const joinedUrls = [...new Set(urls)].sort().join(" ");
             const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
-            const modifiers = settings.sort ? "-S" : settings.hostname_sort ? "-HS" : "";
+            let modifiers = settings.sort ? "-S" : settings.hostname_sort ? "-HS" : "";
+                modifiers = settings.reverse ? modifiers + "R" : modifiers;
             const title = `title="RMB click to temporary toggle Unsearchable option"`;
-            headerElem.innerHTML = `<span class="header-content" ${title}>Result list (${urls.length})</span> <span class="urls-hash"
->#${hexes.toUpperCase()}</span><span class="list-modifiers">${modifiers}</span>`;
+            headerElem.innerHTML =
+                  `<span class="header-content" ${title}>Result list (${urls.length})</span> `
+                + `<span class="urls-hash">#${hexes.toUpperCase()}</span>`
+                + `<span class="list-modifiers">${modifiers}</span>`;
 
             const anchorAttr = `class="url-item-link" target="_blank" rel="noreferrer noopener"`;
             let resultHtml = "";
