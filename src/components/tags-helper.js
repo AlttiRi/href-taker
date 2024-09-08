@@ -1,4 +1,4 @@
-import {getHsl} from "../util.js";
+import {getHsl, MIDDLE_BUTTON} from "../util.js";
 import {clicked} from "./util.js";
 import {hashString, sleep} from "@alttiri/util-js";
 
@@ -51,7 +51,6 @@ export function getTagsHelper(container, settings) {
 
     /** @param {PointerEvent} event */
     function onMMBPointerDownEnableOnlyTargetTag(event) {
-        const MIDDLE_BUTTON = 1;
         if (event.button !== MIDDLE_BUTTON) { return; }
         const listTagEl = getTagFromEvent(event);
         if (!listTagEl) { return; }
@@ -272,7 +271,6 @@ export function getTagsHelper(container, settings) {
 
     /** @param {PointerEvent} event */
     function onMMBPointerDownReverseSelectedTags(event) {
-        const MIDDLE_BUTTON = 1;
         if (event.button !== MIDDLE_BUTTON) {
             return;
         }

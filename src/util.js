@@ -1,3 +1,8 @@
+export const LEFT_BUTTON   = 0;
+export const MIDDLE_BUTTON = 1;
+export const RIGHT_BUTTON  = 2;
+// BACK = 3; FORWARD = 4;
+
 /**
  * @param {string[]} items
  * @param {number} size

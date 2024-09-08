@@ -1,4 +1,6 @@
 import {hashString} from "@alttiri/util-js";
+import {MIDDLE_BUTTON} from "../util.js";
+import {hashUrls} from "./util.js";
 
 /**
  * @param {HTMLElement} container
@@ -35,7 +37,6 @@ export function getListHelper(container, settings) {
 
     /** @param {PointerEvent} event */
     function onMMBPointerUpMarkUrlAsClicked(event) {
-        const MIDDLE_BUTTON = 1;
         if (event.button !== MIDDLE_BUTTON) {
             return;
         }
@@ -111,8 +112,7 @@ export function getListHelper(container, settings) {
         insertUrls(urls) {
             this.clearList();
 
-            const joinedUrls = [...new Set(urls)].sort().join(" ");
-            const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
+            const hexes = hashUrls(urls);
             const title = `title="RMB click to temporary toggle Unsearchable option"`;
 
             let modSpans = "-";

@@ -1,10 +1,10 @@
-import {debounce} from "@alttiri/util-js";
+import {debounce, downloadBlob} from "@alttiri/util-js";
 import {addCSS, localStorage, setGlobalValue} from "../gm-util.js";
 import {makeMovable, makeResizable, storeStateInLS} from "../movable-resizable.js";
-import {getCodeArrays} from "../util.js";
+import {getCodeArrays, LEFT_BUTTON, MIDDLE_BUTTON, RIGHT_BUTTON} from "../util.js";
 import {getListHelper} from "./list-helper.js";
 import {getTagsHelper} from "./tags-helper.js";
-import {clicked} from "./util.js";
+import {clicked, getListHostname, getListMods, hashUrls} from "./util.js";
 import {parseUrls, undoUrlsToText, urlsToText} from "../text-urls-parsing.js";
 import {getPopup} from "./popup.js";
 
@@ -178,7 +178,6 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         const inputOnlyPromptElem = querySelector(`#input-only-prompt`);
         inputOnlyPromptElem.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
-            const MIDDLE_BUTTON = 1;
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
                 updateSettings({reverse_input_only: !settings.reverse_input_only});
@@ -310,7 +309,6 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         listBtn.addEventListener("click", renderUrlListEventHandler);
         /* onMiddleClick */
         listBtn.addEventListener("pointerdown", function onMiddleClick(event) {
-            const MIDDLE_BUTTON = 1; // LEFT = 0; RIGHT = 2; BACK = 3; FORWARD = 4;
             if (event.button !== MIDDLE_BUTTON) {
                 return;
             }
@@ -338,20 +336,45 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         const copyButton = querySelector(`button[name="copy_button"]`);
         copyButton.addEventListener("click", event => {
+            if (event.altKey) {
+                return;
+            }
             void navigator.clipboard.writeText(getTagFilteredUrls().join(" ") + " ");
         });
         copyButton.addEventListener("contextmenu", event => {
             event.preventDefault();
-            void navigator.clipboard.writeText(getTagFilteredUrls().join("\n") + "\n");
+            if (!event.altKey) {
+                void navigator.clipboard.writeText(getTagFilteredUrls().join("\n") + "\n");
+            }
             void clicked(copyButton);
         });
         copyButton.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
-            const MIDDLE_BUTTON = 1;
+            if (event.altKey) {
+                return;
+            }
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
                 void navigator.clipboard.writeText(getCodeArrays(getTagFilteredUrls()) + "\n");
                 void clicked(copyButton);
             }
+        });
+        copyButton.addEventListener("pointerup", /** @param {PointerEvent} event */ event => {
+            if (!event.altKey || event.button !== LEFT_BUTTON) {
+                return;
+            }
+            const urls = getTagFilteredUrls();
+            const text = urls.join("\n") + "\n";
+            const hexes = hashUrls(urls);
+
+            let hostname = getListHostname(urls);
+            if (hostname) {
+                hostname = hostname + "_";
+            }
+
+            const mods = getListMods(settings);
+
+            downloadBlob(new Blob([text]), `url-list_${hostname}(${urls.length}-${hexes}${mods}).txt`);
+            void clicked(copyButton);
         });
 
         // ------

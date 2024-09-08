@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.15.0-2024.9.8-4027
+// @version     0.16.0-2024.9.8-1de1
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -203,6 +203,20 @@ function hashString(str) {
     }
     return hash;
 }
+function downloadBlob(blob, name = "", urlOrOpts) {
+    const anchor = document.createElement("a");
+    anchor.setAttribute("download", name || "");
+    const blobUrl = URL.createObjectURL(blob);
+    let url;
+    let timeout = 5000;
+    {
+        url = urlOrOpts?.url;
+        timeout = timeout;
+    }
+    anchor.href = blobUrl + (url ? ("#" + url) : "");
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), timeout);
+}
 
 /** A classic `debounce` wrap function. */
 function debounce(runnable, ms = 50, scope) {
@@ -273,6 +287,60 @@ async function clicked(elem) {
     elem.blur();
     await sleep(125);
     elem.classList.remove("clicked");
+}
+
+/**
+ * Return the hash of url list.
+ * Only unique URLs are counted, order-independently.
+ * @param {string[]} urls
+ * @return {string} hexes
+ * */
+function hashUrls(urls) {
+    const joinedUrls = [...new Set(urls)].sort().join(" ");
+    return Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0").toUpperCase();
+}
+
+
+/** @param {string[]} urls */
+function getListHostname(urls) {
+    if (!urls.length) {
+        return "";
+    }
+    const firstHostname = getMainHostname(urls[0]);
+    if (urls.length === 1) {
+        return firstHostname;
+    }
+    for (const url of urls) {
+        if (firstHostname !== getMainHostname(url)) {
+            return "";
+        }
+    }
+    return firstHostname;
+}
+/** @param {string} url */
+function getMainHostname(url) {
+    const hostname = new URL(url).hostname;
+    return hostname.split(".").slice(-2).join(".");
+}
+
+/**
+ * Return string starts with "-" if any mode exists
+ * @param {ScriptSettings} settings
+ */
+function getListMods(settings) {
+    let mods = "-";
+    if (settings.sort) {
+        mods += "S";
+    } else if (settings.hostname_sort) {
+        mods += "HS";
+    }
+    if (settings.reverse) {
+        mods += "R";
+    }
+    if (mods.length === 1) {
+        mods = "";
+    }
+    return mods;
 }
 
 function getWrapper() {
@@ -582,6 +650,10 @@ function storeStateInLS({id: lsName, onMove, onStop, reset, restore}) {
     };
 }
 
+const LEFT_BUTTON   = 0;
+const MIDDLE_BUTTON = 1;
+// BACK = 3; FORWARD = 4;
+
 /**
  * @param {string[]} items
  * @param {number} size
@@ -656,7 +728,6 @@ function getListHelper(container, settings) {
 
     /** @param {PointerEvent} event */
     function onMMBPointerUpMarkUrlAsClicked(event) {
-        const MIDDLE_BUTTON = 1;
         if (event.button !== MIDDLE_BUTTON) {
             return;
         }
@@ -732,8 +803,7 @@ function getListHelper(container, settings) {
         insertUrls(urls) {
             this.clearList();
 
-            const joinedUrls = [...new Set(urls)].sort().join(" ");
-            const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
+            const hexes = hashUrls(urls);
             const title = `title="RMB click to temporary toggle Unsearchable option"`;
 
             let modSpans = "-";
@@ -822,7 +892,6 @@ function getTagsHelper(container, settings) {
 
     /** @param {PointerEvent} event */
     function onMMBPointerDownEnableOnlyTargetTag(event) {
-        const MIDDLE_BUTTON = 1;
         if (event.button !== MIDDLE_BUTTON) { return; }
         const listTagEl = getTagFromEvent(event);
         if (!listTagEl) { return; }
@@ -1043,7 +1112,6 @@ function getTagsHelper(container, settings) {
 
     /** @param {PointerEvent} event */
     function onMMBPointerDownReverseSelectedTags(event) {
-        const MIDDLE_BUTTON = 1;
         if (event.button !== MIDDLE_BUTTON) {
             return;
         }
@@ -2095,7 +2163,6 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         const inputOnlyPromptElem = querySelector(`#input-only-prompt`);
         inputOnlyPromptElem.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
-            const MIDDLE_BUTTON = 1;
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
                 updateSettings({reverse_input_only: !settings.reverse_input_only});
@@ -2227,7 +2294,6 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         listBtn.addEventListener("click", renderUrlListEventHandler);
         /* onMiddleClick */
         listBtn.addEventListener("pointerdown", function onMiddleClick(event) {
-            const MIDDLE_BUTTON = 1; // LEFT = 0; RIGHT = 2; BACK = 3; FORWARD = 4;
             if (event.button !== MIDDLE_BUTTON) {
                 return;
             }
@@ -2255,20 +2321,45 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         const copyButton = querySelector(`button[name="copy_button"]`);
         copyButton.addEventListener("click", event => {
+            if (event.altKey) {
+                return;
+            }
             void navigator.clipboard.writeText(getTagFilteredUrls().join(" ") + " ");
         });
         copyButton.addEventListener("contextmenu", event => {
             event.preventDefault();
-            void navigator.clipboard.writeText(getTagFilteredUrls().join("\n") + "\n");
+            if (!event.altKey) {
+                void navigator.clipboard.writeText(getTagFilteredUrls().join("\n") + "\n");
+            }
             void clicked(copyButton);
         });
         copyButton.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
-            const MIDDLE_BUTTON = 1;
+            if (event.altKey) {
+                return;
+            }
             if (event.button === MIDDLE_BUTTON) {
                 event.preventDefault();
                 void navigator.clipboard.writeText(getCodeArrays(getTagFilteredUrls()) + "\n");
                 void clicked(copyButton);
             }
+        });
+        copyButton.addEventListener("pointerup", /** @param {PointerEvent} event */ event => {
+            if (!event.altKey || event.button !== LEFT_BUTTON) {
+                return;
+            }
+            const urls = getTagFilteredUrls();
+            const text = urls.join("\n") + "\n";
+            const hexes = hashUrls(urls);
+
+            let hostname = getListHostname(urls);
+            if (hostname) {
+                hostname = hostname + "_";
+            }
+
+            const mods = getListMods(settings);
+
+            downloadBlob(new Blob([text]), `url-list_${hostname}(${urls.length}-${hexes}${mods}).txt`);
+            void clicked(copyButton);
         });
 
         // ------
