@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.14.3-2024.9.8-2892
+// @version     0.14.4-2024.9.8-1d7e
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -711,13 +711,22 @@ function getListHelper(container, settings) {
 
             const joinedUrls = [...new Set(urls)].sort().join(" ");
             const hexes = Math.abs(hashString(joinedUrls)).toString(16).slice(-8).padStart(8, "0");
-            let modifiers = settings.sort ? "-S" : settings.hostname_sort ? "-HS" : "";
-                modifiers = settings.reverse ? modifiers + "R" : modifiers;
             const title = `title="RMB click to temporary toggle Unsearchable option"`;
+
+            let modSpans = "-";
+            if (settings.sort) {
+                modSpans += `<span class="modifier" title="Sorted">S</span>`;
+            } else if (settings.hostname_sort) {
+                modSpans += `<span class="modifier" title="Hostname Sorted">HS</span>`;
+            }
+            if (settings.reverse) {
+                modSpans += `<span class="modifier" title="Reversed">R</span>`;
+            }
+
             headerElem.innerHTML =
                   `<span class="header-content" ${title}>Result list (${urls.length})</span> `
-                + `<span class="urls-hash">#${hexes.toUpperCase()}</span>`
-                + `<span class="list-modifiers">${modifiers}</span>`;
+                + `<span class="urls-hash">#<span class="hash" title="Hash">${hexes.toUpperCase()}</span></span>`
+                + `<span class="list-modifiers">${modSpans.length > 1 ? modSpans : ""}</span>`;
 
             const anchorAttr = `class="url-item-link" target="_blank" rel="noreferrer noopener"`;
             let resultHtml = "";
@@ -1847,6 +1856,9 @@ input[disabled] {
 
 .urls-hash, .list-modifiers {
     color: gray;
+}
+.urls-hash .hash:hover, .modifier:hover {
+    color: dimgray;
 }
 
 .header {

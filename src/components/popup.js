@@ -470,6 +470,9 @@ input[disabled] {
 .urls-hash, .list-modifiers {
     color: gray;
 }
+.urls-hash .hash:hover, .modifier:hover {
+    color: dimgray;
+}
 
 .header {
     position: absolute;
