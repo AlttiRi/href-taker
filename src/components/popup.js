@@ -102,18 +102,23 @@ export function getPopup(settings) {
                         name="list_button" 
                         class="short btn-left"
                         >List links</button>
-                <label title="Include URLs parsed from text" id="include_text_url-label">
-                    <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
-                    Text
-                </label>
-                <label title="Only URLs parsed from text">
-                    <input type="checkbox" name="only_text_url" ${checked(only_text_url)}>
-                    Only text
-                </label>
-                <label title="Include media (img, video) tags">
+                <div class="quick-option">
+                    <label title="Include URLs parsed from text" id="include_text_url-label">
+                        <input type="checkbox" name="include_text_url" ${checked(include_text_url)}>
+                        Text
+                    </label> 
+                </div>
+                <div class="quick-option">
+                    <label title="Only URLs parsed from text">
+                        <input type="checkbox" name="only_text_url" ${checked(only_text_url)}>
+                        Only text
+                    </label>
+                </div>
+                <div class="quick-option"><label title="Include media (img, video) tags">
                     <input type="checkbox" name="include_media" ${checked(include_media)}>
-                    Media
-                </label>
+                        Media
+                    </label>
+                </div>
             </div>
             <div>
                 <button name="to_text_button" class="long btn-right"
@@ -126,13 +131,13 @@ export function getPopup(settings) {
                         name="copy_button" class="short btn-left"
                 >Copy</button>
                 
-                <span id="append-on-hover-wrapper">
+                <span class="quick-option" id="append-on-hover-wrapper">
                     <label title="Append URLs on the button hover">
                         <input type="checkbox" name="append_on_hover" ${checked(append_on_hover)}>
                         AoH
                     </label>
                 </span>
-                <span id="keep-in-storage-wrapper">
+                <span class="quick-option" id="keep-in-storage-wrapper">
                     <label title="Keep URLs in localStorage">
                         <input type="checkbox" name="keep_in_storage" ${checked(keep_in_storage)}>
                         KiS
@@ -265,7 +270,10 @@ this option only defines the default state.">
 }
 
 #extra_settings label {
-    min-width: 120px;
+    min-width: 125px;
+}
+.quick-option {
+    min-width: 55px;
 }
 
 .btn-left {
