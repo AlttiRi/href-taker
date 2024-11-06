@@ -23,6 +23,7 @@ const banner = `// ==UserScript==
 // @license     GPL-3.0
 // @homepageURL https://github.com/AlttiRi/href-taker
 // @supportURL  https://github.com/AlttiRi/href-taker/issues
+// @downloadURL https://github.com/AlttiRi/href-taker/raw/master/dist/href-taker.user.js
 // @match       *://*/*
 // @grant       GM_registerMenuCommand
 // @grant       GM_addElement

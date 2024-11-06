@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.16.2-2024.9.9-5ba2
+// @version     0.16.3-2024.11.6-5ba2
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
 // @homepageURL https://github.com/AlttiRi/href-taker
 // @supportURL  https://github.com/AlttiRi/href-taker/issues
+// @downloadURL https://github.com/AlttiRi/href-taker/raw/master/dist/href-taker.user.js
 // @match       *://*/*
 // @grant       GM_registerMenuCommand
 // @grant       GM_addElement
