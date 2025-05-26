@@ -306,7 +306,9 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         }
 
         /* onLeftClick */
-        listBtn.addEventListener("click", renderUrlListEventHandler);
+        listBtn.addEventListener("click", function onLeftClick(_event) {
+            renderUrlListEventHandler();
+        });
         /* onMiddleClick */
         listBtn.addEventListener("pointerdown", function onMiddleClick(event) {
             if (event.button !== MIDDLE_BUTTON) {
@@ -326,7 +328,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             void clicked(listBtn);
         });
         /* onPointerEnter */
-        listBtn.addEventListener("pointerenter", event => {
+        listBtn.addEventListener("pointerenter", function onPointerEnter(_event) {
             if (settings.append_on_hover) { // todo append urls on scroll over the button
                 renderUrlList(true);
                 void clicked(listBtn);
@@ -335,20 +337,20 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         // ------
 
         const copyButton = querySelector(`button[name="copy_button"]`);
-        copyButton.addEventListener("click", event => {
+        copyButton.addEventListener("click", function onLeftClick(event) {
             if (event.altKey) {
                 return;
             }
             void navigator.clipboard.writeText(getTagFilteredUrls().join(" ") + " ");
         });
-        copyButton.addEventListener("contextmenu", event => {
+        copyButton.addEventListener("contextmenu", function onRightClick(event)  {
             event.preventDefault();
             if (!event.altKey) {
                 void navigator.clipboard.writeText(getTagFilteredUrls().join("\n") + "\n");
             }
             void clicked(copyButton);
         });
-        copyButton.addEventListener("pointerdown", /** @param {PointerEvent} event */ event => {
+        copyButton.addEventListener("pointerdown", function onMiddleClick(event) {
             if (event.altKey) {
                 return;
             }
@@ -358,7 +360,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 void clicked(copyButton);
             }
         });
-        copyButton.addEventListener("pointerup", /** @param {PointerEvent} event */ event => {
+        copyButton.addEventListener("pointerup", function onLeftClickAlt(event) {
             if (!event.altKey || event.button !== LEFT_BUTTON) {
                 return;
             }

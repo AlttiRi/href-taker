@@ -22,9 +22,14 @@ export function cssFromStyle(textParts, ...values) {
     return fullText.replace(/^\s*<style>\n?/, "").replace(/\s*<\/style>\s*$/, "");
 }
 
+/**
+ * For buttons with `preventDefault` in the popup.
+ * @param {HTMLButtonElement} elem
+ * @returns {Promise<void>}
+ */
 export async function clicked(elem) {
+    elem.closest(`[id="popup"]`).focus();
     elem.classList.add("clicked");
-    elem.blur();
     await sleep(125);
     elem.classList.remove("clicked");
 }
