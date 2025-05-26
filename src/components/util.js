@@ -23,12 +23,13 @@ export function cssFromStyle(textParts, ...values) {
 }
 
 /**
- * For buttons with `preventDefault` in the popup.
+ * For buttons with `preventDefault`.
  * @param {HTMLButtonElement} elem
  * @returns {Promise<void>}
  */
 export async function clicked(elem) {
-    elem.closest(`[id="popup"]`).focus();
+    elem.blur();
+    elem.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
     elem.classList.add("clicked");
     await sleep(125);
     elem.classList.remove("clicked");
