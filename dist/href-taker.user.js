@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.16.4-2025.5.26-bef0
+// @version     0.16.5-2025.5.26-bf20
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -284,12 +284,13 @@ function cssFromStyle(textParts, ...values) {
 }
 
 /**
- * For buttons with `preventDefault` in the popup.
+ * For buttons with `preventDefault`.
  * @param {HTMLButtonElement} elem
  * @returns {Promise<void>}
  */
 async function clicked(elem) {
-    elem.closest(`[id="popup"]`).focus();
+    elem.blur();
+    elem.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
     elem.classList.add("clicked");
     await sleep(125);
     elem.classList.remove("clicked");
