@@ -307,7 +307,12 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         /* onLeftClick */
         listBtn.addEventListener("click", function onLeftClick(_event) {
-            renderUrlListEventHandler();
+            void clicked(listBtn);
+            if (settings.keep_in_storage) {
+                renderUrlList(true);
+            } else {
+                renderUrlListEventHandler();
+            }
         });
         /* onMiddleClick */
         listBtn.addEventListener("pointerdown", function onMiddleClick(event) {
@@ -315,29 +320,32 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 return;
             }
             event.preventDefault();
-            listHelper.clearList(true);
-            tagsHelper.clearTags();
-            clearMainUrls();
-            listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
             void clicked(listBtn);
+
+            renderUrlList(true);
         });
         /* onRightClick */
         listBtn.addEventListener("contextmenu", function onRightClick(event) {
             event.preventDefault();
-            renderUrlList(true);
             void clicked(listBtn);
+
+            listHelper.clearList(true);
+            tagsHelper.clearTags();
+            clearMainUrls();
+            listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
         });
         /* onPointerEnter */
         listBtn.addEventListener("pointerenter", function onPointerEnter(_event) {
             if (settings.append_on_hover) { // todo append urls on scroll over the button
-                renderUrlList(true);
                 void clicked(listBtn);
+                renderUrlList(true);
             }
         });
         // ------
 
         const copyButton = querySelector(`button[name="copy_button"]`);
         copyButton.addEventListener("click", function onLeftClick(event) {
+            void clicked(copyButton);
             if (event.altKey) {
                 return;
             }
@@ -345,25 +353,27 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         });
         copyButton.addEventListener("contextmenu", function onRightClick(event)  {
             event.preventDefault();
+            void clicked(copyButton);
             if (!event.altKey) {
                 void navigator.clipboard.writeText(getTagFilteredUrls().join("\n") + "\n");
             }
-            void clicked(copyButton);
         });
         copyButton.addEventListener("pointerdown", function onMiddleClick(event) {
+            event.preventDefault();
+            void clicked(copyButton);
             if (event.altKey) {
                 return;
             }
             if (event.button === MIDDLE_BUTTON) {
-                event.preventDefault();
                 void navigator.clipboard.writeText(getCodeArrays(getTagFilteredUrls()) + "\n");
-                void clicked(copyButton);
             }
         });
         copyButton.addEventListener("pointerup", function onLeftClickAlt(event) {
+            void clicked(copyButton);
             if (!event.altKey || event.button !== LEFT_BUTTON) {
                 return;
             }
+
             const urls = getTagFilteredUrls();
             const text = urls.join("\n") + "\n";
             const hexes = hashUrls(urls);
@@ -372,11 +382,9 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             if (hostname) {
                 hostname = hostname + "_";
             }
-
             const mods = getListMods(settings);
 
             downloadBlob(new Blob([text]), `url-list_${hostname}(${urls.length}-${hexes}${mods}).txt`);
-            void clicked(copyButton);
         });
 
         // ------

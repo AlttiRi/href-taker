@@ -98,7 +98,7 @@ export function getPopup(settings) {
     <div class="content" data-content_name="controls">
         <div class="control-row">
             <div class="control-row-inner">
-                <button title="LMB: list links \nRMB: append new links \nMMB: clear the list" 
+                <button title="LMB: list links (default) / append links (KiS) \nRMB: clear the list \nMMB: append new links" 
                         name="list_button" 
                         class="short btn-left"
                         >List links</button>

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.16.5-2025.5.26-bf20
+// @version     0.16.6-2025.5.26-f85d
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1583,7 +1583,7 @@ function getPopup(settings) {
     <div class="content" data-content_name="controls">
         <div class="control-row">
             <div class="control-row-inner">
-                <button title="LMB: list links \nRMB: append new links \nMMB: clear the list" 
+                <button title="LMB: list links (default) / append (KiS) \nRMB: clear the list \nMMB: append new links" 
                         name="list_button" 
                         class="short btn-left"
                         >List links</button>
@@ -2307,7 +2307,12 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
         /* onLeftClick */
         listBtn.addEventListener("click", function onLeftClick(_event) {
-            renderUrlListEventHandler();
+            void clicked(listBtn);
+            if (settings.keep_in_storage) {
+                renderUrlList(true);
+            } else {
+                renderUrlListEventHandler();
+            }
         });
         /* onMiddleClick */
         listBtn.addEventListener("pointerdown", function onMiddleClick(event) {
@@ -2315,29 +2320,32 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
                 return;
             }
             event.preventDefault();
-            listHelper.clearList(true);
-            tagsHelper.clearTags();
-            clearMainUrls();
-            listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
             void clicked(listBtn);
+
+            renderUrlList(true);
         });
         /* onRightClick */
         listBtn.addEventListener("contextmenu", function onRightClick(event) {
             event.preventDefault();
-            renderUrlList(true);
             void clicked(listBtn);
+
+            listHelper.clearList(true);
+            tagsHelper.clearTags();
+            clearMainUrls();
+            listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
         });
         /* onPointerEnter */
         listBtn.addEventListener("pointerenter", function onPointerEnter(_event) {
             if (settings.append_on_hover) { // todo append urls on scroll over the button
-                renderUrlList(true);
                 void clicked(listBtn);
+                renderUrlList(true);
             }
         });
         // ------
 
         const copyButton = querySelector(`button[name="copy_button"]`);
         copyButton.addEventListener("click", function onLeftClick(event) {
+            void clicked(copyButton);
             if (event.altKey) {
                 return;
             }
@@ -2345,25 +2353,27 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         });
         copyButton.addEventListener("contextmenu", function onRightClick(event)  {
             event.preventDefault();
+            void clicked(copyButton);
             if (!event.altKey) {
                 void navigator.clipboard.writeText(getTagFilteredUrls().join("\n") + "\n");
             }
-            void clicked(copyButton);
         });
         copyButton.addEventListener("pointerdown", function onMiddleClick(event) {
+            event.preventDefault();
+            void clicked(copyButton);
             if (event.altKey) {
                 return;
             }
             if (event.button === MIDDLE_BUTTON) {
-                event.preventDefault();
                 void navigator.clipboard.writeText(getCodeArrays(getTagFilteredUrls()) + "\n");
-                void clicked(copyButton);
             }
         });
         copyButton.addEventListener("pointerup", function onLeftClickAlt(event) {
+            void clicked(copyButton);
             if (!event.altKey || event.button !== LEFT_BUTTON) {
                 return;
             }
+
             const urls = getTagFilteredUrls();
             const text = urls.join("\n") + "\n";
             const hexes = hashUrls(urls);
@@ -2372,11 +2382,9 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             if (hostname) {
                 hostname = hostname + "_";
             }
-
             const mods = getListMods(settings);
 
             downloadBlob(new Blob([text]), `url-list_${hostname}(${urls.length}-${hexes}${mods}).txt`);
-            void clicked(copyButton);
         });
 
         // ------
