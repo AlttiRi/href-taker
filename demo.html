@@ -37,7 +37,24 @@
             localStorage.setItem("ujs-href-taker", JSON.stringify({console_vars: true}));
         }
     </script>
-    <script defer src="./src/main.js" type="module"></script>
+    <script>
+        if (location.hostname.includes("localhost")) {
+            void appendScript("./src/main.js");
+        } else {
+            void appendScript("./dist/href-taker.user.js");
+        }
+        function appendScript(src) {
+            return new Promise(function createScript(resolve, reject)  {
+                const script = document.createElement("script");
+                script.src   = src;
+                script.defer = true;
+                script.type  = "module";
+                script.onload  = resolve;
+                script.onerror = event => reject({message: "Failed to load script", src, event});
+                document.head.append(script);
+            });
+        }
+    </script>
     <script defer>
         const getShadowRoot = () => document.querySelector("#href-taker-outer-shadow-wrapper")?.shadowRoot;
         globalThis.getShadowRoot = getShadowRoot();
