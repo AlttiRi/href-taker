@@ -287,7 +287,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         }
 
         const renderUrlListEventHandler = () => {
-            if (settings.keep_in_storage) {
+            if (settings.keep_in_storage) { // todo: remove?
                 clearMainUrls();
                 clearUrlsStore();
             }
@@ -332,6 +332,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             listHelper.clearList(true);
             tagsHelper.clearTags();
             clearMainUrls();
+            clearUrlsStore();
             listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
         });
         /* onPointerEnter */

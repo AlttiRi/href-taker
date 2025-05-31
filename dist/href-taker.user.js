@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.17.0-2025.5.26-c04e
+// @version     0.17.1-2025.5.31-2942
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -2287,7 +2287,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         }
 
         const renderUrlListEventHandler = () => {
-            if (settings.keep_in_storage) {
+            if (settings.keep_in_storage) { // todo: remove?
                 clearMainUrls();
                 clearUrlsStore();
             }
@@ -2332,6 +2332,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             listHelper.clearList(true);
             tagsHelper.clearTags();
             clearMainUrls();
+            clearUrlsStore();
             listHelper.contentElem.addEventListener("click", renderUrlListEventHandler, {once: true});
         });
         /* onPointerEnter */
