@@ -1,8 +1,8 @@
 # HrefTaker
 
-The userscript that adds a popup to collect URLs from a web page. It's mainly aimed for static web sites.
+The userscript that adds a popup to collect links from a web page. It's mainly aimed for static websites.
 
-It grabs the links from anchors' `href`s (`a` HTML tag) as well as from non-hyperlink visible text.
+It grabs the URLs from anchors' `href`s (`a` HTML tag) as well as from non-hyperlink visible text.
 
 ![Screenshot](https://user-images.githubusercontent.com/16310547/232351246-7ba1837b-9e0f-4dfe-a329-1341be9769e2.png)
 
