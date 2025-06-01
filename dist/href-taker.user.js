@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.17.1-2025.5.31-2942
+// @version     0.17.2-2025.6.1-d32c
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1165,7 +1165,17 @@ function getTagsHelper(container, settings) {
         const other = "other";
         let i = 0;
         for (const url of urls) {
-            let host = url.match(/\w+\.[a-z]+(?=\/)/i)?.[0];
+            let host = url.match(/[^\s\/.]+\.[^\s\/.]+(?=\/)/i)?.[0]; // old /\w+\.[a-z]+(?=\/)/i
+
+            // todo: un'Punycode // xn--
+            // try {
+            //     host = new URL(url).hostname;
+            //     host = host.split(".").slice(-2).join(".");
+            //     if (host.startsWith("www.")) {
+            //         host = host.replace("www.", "");
+            //     }
+            // } catch (e) { /* ... */}
+
             if (!host) {
                 host = other;
             }

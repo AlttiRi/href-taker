@@ -317,7 +317,17 @@ export function getTagsHelper(container, settings) {
         const other = "other";
         let i = 0;
         for (const url of urls) {
-            let host = url.match(/\w+\.[a-z]+(?=\/)/i)?.[0];
+            let host = url.match(/[^\s\/.]+\.[^\s\/.]+(?=\/)/i)?.[0]; // old /\w+\.[a-z]+(?=\/)/i
+
+            // todo: un'Punycode // xn--
+            // try {
+            //     host = new URL(url).hostname;
+            //     host = host.split(".").slice(-2).join(".");
+            //     if (host.startsWith("www.")) {
+            //         host = host.replace("www.", "");
+            //     }
+            // } catch (e) { /* ... */}
+
             if (!host) {
                 host = other;
             }
