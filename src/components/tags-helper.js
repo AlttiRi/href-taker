@@ -1,4 +1,4 @@
-import {getHsl, MIDDLE_BUTTON} from "../util.js";
+import {getHsl, MIDDLE_BUTTON, mTLDs} from "../util.js";
 import {clicked} from "./util.js";
 import {hashString, sleep} from "@alttiri/util-js";
 
@@ -317,6 +317,7 @@ export function getTagsHelper(container, settings) {
         const other = "other";
         let i = 0;
         for (const url of urls) {
+            // last 2 parts
             let host = url.match(/[^\s\/.]+\.[^\s\/.]+(?=\/)/i)?.[0]; // old /\w+\.[a-z]+(?=\/)/i
 
             // todo: un'Punycode // xn--
@@ -327,6 +328,14 @@ export function getTagsHelper(container, settings) {
             //         host = host.replace("www.", "");
             //     }
             // } catch (e) { /* ... */}
+
+            if (host && host.split(".").every(h => mTLDs.has(h))) {
+                host = new URL(url).hostname;
+                host = host.split(".").slice(-3).join(".");
+                if (host.startsWith("www.")) {
+                    host = host.replace("www.", "");
+                }
+            }
 
             if (!host) {
                 host = other;

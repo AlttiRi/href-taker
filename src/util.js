@@ -50,3 +50,6 @@ export function getRandom(seed = Date.now()) { // mulberry32 algo
 }
 
 // --------------------------
+
+// Some multiple TLDs
+export const mTLDs = new Set(["co", "uk", "jp", "au", "com", "net"]);
