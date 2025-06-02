@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.17.3-2025.6.1-a8be
+// @version     0.17.4-2025.6.2-0194
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -2240,6 +2240,8 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         // ------
         /** @type {string[]} */
         let mainUrls;
+        /** @type {string[]} */
+        let mainUrlsUnOrdered;
         /** @param {string[]} newUrls
          *  @return string[]  */
         function setMainUrls(newUrls) {
@@ -2250,6 +2252,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         }
         function clearMainUrls() {
             setMainUrls([]);
+            mainUrlsUnOrdered = [];
         }
         clearMainUrls();
 
@@ -2280,10 +2283,10 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         const checkboxKiS = querySelector(`[type="checkbox"][name="keep_in_storage"]`);
         checkboxKiS.addEventListener("change", () => {
             if (checkboxKiS.checked) {
-                addUrlsToStore(mainUrls);
+                addUrlsToStore(mainUrlsUnOrdered);
             } else {
                 clearUrlsStore();
-                renderUrlList();
+                // renderUrlList(); // is already called in saveSetting()
             }
         });
 
@@ -2467,7 +2470,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             });
 
             if (keepOld || settings.keep_in_storage) {
-                newUrls = [...mainUrls, ...newUrls];
+                newUrls = [...mainUrlsUnOrdered, ...newUrls];
             }
 
             let onlyTexts   =   settings.input_only.trim().split(/\s+/g).filter(o => o);
@@ -2504,6 +2507,12 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             if (settings.unique) {
                 newUrls = [...new Set(newUrls)];
             }
+
+            mainUrlsUnOrdered = [...newUrls]; // a copy
+            if (settings.keep_in_storage) {
+                addUrlsToStore(mainUrlsUnOrdered);
+            }
+
             if (settings.sort) {
                 newUrls.sort(urlComparator);
             } else if (settings.hostname_sort) {
@@ -2515,9 +2524,7 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             if (settings.console_log) {
                 console.log(getCodeArrays(newUrls));
             }
-            if (settings.keep_in_storage) {
-                addUrlsToStore(newUrls);
-            }
+
             setMainUrls(newUrls);
         }
 

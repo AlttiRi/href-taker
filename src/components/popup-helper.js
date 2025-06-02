@@ -218,6 +218,8 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         // ------
         /** @type {string[]} */
         let mainUrls;
+        /** @type {string[]} */
+        let mainUrlsUnOrdered;
         /** @param {string[]} newUrls
          *  @return string[]  */
         function setMainUrls(newUrls) {
@@ -228,6 +230,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         }
         function clearMainUrls() {
             setMainUrls([]);
+            mainUrlsUnOrdered = [];
         }
         clearMainUrls();
 
@@ -258,10 +261,10 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
         const checkboxKiS = querySelector(`[type="checkbox"][name="keep_in_storage"]`);
         checkboxKiS.addEventListener("change", () => {
             if (checkboxKiS.checked) {
-                addUrlsToStore(mainUrls);
+                addUrlsToStore(mainUrlsUnOrdered);
             } else {
                 clearUrlsStore();
-                renderUrlList();
+                // renderUrlList(); // is already called in saveSetting()
             }
         });
 
@@ -445,7 +448,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             });
 
             if (keepOld || settings.keep_in_storage) {
-                newUrls = [...mainUrls, ...newUrls];
+                newUrls = [...mainUrlsUnOrdered, ...newUrls];
             }
 
             let onlyTexts   =   settings.input_only.trim().split(/\s+/g).filter(o => o);
@@ -482,6 +485,12 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             if (settings.unique) {
                 newUrls = [...new Set(newUrls)];
             }
+
+            mainUrlsUnOrdered = [...newUrls]; // a copy
+            if (settings.keep_in_storage) {
+                addUrlsToStore(mainUrlsUnOrdered);
+            }
+
             if (settings.sort) {
                 newUrls.sort(urlComparator);
             } else if (settings.hostname_sort) {
@@ -493,9 +502,7 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             if (settings.console_log) {
                 console.log(getCodeArrays(newUrls));
             }
-            if (settings.keep_in_storage) {
-                addUrlsToStore(newUrls);
-            }
+
             setMainUrls(newUrls);
         }
 
