@@ -1,7 +1,7 @@
 {
   "name": "href-taker",
   "private": true,
-  "version": "0.17.4-2025.6.2-0194",
+  "version": "0.17.5-2025.6.3-d5c4",
   "type": "module",
   "scripts": {
     "dev": "vite --open demo.html --host",

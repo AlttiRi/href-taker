@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.17.4-2025.6.2-0194
+// @version     0.17.5-2025.6.3-d5c4
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -2276,7 +2276,9 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             return storedUrls;
         }
         if (settings.keep_in_storage) {
-            setMainUrls(getUrlsFromStore());
+            const storedUrls = getUrlsFromStore();
+            setMainUrls(storedUrls);
+            mainUrlsUnOrdered = storedUrls;
         }
 
         /** @type {HTMLInputElement} */

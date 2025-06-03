@@ -254,7 +254,9 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             return storedUrls;
         }
         if (settings.keep_in_storage) {
-            setMainUrls(getUrlsFromStore());
+            const storedUrls = getUrlsFromStore();
+            setMainUrls(storedUrls);
+            mainUrlsUnOrdered = storedUrls;
         }
 
         /** @type {HTMLInputElement} */
