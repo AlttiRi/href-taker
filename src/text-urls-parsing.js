@@ -117,7 +117,7 @@ function splitOnUnmatchedBrackets(url) {
 }
 
 function parseUrlsFromText(text, bracketsTrim = true) {
-    const regex = /[^\s<>"():\/]+\.(?<host1>[^\s<>"()\/:]+(:\d+)?)\/[^\s<>"]+/g;
+    const regex = /[^\s<>"():\[\]\/]+\.(?<tld>[^\s<>"()\[\]\/:]+(:\d+)?)\/[^\s<>"]+/g; // host.tld/path
     const urls = [...text.matchAll(regex)]
         .map(match => match[0])
         .map(text => {
