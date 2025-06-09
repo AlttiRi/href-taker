@@ -29,10 +29,10 @@ export function getTagsHelper(container, settings) {
     let urlsCount = 0;
 
     tagsPopupContainerEl.addEventListener("click", onClickSelectTagFromPopup);
-    tagsListContainerEl.addEventListener("click", onClickRemoveTagFromSelect);
+    tagsListContainerEl.addEventListener( "click", onClickToggleDisablingSelectedTag);
 
-    tagsListContainerEl.addEventListener("contextmenu", onContextMenuToggleDisablingSelectedTag);
     tagsPopupContainerEl.addEventListener("contextmenu", onContextMenuAddPopupTagOrToggleDisabling);
+    tagsListContainerEl.addEventListener( "contextmenu", onContextMenuRemoveTagFromSelect);
 
     tagsListContainerEl.addEventListener("pointerdown", onMMBPointerDownEnableOnlyTargetTag);
 
@@ -83,10 +83,11 @@ export function getTagsHelper(container, settings) {
     }
 
     /** @param {MouseEvent} event */
-    function onClickRemoveTagFromSelect(event) {
+    function onContextMenuRemoveTagFromSelect(event) {
         const listTagEl = getTagFromEvent(event);
         if (!listTagEl) { return; }
 
+        event.preventDefault();
         const popupTag = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
         popupTag.classList.remove("selected");
         popupTag.classList.remove("disabled");
@@ -141,11 +142,10 @@ export function getTagsHelper(container, settings) {
     }
 
     /** @param {MouseEvent} event */
-    function onContextMenuToggleDisablingSelectedTag(event) {
+    function onClickToggleDisablingSelectedTag(event) {
         const listTagEl = getTagFromEvent(event);
         if (!listTagEl) { return; }
 
-        event.preventDefault();
         if (event.shiftKey) {
             const enabled = !listTagEl.classList.contains("disabled");
             if (enabled) {
