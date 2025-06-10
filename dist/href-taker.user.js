@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.19.0-2025.6.9-f5ea
+// @version     0.20.0-2025.6.10-2167
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -885,20 +885,27 @@ function getTagsHelper(container, settings) {
     tagsPopupContainerEl.addEventListener("contextmenu", onContextMenuAddPopupTagOrToggleDisabling);
     tagsListContainerEl.addEventListener( "contextmenu", onContextMenuRemoveTagFromSelect);
 
-    tagsListContainerEl.addEventListener("pointerdown", onMMBPointerDownEnableOnlyTargetTag);
+    tagsListContainerEl.addEventListener("pointerdown",  onMMBPointerDownEnableOnlyTargetTag);
+    tagsListContainerEl.addEventListener("pointermove",  onPointerMoveEnableTag);
+    tagsListContainerEl.addEventListener("pointerup",    onPointerUpResetMiddleButton);
 
     addTagBtnEl.addEventListener("click", openTagsPopup);
     addTagBtnEl.addEventListener("contextmenu", onContextMenuSelectAllTagsOrClear);
     addTagBtnEl.addEventListener("pointerdown", onMMBPointerDownReverseSelectedTags);
 
+    const isTag = htmlElement => htmlElement.classList.contains("tag") && htmlElement.dataset.tag;
     /** @param {Event} event */
     function getTagFromEvent(event) {
-        const tagEl = /** @type {HTMLElement} */ event.target;
-        if (!tagEl.classList.contains("tag")) {
+        const tarEl = /** @type {HTMLElement} */ event.target;
+        if (!isTag(tarEl)) {
             return null;
         }
-        return tagEl;
+        return tarEl;
     }
+
+    const shadowRoot = document.querySelector("#href-taker-outer-shadow-wrapper").shadowRoot;
+    let isMiddleButtonHeld = false;
+    let lastProcessedTag = null;
 
     /** @param {PointerEvent} event */
     function onMMBPointerDownEnableOnlyTargetTag(event) {
@@ -907,11 +914,39 @@ function getTagsHelper(container, settings) {
         if (!listTagEl) { return; }
         event.preventDefault();
 
+        isMiddleButtonHeld = true;
+        lastProcessedTag = listTagEl;
+        tagsListContainerEl.setPointerCapture(event.pointerId);
+
+        enableOnlyTargetTag(listTagEl);
+    }
+    /** @param {PointerEvent} event */
+    function onPointerMoveEnableTag(event) {
+        if (!isMiddleButtonHeld) { return; }
+
+        const elementUnderCursor = shadowRoot.elementFromPoint(event.clientX, event.clientY);
+        const listTagEl = isTag(elementUnderCursor) ? elementUnderCursor: null;
+        if (!listTagEl) { return; }
+        if (listTagEl === lastProcessedTag) {
+            return;
+        }
+        lastProcessedTag = listTagEl;
+
+        enableOnlyTargetTag(listTagEl);
+    }
+    function enableOnlyTargetTag(listTagEl) {
         disableAllSelectedTagElems();
         enableTag(listTagEl);
 
         updateAddTagBtnTitle();
         onUpdateCb?.();
+    }
+    /** @param {PointerEvent} event */
+    function onPointerUpResetMiddleButton(event) {
+        if (event.button !== MIDDLE_BUTTON) { return; }
+        isMiddleButtonHeld = false;
+        lastProcessedTag = null;
+        tagsListContainerEl.releasePointerCapture(event.pointerId);
     }
 
     /** @param {MouseEvent} event */
