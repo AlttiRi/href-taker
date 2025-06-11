@@ -29,16 +29,15 @@ export function getTagsHelper(container, settings) {
     let urlsCount = 0;
 
     tagsPopupContainerEl.addEventListener("click", onClickSelectTagFromPopup);
+    tagsPopupContainerEl.addEventListener("contextmenu", onContextMenuAddPopupTagOrToggleDisabling);
+
     tagsListContainerEl.addEventListener("pointerdown", onLeftButtonDownToggleTagDisabling);
     tagsListContainerEl.addEventListener("pointermove", onPointerMoveToggleTag);
-    tagsListContainerEl.addEventListener("pointerup",   onPointerUpResetLeftButton);
 
-    tagsPopupContainerEl.addEventListener("contextmenu", onContextMenuAddPopupTagOrToggleDisabling);
     tagsListContainerEl.addEventListener( "contextmenu", onContextMenuRemoveTagFromSelect);
 
     tagsListContainerEl.addEventListener("pointerdown",  onMMBPointerDownEnableOnlyTargetTag);
     tagsListContainerEl.addEventListener("pointermove",  onPointerMoveEnableTag);
-    tagsListContainerEl.addEventListener("pointerup",    onPointerUpResetMiddleButton);
 
     addTagBtnEl.addEventListener("click", openTagsPopup);
     addTagBtnEl.addEventListener("contextmenu", onContextMenuSelectAllTagsOrClear);
@@ -56,7 +55,7 @@ export function getTagsHelper(container, settings) {
 
     const shadowRoot = document.querySelector("#href-taker-outer-shadow-wrapper").shadowRoot;
     let isMiddleButtonHeld = false;
-    let lastProcessedTag = null;
+    let lastProcessedTagEl = null;
 
     /** @param {PointerEvent} event */
     function onMMBPointerDownEnableOnlyTargetTag(event) {
@@ -66,8 +65,9 @@ export function getTagsHelper(container, settings) {
         event.preventDefault();
 
         isMiddleButtonHeld = true;
-        lastProcessedTag = listTagEl;
+        lastProcessedTagEl = listTagEl;
         tagsListContainerEl.setPointerCapture(event.pointerId);
+        tagsListContainerEl.addEventListener("pointerup", onPointerUpResetMiddleButton, {once: true});
 
         enableOnlyTargetTag(listTagEl);
     }
@@ -78,10 +78,10 @@ export function getTagsHelper(container, settings) {
         const elementUnderCursor = shadowRoot.elementFromPoint(event.clientX, event.clientY);
         const listTagEl = isTag(elementUnderCursor) ? elementUnderCursor: null;
         if (!listTagEl) { return; }
-        if (listTagEl === lastProcessedTag) {
+        if (listTagEl === lastProcessedTagEl) {
             return;
         }
-        lastProcessedTag = listTagEl;
+        lastProcessedTagEl = listTagEl;
 
         enableOnlyTargetTag(listTagEl);
     }
@@ -96,7 +96,7 @@ export function getTagsHelper(container, settings) {
     function onPointerUpResetMiddleButton(event) {
         if (event.button !== MIDDLE_BUTTON) { return; }
         isMiddleButtonHeld = false;
-        lastProcessedTag = null;
+        lastProcessedTagEl = null;
         tagsListContainerEl.releasePointerCapture(event.pointerId);
     }
 
@@ -218,9 +218,10 @@ export function getTagsHelper(container, settings) {
         }
 
         isLeftButtonHeld = true;
-        lastProcessedTag = listTagEl;
+        lastProcessedTagEl = listTagEl;
         tagDisablingMode = !isListTagDisabled(listTagEl);
         tagsListContainerEl.setPointerCapture(event.pointerId);
+        tagsListContainerEl.addEventListener("pointerup", onPointerUpResetLeftButton, {once: true});
 
         const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
         toggleTagDisabling(listTagEl, popupTagEl);
@@ -234,13 +235,13 @@ export function getTagsHelper(container, settings) {
         const elementUnderCursor = shadowRoot.elementFromPoint(event.clientX, event.clientY);
         const listTagEl = isTag(elementUnderCursor) ? elementUnderCursor : null;
         if (!listTagEl) {
-            lastProcessedTag = null;
+            lastProcessedTagEl = null;
             return;
         }
-        if (listTagEl === lastProcessedTag) {
+        if (listTagEl === lastProcessedTagEl) {
             return;
         }
-        lastProcessedTag = listTagEl;
+        lastProcessedTagEl = listTagEl;
         if (tagDisablingMode === isListTagDisabled(listTagEl)) {
             return;
         }
@@ -254,7 +255,7 @@ export function getTagsHelper(container, settings) {
     function onPointerUpResetLeftButton(event) {
         if (event.button !== LEFT_BUTTON) { return; }
         isLeftButtonHeld = false;
-        lastProcessedTag = null;
+        lastProcessedTagEl = null;
         tagsListContainerEl.releasePointerCapture(event.pointerId);
     }
 
