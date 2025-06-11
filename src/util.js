@@ -1,5 +1,8 @@
+/** @type {0} */
 export const LEFT_BUTTON   = 0;
+/** @type {1} */
 export const MIDDLE_BUTTON = 1;
+/** @type {2} */
 export const RIGHT_BUTTON  = 2;
 // BACK = 3; FORWARD = 4;
 

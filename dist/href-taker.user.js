@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.20.0-2025.6.10-2167
+// @version     0.21.0-2025.6.11-b19c
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -657,7 +657,9 @@ function storeStateInLS({id: lsName, onMove, onStop, reset, restore}) {
     };
 }
 
+/** @type {0} */
 const LEFT_BUTTON   = 0;
+/** @type {1} */
 const MIDDLE_BUTTON = 1;
 // BACK = 3; FORWARD = 4;
 
@@ -880,7 +882,9 @@ function getTagsHelper(container, settings) {
     let urlsCount = 0;
 
     tagsPopupContainerEl.addEventListener("click", onClickSelectTagFromPopup);
-    tagsListContainerEl.addEventListener( "click", onClickToggleDisablingSelectedTag);
+    tagsListContainerEl.addEventListener("pointerdown", onLeftButtonDownToggleTagDisabling);
+    tagsListContainerEl.addEventListener("pointermove", onPointerMoveToggleTag);
+    tagsListContainerEl.addEventListener("pointerup",   onPointerUpResetLeftButton);
 
     tagsPopupContainerEl.addEventListener("contextmenu", onContextMenuAddPopupTagOrToggleDisabling);
     tagsListContainerEl.addEventListener( "contextmenu", onContextMenuRemoveTagFromSelect);
@@ -1016,19 +1020,28 @@ function getTagsHelper(container, settings) {
         popupTagEl.classList.add("disabled");
         selectedTags.delete(tag);
     }
-    function disableSelectedTag(listTagEl, popupTagEl) {
-        const disabled = listTagEl.classList.toggle("disabled");
-        if (disabled) {
+    function isListTagDisabled(listTagEl) {
+        return listTagEl.classList.contains("disabled");
+    }
+    function toggleTagDisabling(listTagEl, popupTagEl) {
+        if (!isListTagDisabled(listTagEl)) {
             selectedTags.delete(listTagEl.dataset.tag);
+            listTagEl.classList.add("disabled");
             popupTagEl.classList.add("disabled");
         } else {
             selectedTags.add(listTagEl.dataset.tag);
+            listTagEl.classList.remove("disabled");
             popupTagEl.classList.remove("disabled");
         }
     }
 
-    /** @param {MouseEvent} event */
-    function onClickToggleDisablingSelectedTag(event) {
+    let isLeftButtonHeld = false;
+    let tagDisablingMode = false;
+
+    /** @param {PointerEvent} event */
+    function onLeftButtonDownToggleTagDisabling(event) {
+        if (event.button !== LEFT_BUTTON) { return; }
+
         const listTagEl = getTagFromEvent(event);
         if (!listTagEl) { return; }
 
@@ -1050,12 +1063,52 @@ function getTagsHelper(container, settings) {
                     disableTag(listTagEl);
                 }
             }
-        } else {
-            const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
-            disableSelectedTag(listTagEl, popupTagEl);
+
+            updateAddTagBtnTitle();
+            onUpdateCb?.();
+
+            return;
         }
+
+        isLeftButtonHeld = true;
+        lastProcessedTag = listTagEl;
+        tagDisablingMode = !isListTagDisabled(listTagEl);
+        tagsListContainerEl.setPointerCapture(event.pointerId);
+
+        const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
+        toggleTagDisabling(listTagEl, popupTagEl);
         updateAddTagBtnTitle();
         onUpdateCb?.();
+    }
+    /** @param {PointerEvent} event */
+    function onPointerMoveToggleTag(event) {
+        if (!isLeftButtonHeld) { return; }
+
+        const elementUnderCursor = shadowRoot.elementFromPoint(event.clientX, event.clientY);
+        const listTagEl = isTag(elementUnderCursor) ? elementUnderCursor : null;
+        if (!listTagEl) {
+            lastProcessedTag = null;
+            return;
+        }
+        if (listTagEl === lastProcessedTag) {
+            return;
+        }
+        lastProcessedTag = listTagEl;
+        if (tagDisablingMode === isListTagDisabled(listTagEl)) {
+            return;
+        }
+
+        const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
+        toggleTagDisabling(listTagEl, popupTagEl);
+        updateAddTagBtnTitle();
+        onUpdateCb?.();
+    }
+    /** @param {PointerEvent} event */
+    function onPointerUpResetLeftButton(event) {
+        if (event.button !== LEFT_BUTTON) { return; }
+        isLeftButtonHeld = false;
+        lastProcessedTag = null;
+        tagsListContainerEl.releasePointerCapture(event.pointerId);
     }
 
     /** @param {MouseEvent} event */
@@ -1071,7 +1124,7 @@ function getTagsHelper(container, settings) {
             popupTagEl.classList.add("selected");
         } else {
             const listTagEl = tagsListContainerEl.querySelector(`[data-tag="${popupTagEl.dataset.tag}"]`);
-            disableSelectedTag(listTagEl, popupTagEl);
+            toggleTagDisabling(listTagEl, popupTagEl);
         }
         updateAddTagBtnTitle();
         onUpdateCb?.();
