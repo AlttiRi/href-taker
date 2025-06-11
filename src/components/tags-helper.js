@@ -56,6 +56,7 @@ export function getTagsHelper(container, settings) {
     /** @param {PointerEvent} event */
     function onMiddleButtonDownEnableOnlyTargetTag(event) {
         if (event.button !== MIDDLE_BUTTON) { return; }
+        if (isLeftButtonHeld) { return; }
         const listTagEl = getTagFromEvent(event);
         if (!listTagEl) { return; }
         event.preventDefault();
@@ -186,6 +187,7 @@ export function getTagsHelper(container, settings) {
     /** @param {PointerEvent} event */
     function onLeftButtonDownToggleTagDisabling(event) {
         if (event.button !== LEFT_BUTTON) { return; }
+        if (isMiddleButtonHeld) { return; }
 
         const listTagEl = getTagFromEvent(event);
         if (!listTagEl) { return; }

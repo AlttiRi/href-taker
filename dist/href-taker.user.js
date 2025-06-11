@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.21.2-2025.6.11-96e9
+// @version     0.21.3-2025.6.11-8fb1
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -909,6 +909,7 @@ function getTagsHelper(container, settings) {
     /** @param {PointerEvent} event */
     function onMiddleButtonDownEnableOnlyTargetTag(event) {
         if (event.button !== MIDDLE_BUTTON) { return; }
+        if (isLeftButtonHeld) { return; }
         const listTagEl = getTagFromEvent(event);
         if (!listTagEl) { return; }
         event.preventDefault();
@@ -1039,6 +1040,7 @@ function getTagsHelper(container, settings) {
     /** @param {PointerEvent} event */
     function onLeftButtonDownToggleTagDisabling(event) {
         if (event.button !== LEFT_BUTTON) { return; }
+        if (isMiddleButtonHeld) { return; }
 
         const listTagEl = getTagFromEvent(event);
         if (!listTagEl) { return; }
