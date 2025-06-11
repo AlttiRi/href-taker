@@ -39,7 +39,7 @@ export function getTagsHelper(container, settings) {
     addTagBtnEl.addEventListener("contextmenu", onContextMenuSelectAllTagsOrClear);
     addTagBtnEl.addEventListener("pointerdown", onMMBPointerDownReverseSelectedTags);
 
-    const isTag = htmlElement => htmlElement.classList.contains("tag") && htmlElement.dataset.tag;
+    const isTag = htmlElement => htmlElement && htmlElement.classList.contains("tag") && htmlElement.dataset.tag;
     /** @param {Event} event */
     function getTagFromEvent(event) {
         const tarEl = /** @type {HTMLElement} */ event.target;
@@ -52,6 +52,10 @@ export function getTagsHelper(container, settings) {
     const shadowRoot = document.querySelector("#href-taker-outer-shadow-wrapper").shadowRoot;
     let isMiddleButtonHeld = false;
     let lastProcessedTagEl = null;
+
+    function preventDefault(event) {
+        event.preventDefault();
+    }
 
     /** @param {PointerEvent} event */
     function onMiddleButtonDownEnableOnlyTargetTag(event) {
@@ -66,6 +70,7 @@ export function getTagsHelper(container, settings) {
         tagsListContainerEl.setPointerCapture(event.pointerId);
         tagsListContainerEl.addEventListener("pointermove", onPointerMoveEnableTag);
         tagsListContainerEl.addEventListener("pointerup", onPointerUpResetMiddleButton, {once: true});
+        tagsListContainerEl.addEventListener("contextmenu", preventDefault);
 
         enableOnlyTargetTag(listTagEl);
     }
@@ -92,10 +97,10 @@ export function getTagsHelper(container, settings) {
     }
     /** @param {PointerEvent} event */
     function onPointerUpResetMiddleButton(event) {
-        if (event.button !== MIDDLE_BUTTON) { return; }
         isMiddleButtonHeld = false;
         lastProcessedTagEl = null;
         tagsListContainerEl.removeEventListener("pointermove",  onPointerMoveEnableTag);
+        tagsListContainerEl.removeEventListener("contextmenu", preventDefault);
         tagsListContainerEl.releasePointerCapture(event.pointerId);
     }
 
@@ -223,6 +228,7 @@ export function getTagsHelper(container, settings) {
         tagsListContainerEl.setPointerCapture(event.pointerId);
         tagsListContainerEl.addEventListener("pointermove", onPointerMoveToggleTag);
         tagsListContainerEl.addEventListener("pointerup", onPointerUpResetLeftButton, {once: true});
+        tagsListContainerEl.addEventListener("contextmenu", preventDefault);
 
         const popupTagEl = tagsPopupContainerEl.querySelector(`[data-tag="${listTagEl.dataset.tag}"]`);
         toggleTagDisabling(listTagEl, popupTagEl);
@@ -254,10 +260,10 @@ export function getTagsHelper(container, settings) {
     }
     /** @param {PointerEvent} event */
     function onPointerUpResetLeftButton(event) {
-        if (event.button !== LEFT_BUTTON) { return; }
         isLeftButtonHeld = false;
         lastProcessedTagEl = null;
         tagsListContainerEl.removeEventListener("pointermove", onPointerMoveToggleTag);
+        tagsListContainerEl.removeEventListener("contextmenu", preventDefault);
         tagsListContainerEl.releasePointerCapture(event.pointerId);
     }
 
