@@ -1,4 +1,4 @@
-# HrefTaker
+# [HrefTaker](https://github.com/alttiri/href-taker)
 
 The userscript that adds a popup to collect links from a web page. It's mainly aimed for static websites.
 
