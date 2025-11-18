@@ -472,7 +472,12 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
             newUrls = newUrls.filter(urlFilter);
             if (settings.https) {
-                newUrls = newUrls.map(url => url.startsWith("http://") ? url.replace("http://", "https://"): url);
+                newUrls = newUrls.map(url => {
+                    if (url.startsWith("http://") && !(new URL(url).hostname.endsWith(".onion"))) {
+                        return url.replace("http://", "https://");
+                    }
+                    return url;
+                });
             }
             if (!settings.input_only_disabled && onlyTexts.length) {
                 if (!settings.reverse_input_only) {

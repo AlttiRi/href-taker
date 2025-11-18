@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.21.5-2025.11.18-8725
+// @version     0.21.6-2025.11.18-6e0b
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -2611,7 +2611,12 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
 
             newUrls = newUrls.filter(urlFilter);
             if (settings.https) {
-                newUrls = newUrls.map(url => url.startsWith("http://") ? url.replace("http://", "https://"): url);
+                newUrls = newUrls.map(url => {
+                    if (url.startsWith("http://") && !(new URL(url).hostname.endsWith(".onion"))) {
+                        return url.replace("http://", "https://");
+                    }
+                    return url;
+                });
             }
             if (!settings.input_only_disabled && onlyTexts.length) {
                 if (!settings.reverse_input_only) {
