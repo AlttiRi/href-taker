@@ -1,7 +1,7 @@
 {
   "name": "href-taker",
   "private": true,
-  "version": "0.21.4-2025.6.11-3bc3",
+  "version": "0.21.5-2025.11.18-8725",
   "type": "module",
   "scripts": {
     "dev": "vite --open demo.html --host",
@@ -14,6 +14,6 @@
     "vite": "5.4.3"
   },
   "dependencies": {
-    "@alttiri/util-js": "1.14.1-20240908"
+    "@alttiri/util-js": "1.19.5-20251118"
   }
 }

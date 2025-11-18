@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.21.4-2025.6.11-3bc3
+// @version     0.21.5-2025.11.18-8725
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -103,7 +103,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} clear_store_on_close
  */
 
-/** @return {{settings: ScriptSettings, updateSettings: (ss: Partial<ScriptSettings>) => string[]}} */
+/** @return {{settings: ScriptSettings, updateSettings: (ss: Partial<ScriptSettings>, cb: Function) => string[]}} */
 function loadSettings() {
     /** @type {ScriptSettings} */
     const defaultSettings = {
@@ -188,7 +188,8 @@ function loadSettings() {
 }
 
 /**
- * Java's `hashCode` like.
+ * Java's `hashCode` like. 32-bits hash.
+ * Note: `Math.imul(..., 1)` does the same as  `| 0`, with the same speed.
  * @example
  * hashString("Lorem Ipsum") === -488052133
  * hashString("Qwerty") === -1862984904
@@ -219,8 +220,27 @@ function downloadBlob(blob, name = "", urlOrOpts) {
     setTimeout(() => URL.revokeObjectURL(blobUrl), timeout);
 }
 
-/** A classic `debounce` wrap function. */
-function debounce(runnable, ms = 50, scope) {
+/**
+ * A classic `debounce` wrap function.
+ *
+ * Wraps a function to create a debounced version that delays execution until after a specified time has elapsed since the last call.
+ * Only the last call within the specified time window is executed.
+ *
+ * @param runnable - The function to debounce.
+ * @param ms - The debounce delay in milliseconds (default: 250).
+ * @param scope - Optional context to bind the function to (defaults to the caller's context).
+ * @returns A debounced function that delays execution of the provided function.
+ * @example
+ * const logAny = (i: any) => console.log(i);
+ * const logAnyDebounced = debounce(logAny, 50);
+ *
+ * // prints `99` after ~1+ second
+ * for (let i = 0; i < 100; i++) {
+ *     logAnyDebounced(i);
+ *     await sleep(10);
+ * }
+ */
+function debounce(runnable, ms = 250, scope) {
     let timerId;
     return function debounced() {
         if (timerId !== undefined) {

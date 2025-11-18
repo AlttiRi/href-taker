@@ -43,7 +43,7 @@ const debug = location.pathname === "/href-taker/demo.html" && ["localhost", "al
  * @property {boolean} clear_store_on_close
  */
 
-/** @return {{settings: ScriptSettings, updateSettings: (ss: Partial<ScriptSettings>) => string[]}} */
+/** @return {{settings: ScriptSettings, updateSettings: (ss: Partial<ScriptSettings>, cb: Function) => string[]}} */
 export function loadSettings() {
     /** @type {ScriptSettings} */
     const defaultSettings = {
