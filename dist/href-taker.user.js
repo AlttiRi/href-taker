@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.21.6-2025.11.18-6e0b
+// @version     0.21.7-2026.6.26-373d
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -2017,6 +2017,7 @@ a {
 
 #popup {
     width: 720px;
+    color: black;
     background-color: white;
     height: 580px;
     border: 1px solid darkgray;

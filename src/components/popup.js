@@ -393,6 +393,7 @@ a {
 
 #popup {
     width: 720px;
+    color: black;
     background-color: white;
     height: 580px;
     border: 1px solid darkgray;
