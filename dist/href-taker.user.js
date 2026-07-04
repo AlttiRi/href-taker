@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.21.7-2026.6.26-373d
+// @version     0.21.8-2026.7.4-5187
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -376,6 +376,7 @@ function getWrapper() {
     const wrapperCss = cssFromStyle`
 <style>
 #shadow-content-wrapper {
+    color-scheme: light;
     display: flex;
     margin-top: 40px;
     justify-content: center;

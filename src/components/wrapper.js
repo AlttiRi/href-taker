@@ -7,6 +7,7 @@ export function getWrapper() {
     const wrapperCss = cssFromStyle`
 <style>
 #shadow-content-wrapper {
+    color-scheme: light;
     display: flex;
     margin-top: 40px;
     justify-content: center;
