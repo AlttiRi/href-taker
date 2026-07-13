@@ -471,6 +471,12 @@ export function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             }
 
             newUrls = newUrls.filter(urlFilter);
+            newUrls = newUrls.map(url => {
+                if (url.startsWith("//")) {
+                    return location.protocol + url;
+                }
+                return url;
+            });
             if (settings.https) {
                 newUrls = newUrls.map(url => {
                     if (url.startsWith("http://") && !(new URL(url).hostname.endsWith(".onion"))) {

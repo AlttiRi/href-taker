@@ -34,8 +34,9 @@ export function parseUrls(targetSelector = "body", {
 
         if (includeMedia) {
             const imageUrls = [...el.querySelectorAll("img")].map(el => el.src);
+            const imagePics = [...el.querySelectorAll("picture source")].map(el => el.srcset);
             const videoUrls = [...el.querySelectorAll("video, video source")].map(el => el.src);
-            urls.push(imageUrls, videoUrls);
+            urls.push(imageUrls, imagePics, videoUrls);
         }
     }
     return urls.flat();

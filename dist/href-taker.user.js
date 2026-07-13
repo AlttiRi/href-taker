@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        HrefTaker
-// @version     0.21.8-2026.7.4-5187
+// @version     0.21.9-2026.7.13-7ec4
 // @namespace   gh.alttiri
 // @description URL grabber popup
 // @license     GPL-3.0
@@ -1444,8 +1444,9 @@ function parseUrls(targetSelector = "body", {
 
         if (includeMedia) {
             const imageUrls = [...el.querySelectorAll("img")].map(el => el.src);
+            const imagePics = [...el.querySelectorAll("picture source")].map(el => el.srcset);
             const videoUrls = [...el.querySelectorAll("video, video source")].map(el => el.src);
-            urls.push(imageUrls, videoUrls);
+            urls.push(imageUrls, imagePics, videoUrls);
         }
     }
     return urls.flat();
@@ -2612,6 +2613,12 @@ function initPopup({settings, updateSettings, wrapper, popup, minim}) {
             }
 
             newUrls = newUrls.filter(urlFilter);
+            newUrls = newUrls.map(url => {
+                if (url.startsWith("//")) {
+                    return location.protocol + url;
+                }
+                return url;
+            });
             if (settings.https) {
                 newUrls = newUrls.map(url => {
                     if (url.startsWith("http://") && !(new URL(url).hostname.endsWith(".onion"))) {
